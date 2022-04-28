@@ -3,6 +3,8 @@ from evaluation.experiment_procedure import extract_bool_tokens_from_domain_name
 from evaluation.experiment_procedure import extract_trans_tokens_from_domain_name
 
 domain_name = "robot"
+# domain_name = "pixel"
+# domain_name = "string"
 
 all_tokens = list(extract_bool_tokens_from_domain_name(domain_name)
                   .union(extract_trans_tokens_from_domain_name(domain_name)))

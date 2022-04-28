@@ -24,14 +24,14 @@ class EvolvingLanguage(GeneticAlgorithm):
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
 
-        genome = []
+        genome = set()
 
         for i in range(0, length):
             random_index = randrange(0, len(self.all_tokens))
             random_token = self.all_tokens[random_index]
-            genome.append(random_token)
+            genome.add(random_token)
 
-        return sort_genome(genome)
+        return sort_genome(list(genome))
 
     def generate_population(self, size: int) -> Population:
         """This method creates a population of new genomes"""
