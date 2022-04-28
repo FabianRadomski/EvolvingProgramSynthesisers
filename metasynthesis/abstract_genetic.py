@@ -34,13 +34,8 @@ class GeneticAlgorithm:
 
         raise NotImplementedError()
 
-    def single_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-        """This method combines first half of genome a with second half of b and vice versa with certain probability"""
-
-        raise NotImplementedError()
-
-    def n_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-        """This method applies multiple point crossover with certain probability"""
+    def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
+        """This method applies the given crossover function with certain probability"""
 
         raise NotImplementedError()
 
