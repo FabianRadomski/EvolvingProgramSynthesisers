@@ -13,8 +13,8 @@ MAX_TOKEN_FUNCTION_DEPTH = 3
 
 
 class AStar(SearchAlgorithm):
-    def __init__(self, time_limit_sec: float, weight: int = False):
-        super().__init__(time_limit_sec)
+    def __init__(self, time_limit_sec: float, weight: int = False, iterations_limit: int = 0, best_program: Program = Program([])):
+        super().__init__(time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
         if weight is False:
             weight = 0.5
         assert 0 <= weight <= 1

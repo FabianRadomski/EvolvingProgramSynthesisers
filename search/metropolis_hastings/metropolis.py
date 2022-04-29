@@ -19,14 +19,13 @@ class Mutation():
         return self.fun(program)
 
 class MetropolisHasting(SearchAlgorithm):
-    def __init__(self, time_limit_sec: float):
-        super().__init__(time_limit_sec)
+    def __init__(self, time_limit_sec: float, iterations_limit: int = 0, best_program: Program = Program([]) ):
+        super().__init__(time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
 
     def setup(self, examples: List[Example], trans_tokens, bool_tokens):
         self.number_of_explored_programs = 0
         self.number_of_iterations = 0
         self.cost_per_iteration = []
-        self._best_program: Program = Program([])
         self.cost = 100
         self.proposal_distribution = ProposalDistribution()
         fac = MutationFactory()

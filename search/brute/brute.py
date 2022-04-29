@@ -14,20 +14,18 @@ MAX_TOKEN_FUNCTION_DEPTH = 3
 
 class Brute(SearchAlgorithm):
 
-    def __init__(self, time_limit_sec: float):
-        super().__init__(time_limit_sec)
+    def __init__(self, time_limit_sec: float, iterations_limit: int = 0, best_program: Program = Program([])):
+        super().__init__(time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
         self.token_functions = []
         self.sample_inputs: list[Environment] = []
         self.sample_outputs: list[Environment] = []
         self.programs = []
-        self._best_program = Program([])
         self.best_cost = float("inf")
-        self.current_program: Program = Program([])
+        self.current_program: Program = self._best_program
 
 
     def setup(self, examples, trans_tokens, bool_tokens):
         self.programs = []
-        self._best_program = Program([])
         # generate different token combinations
         self.token_functions = invent2(trans_tokens, bool_tokens, MAX_TOKEN_FUNCTION_DEPTH)
 

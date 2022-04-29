@@ -2,7 +2,7 @@ import time
 
 from common.experiment import Example
 from common.prorgam import Program
-from common.tokens.abstract_tokens import EnvToken, BoolToken, TransToken
+from common.tokens.abstract_tokens import BoolToken, EnvToken, TransToken
 from search.abstract_search import SearchAlgorithm
 from search.search_result import SearchResult
 from search.vlns.large_neighborhood_search.accept.accept import Accept
@@ -10,13 +10,15 @@ from search.vlns.large_neighborhood_search.destroy.destroy import Destroy
 from search.vlns.large_neighborhood_search.invent.variable_depth_invent import VariableDepthInvent
 from search.vlns.large_neighborhood_search.repair.repair import Repair
 
+
 class LNS(SearchAlgorithm):
     """Implements the abstract Large Neighborhood Search algorithm given an Accept, Destroy and Repair method. Also a
     time limit can be set."""
 
     def __init__(self, time_limit: float, accept: Accept, destroy: Destroy, repair: Repair,
-                 max_invent_depth: int, max_invent_control_tokens, increase_depth_after: int, debug: bool = False):
-        super().__init__(time_limit)
+                 max_invent_depth: int, max_invent_control_tokens, increase_depth_after: int, iterations_limit: int = 0, best_program: Program =
+                 Program([]), debug: bool = False):
+        super().__init__(time_limit, iterations_limit=iterations_limit, best_program=best_program)
         self.accept = accept
         self.destroy = destroy
         self.repair = repair
@@ -37,8 +39,7 @@ class LNS(SearchAlgorithm):
         self.repair.invent = VariableDepthInvent(trans_tokens, bool_tokens, self.max_invent_depth, self.max_invent_control_tokens)
         self.accept.reset()
 
-        self._best_program = Program([])
-        self.sol_current = Program([])
+        self.sol_current = self._best_program
         self.cost_best = self.cost(exs=test_case, p=self._best_program)
         self.cost_current = self.cost_best
 
@@ -53,8 +54,8 @@ class LNS(SearchAlgorithm):
         self.stats["time_cost"] = 0
         self.stats["best_cost_per_iteration"] = []
         self.stats["current_cost_per_iteration"] = []
-        self.stats["explored_per_depth"] = {k: 0 for k in range(1, self.stats["search_depth"]+1)}
-        self.stats["multiple_explored_per_depth"] = {k: 0 for k in range(1, self.stats["search_depth"]+1)}
+        self.stats["explored_per_depth"] = {k: 0 for k in range(1, self.stats["search_depth"] + 1)}
+        self.stats["multiple_explored_per_depth"] = {k: 0 for k in range(1, self.stats["search_depth"] + 1)}
 
     def iteration(self, test_case: list[Example], tokens: list[EnvToken], bt) -> bool:
         self.debug_print("\n")
@@ -72,7 +73,7 @@ class LNS(SearchAlgorithm):
         t_r = time.process_time()
 
         # Calculate cost of temporary solution
-        #c_temp = self.cost(test_case, x_temp)
+        # c_temp = self.cost(test_case, x_temp)
         c_temp = self.eff_cost(test_case, x_temp)
         t_c = time.process_time()
         self.debug_print("Repaired ({}): {}".format(c_temp, x_temp))
@@ -100,9 +101,9 @@ class LNS(SearchAlgorithm):
                 self.repair.increment_search_depth()
                 self.repair.invent.increment_depth()
 
-                #self.accept.reset()
-                #self.sol_current = Program([])
-                #self.cost_current = self.cost(test_case, self.sol_current)
+                # self.accept.reset()
+                # self.sol_current = Program([])
+                # self.cost_current = self.cost(test_case, self.sol_current)
 
                 self.iterations_since_last_best = 0
 
@@ -111,8 +112,8 @@ class LNS(SearchAlgorithm):
             self.sol_current = x_temp
             self.cost_current = c_temp
 
-            #pair = (self.stats["iterations"], self.cost_current.__round__(2))
-            #self.stats["current_cost_per_iteration"].append(pair)
+            # pair = (self.stats["iterations"], self.cost_current.__round__(2))
+            # self.stats["current_cost_per_iteration"].append(pair)
 
         # Update stats
         self.stats["average_visited_length"] += x_temp.number_of_tokens()

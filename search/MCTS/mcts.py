@@ -29,9 +29,8 @@ def deepcopy_program(program: Program) -> Program:
 
 class MCTS(SearchAlgorithm):
 
-    def __init__(self, time_limit_sec: float):
-        super().__init__(time_limit_sec)
-        self._best_program: Program
+    def __init__(self, time_limit_sec: float, iterations_limit: int = 0, best_program: Program = Program([])):
+        super().__init__(time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
         self.smallest_loss: float = float("inf")
         self.max_expected_loss: float = float("inf")  # is used for normalizing exploitation factor
         self.search_tree: Union[SearchTreeNode, None] = None
