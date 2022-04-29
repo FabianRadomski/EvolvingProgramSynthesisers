@@ -1,4 +1,6 @@
 import common.tokens.robot_tokens as robot_tokens
+import common.tokens.pixel_tokens as pixel_tokens
+import common.tokens.string_tokens as string_tokens
 from typing import List, Type
 
 from common.tokens.abstract_tokens import Token
@@ -7,7 +9,10 @@ from common.tokens.abstract_tokens import Token
 class DomainSpecificLanguage:
     """A class for a domain specific language"""
 
-    def __init__(self, bool_tokens: List[Type[Token]], trans_tokens: List[Type[Token]],
+    def __init__(self,
+                 domain_name: str,
+                 bool_tokens: List[Type[Token]],
+                 trans_tokens: List[Type[Token]],
                  constraints_enabled: bool = False):
         self._bool_tokens = bool_tokens
         self._trans_tokens = trans_tokens
@@ -41,7 +46,16 @@ class DomainSpecificLanguage:
 
         self._constraints_enabled = not self._constraints_enabled
 
-class StandardRobotDomainSpecificLanguage(DomainSpecificLanguage):
-    
-    def __init__(self):
-        super(StandardRobotDomainSpecificLanguage, self).__init__(robot_tokens.BoolTokens, robot_tokens.TransTokens)
+
+class StandardDomainSpecificLanguage(DomainSpecificLanguage):
+
+    def __init__(self, domain_name):
+        if domain_name == "robot":
+            super().__init__(domain_name, robot_tokens.BoolTokens, robot_tokens.TransTokens)
+        elif domain_name == "pixel":
+            super().__init__(domain_name, pixel_tokens.BoolTokens, pixel_tokens.TransTokens)
+        elif domain_name == "string":
+            super().__init__(domain_name, string_tokens.BoolTokens, string_tokens.TransTokens)
+        else:
+            raise NotImplementedError("this domain is not implemented, check whether you are using either "
+                                      "\"robot\", \"pixel\" or \"string\" as domain_name")
