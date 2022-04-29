@@ -1,3 +1,4 @@
+import common.tokens.robot_tokens as robot_tokens
 from typing import List, Type
 
 from common.tokens.abstract_tokens import Token
@@ -39,3 +40,8 @@ class DomainSpecificLanguage:
         """Toggles whether constraints are accounted for in this domain specific language"""
 
         self._constraints_enabled = not self._constraints_enabled
+
+class StandardRobotDomainSpecificLanguage(DomainSpecificLanguage):
+    
+    def __init__(self):
+        super(StandardRobotDomainSpecificLanguage, self).__init__(robot_tokens.BoolTokens, robot_tokens.TransTokens)
