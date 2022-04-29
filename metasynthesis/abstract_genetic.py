@@ -12,19 +12,20 @@ MutationFunc = Callable[[Genome], Genome]
 class GeneticAlgorithm:
     """Abstract interface for a genetic algorithm to synthesise elements used in program synthesis"""
 
-    def __init__(self, fitness_limit: int, generation_limit: int,
-                 crossover_probability: float, mutation_probability: float):
+    def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
+                 mutation_probability: float, generation_size: int):
         self.fitness_limit = fitness_limit
         self.generation_limit = generation_limit
         self.crossover_probability = crossover_probability
         self.mutation_probability = mutation_probability
+        self.generation_size = generation_size
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
 
         raise NotImplementedError()
 
-    def generate_population(self, size: int) -> Population:
+    def generate_population(self) -> Population:
         """This method creates a population of new genomes"""
 
         raise NotImplementedError()
@@ -34,13 +35,8 @@ class GeneticAlgorithm:
 
         raise NotImplementedError()
 
-    def single_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-        """This method combines first half of genome a with second half of b and vice versa with certain probability"""
-
-        raise NotImplementedError()
-
-    def n_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-        """This method applies multiple point crossover with certain probability"""
+    def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
+        """This method applies the given crossover function with certain probability"""
 
         raise NotImplementedError()
 
@@ -64,7 +60,7 @@ class GeneticAlgorithm:
 
         raise NotImplementedError()
 
-    def run_evolution(self) -> Tuple[Population, int]:
+    def run_evolution(self):
         """This method runs the evolution process"""
 
         raise NotImplementedError()
