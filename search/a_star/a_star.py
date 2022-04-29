@@ -1,7 +1,7 @@
 from typing import Iterator, List, Union
 
 from common.experiment import Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.control_tokens import LoopIterationLimitReached
 from common.tokens.pixel_tokens import *
 from search.a_star.unique_priority_queue import UniquePriorityQueue

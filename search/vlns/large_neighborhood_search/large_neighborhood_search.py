@@ -1,7 +1,7 @@
 import time
 
 from common.experiment import Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import EnvToken, BoolToken, TransToken
 from search.abstract_search import SearchAlgorithm
 from search.search_result import SearchResult
