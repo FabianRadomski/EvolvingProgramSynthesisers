@@ -1,6 +1,6 @@
 from collections import Callable
 
-from common.prorgam import Program
+from common.program import Program
 from search.vlns.large_neighborhood_search_seqtoken.tokens.destroyed_token import DestroyedToken
 from search.vlns.large_neighborhood_search_seqtoken.tokens.sequence_token import SequenceToken, SeqToken, EmptySequenceToken
 

@@ -1,5 +1,5 @@
 from common.experiment import Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.control_tokens import If
 from evaluation.experiment_procedure import extract_bool_tokens_from_domain_name, extract_trans_tokens_from_domain_name, test_performance_single_experiment
 from common.tokens.pixel_tokens import *

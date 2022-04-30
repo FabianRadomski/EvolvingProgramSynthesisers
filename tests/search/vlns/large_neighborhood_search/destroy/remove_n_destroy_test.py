@@ -1,6 +1,6 @@
 import unittest
 
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.string_tokens import *
 from search.vlns.large_neighborhood_search.destroy.remove_n_destroy import ExtractNDestroy
 

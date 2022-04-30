@@ -1,7 +1,7 @@
 import random
 from collections import Callable
 
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import EnvToken, BoolToken
 from search.vlns.large_neighborhood_search_seqtoken.repair.repair import Repair
 from search.vlns.large_neighborhood_search_seqtoken.tokens.sequence_token import SeqToken, SequenceToken

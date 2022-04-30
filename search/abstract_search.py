@@ -4,7 +4,7 @@ from statistics import mean
 from typing import List
 
 from common.environment import StringEnvironment
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import Token, InvalidTransition, EnvToken
 from common.experiment import Example
 from common.tokens.control_tokens import LoopIterationLimitReached

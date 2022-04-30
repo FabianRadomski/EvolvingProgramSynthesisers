@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from common.prorgam import Program
+from common.program import Program
 
 
 class SearchResult:
