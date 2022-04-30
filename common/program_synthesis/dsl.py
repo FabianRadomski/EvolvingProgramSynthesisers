@@ -27,7 +27,7 @@ class DomainSpecificLanguage:
 
         return self._trans_tokens
 
-    def get_bool_tokens(self) -> List[Type[Token]]:
+    def get_bool_tokens(self):
         """This method gets bool tokens"""
 
         return self._bool_tokens
@@ -52,11 +52,11 @@ class StandardDomainSpecificLanguage(DomainSpecificLanguage):
 
     def __init__(self, domain_name):
         if domain_name == "robot":
-            super().__init__(domain_name, list(robot_tokens.BoolTokens), list(robot_tokens.TransTokens))
+            super().__init__(domain_name, robot_tokens.BoolTokens, robot_tokens.TransTokens)
         elif domain_name == "pixel":
-            super().__init__(domain_name, list(pixel_tokens.BoolTokens), list(pixel_tokens.TransTokens))
+            super().__init__(domain_name, pixel_tokens.BoolTokens, pixel_tokens.TransTokens)
         elif domain_name == "string":
-            super().__init__(domain_name, list(string_tokens.BoolTokens), list(string_tokens.TransTokens))
+            super().__init__(domain_name, string_tokens.BoolTokens, string_tokens.TransTokens)
         else:
             raise NotImplementedError("this domain is not implemented, check whether you are using either "
                                       "\"robot\", \"pixel\" or \"string\" as domain_name")
