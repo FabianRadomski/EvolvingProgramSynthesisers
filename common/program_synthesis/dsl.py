@@ -11,15 +11,15 @@ class DomainSpecificLanguage:
 
     def __init__(self,
                  domain_name: str,
-                 bool_tokens: List[Type[Token]],
-                 trans_tokens: List[Type[Token]],
+                 bool_tokens: List[Token],
+                 trans_tokens: List[Token],
                  constraints_enabled: bool = False):
         self.domain_name = domain_name
         self._bool_tokens = bool_tokens
         self._trans_tokens = trans_tokens
         self._constraints_enabled = constraints_enabled
 
-    def get_trans_tokens(self, partial_program=None) -> List[Type[Token]]:
+    def get_trans_tokens(self, partial_program=None) -> List[Token]:
         """This method gets trans tokens"""
 
         if partial_program is None:
@@ -27,7 +27,7 @@ class DomainSpecificLanguage:
 
         return self._trans_tokens
 
-    def get_bool_tokens(self):
+    def get_bool_tokens(self) -> List[Token]:
         """This method gets bool tokens"""
 
         return self._bool_tokens
