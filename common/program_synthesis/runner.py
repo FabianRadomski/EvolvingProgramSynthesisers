@@ -7,22 +7,21 @@ from typing import Type, List
 
 from common.experiment import TestCase, Experiment
 from common.program import Program
-from common.program_synthesis.dsl import DomainSpecificLanguage
+from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from example_parser.parser import Parser
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
 from example_parser.string_parser import StringParser
 from search.abstract_search import SearchAlgorithm
 from search.search_result import SearchResult
+from search.brute.brute import Brute
 
 
 @dataclass
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
-
-    search_method: Type[SearchAlgorithm]
-    dsl: DomainSpecificLanguage
-    domain_name: str
+    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
+    search_method: Type[SearchAlgorithm] = Brute
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
     MAX_EXECUTION_TIME_IN_SECONDS = 10
@@ -41,35 +40,38 @@ class Runner:
         if self.MULTI_PROCESS:
             with Pool(processes=self.NO_PROCESSES) as pool:
                 for tc in test_cases:
-                    result = pool.apply_async(self.run_single_test_case(tc))
+                    result = pool.apply_async(self.run_single_test_case, args=(tc,))
                     results.append(result)
 
-                results = [r.get() for r in results]
+                results = [r.get(timeout=5) for r in results]
+
+
         else:
             for tc in test_cases:
                 result = self.run_single_test_case(tc)
                 results.append(result)
 
+        search_results = []
         for result in results:
-            success_percentage, execution_time_in_seconds = result
+            success_percentage, execution_time_in_seconds, search_result = result
             sum_of_success_percentages += success_percentage
             sum_of_execution_times_in_seconds += execution_time_in_seconds
             if success_percentage == 100.0:
                 number_of_completely_successful_programs += 1
+            search_results.append(search_result)
 
         average_success_percentage = sum_of_success_percentages / len(test_cases)
         average_execution_time = sum_of_execution_times_in_seconds / len(test_cases)
         percentage_of_completely_successful_programs = number_of_completely_successful_programs / len(test_cases) * 100
 
-        return average_success_percentage, average_execution_time, percentage_of_completely_successful_programs
-
+        return average_success_percentage, average_execution_time, percentage_of_completely_successful_programs, search_results
 
     def _instantiate_parser(self) -> Parser:
-        if self.domain_name == "pixel":
+        if self.dsl.domain_name == "pixel":
             return PixelParser()
-        if self.domain_name == "robot":
+        if self.dsl.domain_name == "robot":
             return RobotParser()
-        if self.domain_name == "string":
+        if self.dsl.domain_name == "string":
             return StringParser()
 
     def _get_test_cases(self) -> List[TestCase]:
@@ -87,9 +89,8 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME_IN_SECONDS)\
+        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME_IN_SECONDS) \
             .run(test_case.training_examples, self.dsl.get_trans_tokens(), self.dsl.get_bool_tokens())
-
 
         program: Program = search_result.dictionary["program"]
 
@@ -111,9 +112,12 @@ class Runner:
                 successes += 1
 
         success_percentage = 100.0 * successes / len(test_case.test_examples)
-
-
         return success_percentage, execution_time_in_seconds, search_result
 
-if __name__ == '__main__':
-    Runner(Brute, StandardRobotDomainSpecificLanguage, "robot", )
+
+"""
+Example for running a test with the runner:
+"""
+# if __name__ == '__main__':
+#     data = Runner().run()
+#     print(data)

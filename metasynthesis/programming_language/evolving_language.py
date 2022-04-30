@@ -1,6 +1,9 @@
 from itertools import chain
 from random import randrange
 from typing import List, Callable, Tuple, Iterable
+
+from common.program_synthesis.dsl import DomainSpecificLanguage
+from common.program_synthesis.runner import Runner
 from common.tokens.pixel_tokens import BoolTokens as PixelBool
 from common.tokens.robot_tokens import BoolTokens as RobotBool
 from common.tokens.string_tokens import BoolTokens as StringBool
@@ -10,55 +13,58 @@ from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
 from example_parser.string_parser import StringParser
 from example_parser.parser import Parser
-from common.experiment import Experiment
-
-from search.brute.brute import Brute
-from search.batch_run import BatchRun
 
 from metasynthesis.abstract_genetic import GeneticAlgorithm
+from metasynthesis.abstract_genetic import FitnessFunc
+from metasynthesis.abstract_genetic import CrossoverFunc
+from metasynthesis.abstract_genetic import MutationFunc
 
-Genome = List
+Genome = DomainSpecificLanguage
 Population = List[Genome]
-PopulateFunc = Callable[[], Population]
-FitnessFunc = Callable[[Genome], float]
-SelectionFunc = Callable[[Population, FitnessFunc], Tuple[Genome, Genome]]
-CrossoverFunc = Callable[[Genome, Genome], Tuple[Genome, Genome]]
-MutationFunc = Callable[[Genome], Genome]
-
 
 class EvolvingLanguage(GeneticAlgorithm):
     """A genetic algorithm to synthesise a programing language for program synthesis"""
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
-                 mutation_probability: float, domain: str, bool_tokens: list, trans_tokens: list):
-        super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability)
-        self.domain = domain
-        self.bool_tokens = bool_tokens
-        self.trans_tokens = trans_tokens
+                 mutation_probability: float, generation_size: int, dsl: DomainSpecificLanguage):
+        super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
+        self.domain = dsl.domain_name
+        self.dsl = dsl
+        self.bool_tokens = dsl.get_bool_tokens()
+        self.trans_tokens = dsl.get_trans_tokens()
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
 
-        all_tokens = self.bool_tokens + self.trans_tokens
+        max_dsl_length = len(self.bool_tokens + self.trans_tokens)
+        bool_length = round((length / max_dsl_length) * len(self.bool_tokens))
+        trans_length = round((length / max_dsl_length) * len(self.trans_tokens))
 
-        genome = set()
+        bool_chromosomes = set()
+        for i in range(0, bool_length):
+            random_index = randrange(0, len(self.bool_tokens))
+            random_bool_token = self.bool_tokens[random_index]
+            bool_chromosomes.add(random_bool_token)
 
-        for i in range(0, length):
-            random_index = randrange(0, len(all_tokens))
-            random_token = all_tokens[random_index]
-            genome.add(random_token)
+        trans_chromosomes = set()
+        for i in range(0, trans_length):
+            random_index = randrange(0, len(self.trans_tokens))
+            random_trans_token = self.trans_tokens[random_index]
+            trans_chromosomes.add(random_trans_token)
 
-        return sort_genome(list(genome))
+        dsl_genome = DomainSpecificLanguage(self.domain, list(bool_chromosomes), list(trans_chromosomes))
 
-    def generate_population(self, size: int) -> Population:
+        return dsl_genome
+
+    def generate_population(self) -> Population:
         """This method creates a population of new genomes"""
 
-        all_tokens = self.bool_tokens + self.trans_tokens
+        max_dsl_length = len(self.bool_tokens + self.trans_tokens)
 
         population = []
 
-        for i in range(0, size):
-            genome_length = randrange(1, len(all_tokens))
+        for i in range(0, self.generation_size):
+            genome_length = randrange(1, max_dsl_length)
             population.append(self.generate_genome(genome_length))
 
         return population
@@ -71,47 +77,18 @@ class EvolvingLanguage(GeneticAlgorithm):
         # 2) whether program that solves tasks was created
         # 3) number of iterations of searching
 
-        genome_length = len(genome)
+        # genome_length = len(genome.get_bool_tokens() + genome.get_trans_tokens())
 
-        # result = BatchRun(
-        #     domain=self.domain,
-        #     files=([], [], []),
-        #     search_algorithm=[Brute, "brute"][0](10),
-        #     print_results=False,
-        #     multi_core=False
-        # ).run()
-        # from result we can get the relevant stats
-        # print("AAAA", result)
+        runner = Runner(self.dsl)
 
-        # ISSUE: we need a way to inject the DSL genome into BatchRun
+        avg_success_perc, avg_exec_time, perc_successful_programs, search_results = runner.run()
 
-        # alternative: use test cases to run experiments myself
+        # max values: avg_success = 100, avg_exec_time = ?, perc_successful_programs = 100, search_results = ?
 
-        # ISSUE: we can inject a DSL, but runs very very slow
-        filtered_tokens = filter_tokens(genome, self.domain)
-        bool_tokens = filtered_tokens[0]
-        trans_tokens = filtered_tokens[1]
+        return avg_success_perc
 
-        parser = _get_parser(self.domain)
-        test_cases = parser.parse_specific_range([], [], [])
-
-        for test_case in test_cases:
-            succes, time = test_performance_single_case_and_write_to_file(test_case, trans_tokens, bool_tokens, Brute)
-            print(succes, time)
-
-        # ISSUE: this runs quite fast, but no way to inject custom DSL
-        # experiment = Experiment("temp_experiment_name", self.domain, test_cases)
-        # print(test_performance_single_experiment(experiment, Brute))
-
-        return 0.5
-
-    def single_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-        """This method combines first half of genome a with second half of b and vice versa with certain probability"""
-
-        raise NotImplementedError()
-
-    def n_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-        """This method applies multiple point crossover with certain probability"""
+    def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
+        """This method applies the given crossover function with certain probability"""
 
         raise NotImplementedError()
 
@@ -125,56 +102,61 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         raise NotImplementedError()
 
-    def sort_population(self, population: Population, fitness_func: FitnessFunc) -> Population:
+    def sort_population(self, population: Population) -> Population:
         """This method sorts the population based on the given fitness function"""
 
-        return sorted(population, key=fitness_func, reverse=True)
+        return sorted(population, key=lambda genome: self.fitness(genome), reverse=True)
 
     def genome_to_string(self, genome: Genome) -> str:
         """This method converts a given genome to a string"""
 
         raise NotImplementedError()
 
-    def run_evolution(self) -> Tuple[Population, int]:
+    def run_evolution(self):
         """This method runs the evolution process"""
 
         iteration_count = 0
 
-        population = self.generate_population(50)
+        population = self.generate_population()
 
-        print(population)
+        for genome in population:
+            print(genome.get_bool_tokens() + genome.get_trans_tokens())
+            # print(self.fitness(genome))
 
-        # for genome in population:
-        #     print(self.fitness(genome))
+        sorted_population = self.sort_population(population)
+        print(sorted_population)
 
-        return self.generate_population(50), iteration_count
+        return self.generate_population(), iteration_count
 
 
 def sort_genome(genome: Genome) -> Genome:
-    return sorted(genome, key=str, reverse=False)
+    sorted_trans = sorted(genome.get_trans_tokens(), key=str, reverse=False)
+    sorted_bool = sorted(genome.get_bool_tokens(), key=str, reverse=False)
+
+    return DomainSpecificLanguage(genome.domain_name, sorted_trans, sorted_bool)
 
 
-def filter_tokens(genome: Genome, domain: str) -> Tuple[List, List]:
-    filtered = ([], [])
-    if domain == "pixel":
-        for token in genome:
-            if token in PixelBool:
-                filtered[0].append(token)
-            else:
-                filtered[1].append(token)
-    elif domain == "robot":
-        for token in genome:
-            if token in RobotBool:
-                filtered[0].append(token)
-            else:
-                filtered[1].append(token)
-    elif domain == "string":
-        for token in genome:
-            if token in StringBool:
-                filtered[0].append(token)
-            else:
-                filtered[1].append(token)
-    return filtered
+# def filter_tokens(genome: Genome, domain: str) -> Tuple[List, List]:
+#     filtered = ([], [])
+#     if domain == "pixel":
+#         for token in genome:
+#             if token in PixelBool:
+#                 filtered[0].append(token)
+#             else:
+#                 filtered[1].append(token)
+#     elif domain == "robot":
+#         for token in genome:
+#             if token in RobotBool:
+#                 filtered[0].append(token)
+#             else:
+#                 filtered[1].append(token)
+#     elif domain == "string":
+#         for token in genome:
+#             if token in StringBool:
+#                 filtered[0].append(token)
+#             else:
+#                 filtered[1].append(token)
+#     return filtered
 
 
 def _get_parser(domain: str) -> Parser:
