@@ -1,5 +1,5 @@
 from common.experiment import Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.pixel_tokens import *
 from search.brute.brute import extend_program, print_ps, Brute, print_p
 

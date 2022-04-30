@@ -2,7 +2,7 @@ import copy
 import random
 from collections import Set, Callable
 
-from common.prorgam import Program, EnvToken, BoolToken, Token
+from common.program import Program, EnvToken, BoolToken, Token
 from common.tokens.control_tokens import If, LoopWhile
 from search.vlns.large_neighborhood_search_seqtoken.tokens.sequence_token import SeqToken, SequenceToken, EmptySequenceToken
 

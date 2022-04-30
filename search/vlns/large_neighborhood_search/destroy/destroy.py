@@ -1,4 +1,4 @@
-from common.prorgam import Program, EnvToken
+from common.program import Program, EnvToken
 
 
 class Destroy:

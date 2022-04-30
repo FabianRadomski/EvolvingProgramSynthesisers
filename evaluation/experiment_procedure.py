@@ -4,7 +4,7 @@ from pathlib import Path
 from multiprocessing import Pool
 
 from typing import Type
-from common.prorgam import *
+from common.program import *
 from common.experiment import Experiment, TestCase
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser

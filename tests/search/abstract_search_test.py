@@ -2,7 +2,7 @@ import math
 import unittest
 
 from common.experiment import TestCase
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import Token
 
 from search.abstract_search import SearchAlgorithm
