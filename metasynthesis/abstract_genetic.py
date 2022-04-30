@@ -51,7 +51,7 @@ class GeneticAlgorithm:
         raise NotImplementedError()
 
     def sort_population(self, population: Population) -> Population:
-        """This method sorts the population based on the given fitness function"""
+        """This method sorts the population based on the fitness function"""
 
         return sorted(population, key=lambda genome: self.fitness(genome), reverse=True)
 

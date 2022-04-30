@@ -22,7 +22,7 @@ class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
     search_method: Type[SearchAlgorithm] = Brute
-    MULTI_PROCESS = True
+    MULTI_PROCESS = False
     NO_PROCESSES = os.cpu_count() - 1
     MAX_EXECUTION_TIME_IN_SECONDS = 10
 

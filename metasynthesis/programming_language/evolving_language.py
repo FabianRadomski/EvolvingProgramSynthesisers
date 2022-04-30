@@ -124,7 +124,9 @@ class EvolvingLanguage(GeneticAlgorithm):
             # print(self.fitness(genome))
 
         sorted_population = self.sort_population(population)
-        print(sorted_population)
+
+        best_performer = sorted_population[0]
+        print(best_performer.get_bool_tokens() + best_performer.get_trans_tokens())
 
         return self.generate_population(), iteration_count
 
@@ -134,37 +136,3 @@ def sort_genome(genome: Genome) -> Genome:
     sorted_bool = sorted(genome.get_bool_tokens(), key=str, reverse=False)
 
     return DomainSpecificLanguage(genome.domain_name, sorted_trans, sorted_bool)
-
-
-# def filter_tokens(genome: Genome, domain: str) -> Tuple[List, List]:
-#     filtered = ([], [])
-#     if domain == "pixel":
-#         for token in genome:
-#             if token in PixelBool:
-#                 filtered[0].append(token)
-#             else:
-#                 filtered[1].append(token)
-#     elif domain == "robot":
-#         for token in genome:
-#             if token in RobotBool:
-#                 filtered[0].append(token)
-#             else:
-#                 filtered[1].append(token)
-#     elif domain == "string":
-#         for token in genome:
-#             if token in StringBool:
-#                 filtered[0].append(token)
-#             else:
-#                 filtered[1].append(token)
-#     return filtered
-
-
-def _get_parser(domain: str) -> Parser:
-    if domain == "string":
-        return StringParser()
-    elif domain == "robot":
-        return RobotParser()
-    elif domain == "pixel":
-        return PixelParser()
-    else:
-        raise Exception()
