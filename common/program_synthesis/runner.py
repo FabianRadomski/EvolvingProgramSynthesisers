@@ -44,8 +44,6 @@ class Runner:
                     results.append(result)
 
                 results = [r.get(timeout=5) for r in results]
-
-
         else:
             for tc in test_cases:
                 result = self.run_single_test_case(tc)
@@ -118,6 +116,6 @@ class Runner:
 """
 Example for running a test with the runner:
 """
-if __name__ == '__main__':
-    data = Runner().run()
-    print(data)
+# if __name__ == '__main__':
+#     data = Runner().run()
+#     print(data)
