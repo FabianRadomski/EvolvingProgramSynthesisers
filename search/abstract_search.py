@@ -68,7 +68,7 @@ class SearchAlgorithm:
                     break
         else:
             # Iterate until the iteration limit is reached.
-            n_iteration = 0
+            n_iteration = 1
             while self.iteration(training_examples, trans_tokens, bool_tokens):
                 if n_iteration >= self.iterations_limit:
                     break
