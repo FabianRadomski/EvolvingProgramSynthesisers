@@ -1,10 +1,12 @@
 from typing import Tuple, List
 
 from common.environment import Environment
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import Token, InvalidTransition
-from metasynthesis.language_constraints.properties.AbstractProperties import BoolAbstractProperty, TransitiveAbstractProperty, \
+from metasynthesis.language_constraints.properties.AbstractProperties import BoolAbstractProperty, \
+    TransitiveAbstractProperty, \
     PropertyType
+from metasynthesis.language_constraints.constraints.Constraints import PartialConstraint, CompleteConstraint
 
 TokenSequence = List[Token]
 Input = Environment
@@ -38,14 +40,18 @@ class Independent(TransitiveAbstractProperty):
     def hypothesize(self, input) -> bool:
         p = self.tokens[0]
         q = self.tokens[1]
-        return p.apply(q.apply(input)) == q.apply(p.apply(input))
+        return p.apply(q.apply(input.__deepcopy__())) == q.apply(p.apply(input.__deepcopy__()))
 
     def derive_constraint(self):
-        pass
+        p = self.tokens[0]
+        q = self.tokens[1]
+
+        return PartialConstraint([[p, q], [q, p]])
 
     @classmethod
     def property_type(self):
         return PropertyType.BINARY
+
 
 class Identity(TransitiveAbstractProperty):
 
@@ -55,10 +61,13 @@ class Identity(TransitiveAbstractProperty):
     def hypothesize(self, input) -> bool:
         p = self.tokens[0]
         q = self.tokens[1]
-        return p.apply(q.apply(input)) == input
+        return p.apply(q.apply(input.__deepcopy__())) == input
 
     def derive_constraint(self):
-        pass
+        p = self.tokens[0]
+        q = self.tokens[1]
+
+        return CompleteConstraint([[p, q], [q, p]])
 
     @classmethod
     def property_type(self):

@@ -15,18 +15,19 @@ class PropertyType(enum.Enum):
 
 class AbstractProperty:
 
-    def __init__(self, tokens):
+    def __init__(self, tokens: List[Token]):
         self.tokens = tokens
+        self.absurd = True
 
     def relevant(self) -> bool:
         """determines wether a property is relevant for it's given tokens"""
         raise NotImplementedError()
 
-    # TODO: rename to holds_for
     def holds_for(self, input: Input) -> bool:
         """determines wether a property holds for a certain test-case"""
         try:
             h = self.hypothesize(input)
+            self.absurd = False
         except InvalidTransition:
             return True
         return h
@@ -41,6 +42,12 @@ class AbstractProperty:
     @classmethod
     def property_type(self):
         raise NotImplementedError()
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.tokens == other.tokens
+
+    def __repr__(self):
+        return str(self.__class__.__name__) + "(" + str(self.tokens) + ")"
 
 class BoolAbstractProperty(AbstractProperty):
 
