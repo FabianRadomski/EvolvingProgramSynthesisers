@@ -35,11 +35,6 @@ class If(ControlToken):
     def __repr__(self):
         return "If(%s [%s] [%s])" % (self.cond, ", ".join(list(map(str, self.e1))), ", ".join(list(map(str, self.e2))))
 
-    def __eq__(self, other):
-        if super().__eq__(other):
-            return self.cond == other.cond and self.e1 == other.e1 and self.e2 == other.e2
-        return False
-
     def to_formatted_string(self):
         result = "if %s:\n\t%s" % (
             self.cond.to_formatted_string(),
@@ -88,11 +83,6 @@ class LoopWhile(ControlToken):
     def __repr__(self):
         return "LoopWhile(%s [%s])" % \
                (self.cond, ", ".join(list(map(str, self.loop_body))))
-
-    def __eq__(self, other):
-        if super().__eq__(other):
-            return self.cond == other.cond and self.loop_body == other.loop_body
-        return False
 
     def to_formatted_string(self):
         result = "while %s do:\n\t%s" % (
