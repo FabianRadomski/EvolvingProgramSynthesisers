@@ -1,6 +1,6 @@
 import random
 
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import EnvToken
 from search.vlns.large_neighborhood_search.repair.repair import Repair
 

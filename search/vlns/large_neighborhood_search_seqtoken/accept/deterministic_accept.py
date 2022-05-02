@@ -1,4 +1,4 @@
-from common.prorgam import Program
+from common.program import Program
 from search.vlns.large_neighborhood_search_seqtoken.accept.accept import Accept
 
 

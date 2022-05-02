@@ -1,6 +1,6 @@
 import random
 
-from common.prorgam import Program
+from common.program import Program
 from search.vlns.large_neighborhood_search_seqtoken.destroy.destroy import Destroy
 from search.vlns.large_neighborhood_search_seqtoken.tokens.sequence_token import SeqToken, SequenceToken
 
