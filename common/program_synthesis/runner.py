@@ -22,9 +22,11 @@ class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
     search_method: Type[SearchAlgorithm] = Brute
+    MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
+    POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
+    MAX_TEST_CASES = 1000
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
-    MAX_EXECUTION_TIME_IN_SECONDS = 10
 
     # Create experiment runner using specified search and DSL
     def run(self):
@@ -42,8 +44,14 @@ class Runner:
                 for tc in test_cases:
                     result = pool.apply_async(self.run_single_test_case, args=(tc,))
                     results.append(result)
-
-                results = [r.get(timeout=5) for r in results]
+                new_results = []
+                for r in results:
+                    try:
+                        result = r.get(timeout=self.POOL_RUN_PROCESS_TIMEOUT)
+                        new_results.append(result)
+                    except:  # TimeoutError
+                        continue
+                results = new_results
         else:
             for tc in test_cases:
                 result = self.run_single_test_case(tc)
@@ -78,8 +86,12 @@ class Runner:
         test_cases = []
         directory = parser.path
 
+        num_test_cases = 0
         for file in os.listdir(directory):
+            if num_test_cases > self.MAX_TEST_CASES:
+                break
             test_cases.append(parser.parse_file(file))
+            num_test_cases += 1
 
         return test_cases
 
@@ -87,7 +99,7 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME_IN_SECONDS) \
+        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME) \
             .run(test_case.training_examples, self.dsl.get_trans_tokens(), self.dsl.get_bool_tokens())
 
         program: Program = search_result.dictionary["program"]
