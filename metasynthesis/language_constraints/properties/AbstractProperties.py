@@ -37,10 +37,12 @@ class AbstractProperty:
         raise NotImplementedError()
 
     def derive_constraint(self):
+        """determines how a constraint derived from a property is instantiated"""
         raise NotImplementedError()
 
     @classmethod
     def property_type(self):
+        """Returns the type of the property"""
         raise NotImplementedError()
 
     def __eq__(self, other):

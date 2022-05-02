@@ -13,13 +13,15 @@ class AbstractConstraint:
         self._constraints = constraints
         self.enabled = True
 
-    def _get_relevant_sequence(self, seq: Sequence):
+    def _get_relevant_sequence(self, seq: Sequence) -> Sequence:
+        """returns the relevant subsequence for the given constraint"""
         if len(seq) > 0:
             return [seq[-1]]
         else:
             return []
 
     def _check_constraint_relevance(self, seq: Sequence) -> bool:
+        """returns wether the given token sequence is relevant for this constraint"""
         if len(seq) == 0:
             return False
         tokens = self._get_relevant_sequence(seq)
@@ -32,16 +34,20 @@ class AbstractConstraint:
 
         return False
 
-    def disable(self):
+    def disable(self) -> None:
+        """disables the constraint"""
         self.enabled = False
 
-    def enable(self):
+    def enable(self) -> None:
+        """enables the constraint"""
         self.enabled = True
 
-    def toggle_enable(self):
+    def toggle_enable(self) -> None:
+        """toggles whether the constraint is enabled"""
         self.enabled = not self.enabled
 
     def constraint(self, seq: Sequence) -> Constraints:
+        """returns a list of tokens to be constrained for the given input"""
         raise NotImplementedError()
 
 
@@ -56,6 +62,7 @@ class PartialConstraint(AbstractConstraint):
         self._constraint_dict = self._initialize_constraint_dict()
 
     def _initialize_constraint_dict(self):
+        """Initializes a memoised default dict for returning constraint tokens"""
         constraint_dict = {}
         tokens = set(list(itertools.chain(*self._constraints)))
         for token in tokens:
@@ -68,6 +75,10 @@ class PartialConstraint(AbstractConstraint):
         return defaultdict(lambda: [], constraint_dict)
 
     def set_partial_constraint(self, allowed_constraint=None, index=-1) -> bool:
+        """
+        A partial constraint is a constraint that only allows one of several sequences. This function allows for a
+        change in what function is allowed.
+        """
         if allowed_constraint is not None and allowed_constraint in self._constraints:
             self._allowed_constraint = allowed_constraint
             self._constraint_dict = self._initialize_constraint_dict()
@@ -95,6 +106,7 @@ class CompleteConstraint(AbstractConstraint):
         self._constraint_dict = self._initialize_constraint_dict()
 
     def _initialize_constraint_dict(self):
+        """Initializes a memoised default dict for returning constraint tokens"""
         constraint_dict = {}
         tokens = set(list(itertools.chain(*self._constraints)))
         for token in tokens:
