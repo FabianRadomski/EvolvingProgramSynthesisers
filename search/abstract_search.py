@@ -63,7 +63,8 @@ class SearchAlgorithm:
         if self.iterations_limit == 0:
             # self.iteration returns whether a new iteration should be performed. Break the loop if time limit reached.
             while self.iteration(training_examples, trans_tokens, bool_tokens):
-                if time.process_time() >= start_time + self.time_limit_sec:
+                timew = time.process_time()
+                if timew >= start_time + self.time_limit_sec:
                     break
         else:
             # Iterate until the iteration limit is reached.
