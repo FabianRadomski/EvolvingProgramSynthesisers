@@ -48,7 +48,7 @@ class VanillaGP(SearchAlgorithm):
     def generate_rand_population(self, population_size, max_prog_length, initial=None):
         best_part = 0
         population = []
-        if initial is not None:
+        if initial is not None and len(initial.sequence) != 0:
             best_part = round(self.init_factor * population_size)
             population = [initial] * best_part
         for i in range(population_size - best_part):
