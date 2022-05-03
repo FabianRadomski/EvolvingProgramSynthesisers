@@ -8,6 +8,7 @@ from typing import Type, List
 from common.experiment import TestCase, Experiment
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.program_synthesis.objective import ObjectiveFun
 from example_parser.parser import Parser
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
@@ -20,8 +21,9 @@ from search.brute.brute import Brute
 @dataclass
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
-    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
-    search_method: Type[SearchAlgorithm] = Brute
+    domain = "robot"
+    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
+    search_method: SearchAlgorithm = Brute(10, ObjectiveFun(domain).fun)
     MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
     POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
     MAX_TEST_CASES = 1000
@@ -70,7 +72,12 @@ class Runner:
         average_execution_time = sum_of_execution_times_in_seconds / len(test_cases)
         percentage_of_completely_successful_programs = number_of_completely_successful_programs / len(test_cases) * 100
 
-        return average_success_percentage, average_execution_time, percentage_of_completely_successful_programs, search_results
+        return {
+            "average_success": average_success_percentage,
+            "average_execution": average_execution_time,
+            "completely_successful_percentage": percentage_of_completely_successful_programs,
+            "programs": search_results
+        }
 
     def _instantiate_parser(self) -> Parser:
         if self.dsl.domain_name == "pixel":
@@ -99,8 +106,8 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME) \
-            .run(test_case.training_examples, self.dsl.get_trans_tokens(), self.dsl.get_bool_tokens())
+        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
+                                                             self.dsl.get_bool_tokens())
 
         program: Program = search_result.dictionary["program"]
 
@@ -128,6 +135,7 @@ class Runner:
 """
 Example for running a test with the runner:
 """
-# if __name__ == '__main__':
-#     data = Runner().run()
-#     print(data)
+if __name__ == '__main__':
+    domain = "robot"
+    data = Runner(StandardDomainSpecificLanguage(domain), Brute(10, ObjectiveFun(domain).fun)).run()
+    print(data)

@@ -20,6 +20,12 @@ class Token:
     def __repr__(self):
         return str(type(self).__name__)
 
+    def __eq__(self, other):
+        return self.__class__ is other.__class__
+
+    def __hash__(self):
+        return hash((self.__class__))
+
 
 class BoolToken(Token):
     """Abstract Token that returns a boolean value."""
