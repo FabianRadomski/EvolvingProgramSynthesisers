@@ -28,11 +28,16 @@ class Parser:
 
         i = file_name[:-3].split("-")
 
+        # Some string files start with letters, this replaces that by a digit
+        created_index = (i[0], i[1], i[2])
+        if created_index[1].startswith('b'):
+            created_index = (int(i[0]), int(i[0] + i[1][1:]), int(i[2]))
+
         return TestCase(
             path_to_result_file=self.result_folder_path + file_name,
             training_examples=data[0],
             test_examples=data[1],
-            index=(int(i[0]), int(i[1]), int(i[2]))
+            index=created_index
         )
 
     def parse_specific_range(self, i1: Iterable, i2: Iterable, i3: Iterable) -> list[TestCase]:
