@@ -23,7 +23,6 @@ class TestRobotPropertyFactory(TestCase):
 
     def testDefiniteProperties(self):
         props = self.factory.create()
-
         self.assertTrue(self.contains(MoveLeft(), MoveRight(), Identity, props))
         self.assertTrue(self.contains(MoveUp(), MoveDown(), Identity, props))
         self.assertTrue(self.contains(Grab(), Drop(), Identity, props))

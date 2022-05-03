@@ -14,6 +14,7 @@ class DomainSpecificLanguage:
                  bool_tokens: List[Type[Token]],
                  trans_tokens: List[Type[Token]],
                  constraints_enabled: bool = False):
+        self.domain_name = domain_name
         self._bool_tokens = bool_tokens
         self._trans_tokens = trans_tokens
         self._constraints_enabled = constraints_enabled
