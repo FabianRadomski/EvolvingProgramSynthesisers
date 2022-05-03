@@ -8,6 +8,7 @@ from typing import Type, List
 from common.experiment import TestCase, Experiment
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.program_synthesis.objective import ObjectiveFun
 from example_parser.parser import Parser
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
@@ -20,8 +21,9 @@ from search.brute.brute import Brute
 @dataclass
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
-    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
-    search_method: SearchAlgorithm = Brute(10)
+    domain = "robot"
+    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
+    search_method: SearchAlgorithm = Brute(10, ObjectiveFun(domain).fun)
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
 
@@ -120,6 +122,7 @@ class Runner:
 """
 Example for running a test with the runner:
 """
-# if __name__ == '__main__':
-#     data = Runner().run()
-#     print(data)
+if __name__ == '__main__':
+    domain = "robot"
+    data = Runner(StandardDomainSpecificLanguage(domain), Brute(10, ObjectiveFun(domain).fun)).run()
+    print(data)
