@@ -113,7 +113,7 @@ class BatchRun:
             ca = tc.path_to_result_file.split("-")
             curr_program = Program([])
             for alg in alg_seq:
-                search_algorithm = alg[0](0, alg[1], curr_program)
+                search_algorithm = alg[0](time_limit_sec=0, iterations_limit=alg[1], best_program=curr_program)
                 result = search_algorithm.run(tc.training_examples, self.token_library, self.bools).dictionary
 
                 curr_program = result["program"]

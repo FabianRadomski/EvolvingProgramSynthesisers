@@ -31,7 +31,7 @@ class Brute(SearchAlgorithm):
 
         self.sample_inputs = [e.input_environment for e in examples]
         self.sample_outputs = [e.output_environment for e in examples]
-        self.programs = [(float('inf'), 1, self.current_program)]
+        self.programs = [evaluate_program(self.current_program, self.sample_inputs, self.sample_outputs)]
         heapq.heapify(self.programs)
 
         self.number_of_explored_programs = 0
