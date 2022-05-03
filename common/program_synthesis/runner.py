@@ -21,10 +21,9 @@ from search.brute.brute import Brute
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
-    search_method: Type[SearchAlgorithm] = Brute
+    search_method: SearchAlgorithm = Brute(10)
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
-    MAX_EXECUTION_TIME_IN_SECONDS = 10
 
     # Create experiment runner using specified search and DSL
     def run(self):
@@ -62,7 +61,12 @@ class Runner:
         average_execution_time = sum_of_execution_times_in_seconds / len(test_cases)
         percentage_of_completely_successful_programs = number_of_completely_successful_programs / len(test_cases) * 100
 
-        return average_success_percentage, average_execution_time, percentage_of_completely_successful_programs, search_results
+        return {
+            "average_success": average_success_percentage,
+            "average_execution": average_execution_time,
+            "completely_succesful_percentage": percentage_of_completely_successful_programs,
+            "programs": search_results
+        }
 
     def _instantiate_parser(self) -> Parser:
         if self.dsl.domain_name == "pixel":
@@ -87,8 +91,8 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME_IN_SECONDS) \
-            .run(test_case.training_examples, self.dsl.get_trans_tokens(), self.dsl.get_bool_tokens())
+        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
+                                                             self.dsl.get_bool_tokens())
 
         program: Program = search_result.dictionary["program"]
 
