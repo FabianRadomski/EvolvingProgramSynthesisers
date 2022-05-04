@@ -6,7 +6,7 @@ from anytree import RenderTree
 
 from common.environment import StringEnvironment, RobotEnvironment, PixelEnvironment, Environment
 from common.experiment import Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import TransToken, BoolToken, InvalidTransition, InventedToken
 from common.tokens.control_tokens import LoopIterationLimitReached, If, LoopWhile
 

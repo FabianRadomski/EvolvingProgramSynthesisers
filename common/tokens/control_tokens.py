@@ -1,7 +1,7 @@
 from typing import Union
 
 from common.tokens.abstract_tokens import *
-from common.prorgam import Program
+from common.program import Program
 
 
 class If(ControlToken):

@@ -7,7 +7,7 @@ from math import modf
 from typing import List
 
 from common.experiment import Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import InvalidTransition, Token
 from common.tokens.control_tokens import LoopIterationLimitReached
 from search.abstract_search import SearchAlgorithm

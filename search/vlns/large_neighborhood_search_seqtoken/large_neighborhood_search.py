@@ -3,7 +3,7 @@ import time
 from statistics import mean
 
 from common.experiment import TestCase, Example
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import Token, EnvToken, BoolToken, InvalidTransition
 from common.tokens.control_tokens import LoopIterationLimitReached, StringEnvironment
 

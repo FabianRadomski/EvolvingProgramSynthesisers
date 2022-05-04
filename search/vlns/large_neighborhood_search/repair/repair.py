@@ -1,4 +1,4 @@
-from common.prorgam import Program
+from common.program import Program
 from common.tokens.abstract_tokens import EnvToken
 
 
