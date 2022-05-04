@@ -105,8 +105,8 @@ class BatchRun:
 
         return final
 
-    # TODO: put this function in a separate runner class
-    def run_seq(self, alg_seq: List[tuple[SearchAlgorithm.__class__, int]]) -> list:
+    # THIS FUNCTION WAS USED FOR TESTING PURPOSES BEFORE THE RUNNER WAS PRESENT, CAN BE REMOVED
+    def run_seq(self, alg_seq: List[tuple[Type[SearchAlgorithm], int]]) -> list:
 
         results = []
         for tc in self.test_cases:
