@@ -47,6 +47,10 @@ class DomainSpecificLanguage:
 
         self._constraints_enabled = not self._constraints_enabled
 
+    def to_string(self):
+        """Converts a domain specific language to a string"""
+
+        return str(self._bool_tokens + self._trans_tokens)
 
 class StandardDomainSpecificLanguage(DomainSpecificLanguage):
 

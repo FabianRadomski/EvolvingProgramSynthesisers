@@ -1,5 +1,6 @@
 from typing import Callable, Tuple
 
+from common.program_synthesis.objective import ObjectiveFun
 from common.tokens.control_tokens import LoopIterationLimitReached
 from common.program import *
 from common.tokens.pixel_tokens import *
@@ -16,7 +17,7 @@ MAX_TOKEN_FUNCTION_DEPTH = 3
 
 class Brute(SearchAlgorithm):
 
-    def __init__(self, time_limit_sec: float, dist: Callable[[Environment, Environment], float]):
+    def __init__(self, time_limit_sec: float, dist: Callable[[Environment, Environment], float] = ObjectiveFun("robot").fun):
         super().__init__(time_limit_sec)
         self.token_functions = []
         self.sample_inputs: list[Environment] = []

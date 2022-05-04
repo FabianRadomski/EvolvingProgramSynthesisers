@@ -24,9 +24,9 @@ class Runner:
     domain = "robot"
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
     search_method: SearchAlgorithm = Brute(10, ObjectiveFun(domain).fun)
+    max_test_cases: int = 1000
     MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
     POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
-    MAX_TEST_CASES = 1000
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
 
@@ -95,7 +95,7 @@ class Runner:
 
         num_test_cases = 0
         for file in os.listdir(directory):
-            if num_test_cases > self.MAX_TEST_CASES:
+            if num_test_cases > self.max_test_cases:
                 break
             test_cases.append(parser.parse_file(file))
             num_test_cases += 1

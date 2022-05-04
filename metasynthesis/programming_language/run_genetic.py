@@ -6,6 +6,11 @@ dsl = StandardDomainSpecificLanguage("robot")
 
 if __name__ == '__main__':
 
-    genetic = EvolvingLanguage(1, 100, 0.5, 0.5, 2, dsl)
+    genetic = EvolvingLanguage(fitness_limit=1,
+                               generation_limit=10,
+                               crossover_probability=0.5,
+                               mutation_probability=0.5,
+                               generation_size=30,
+                               dsl=dsl)
     genetic.run_evolution()
 

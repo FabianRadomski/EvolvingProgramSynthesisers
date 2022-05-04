@@ -2,7 +2,8 @@ from itertools import chain
 from random import randrange
 from typing import List, Callable, Tuple, Iterable
 
-from common.program_synthesis.dsl import DomainSpecificLanguage
+from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.program_synthesis.objective import ObjectiveFun
 from common.program_synthesis.runner import Runner
 from common.tokens.pixel_tokens import BoolTokens as PixelBool
 from common.tokens.robot_tokens import BoolTokens as RobotBool
@@ -18,9 +19,13 @@ from metasynthesis.abstract_genetic import GeneticAlgorithm
 from metasynthesis.abstract_genetic import FitnessFunc
 from metasynthesis.abstract_genetic import CrossoverFunc
 from metasynthesis.abstract_genetic import MutationFunc
+from search.brute.brute import Brute
 
 Genome = DomainSpecificLanguage
 Population = List[Genome]
+
+genome_fitness_values = {}
+
 
 class EvolvingLanguage(GeneticAlgorithm):
     """A genetic algorithm to synthesise a programing language for program synthesis"""
@@ -54,7 +59,7 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         dsl_genome = DomainSpecificLanguage(self.domain, list(bool_chromosomes), list(trans_chromosomes))
 
-        return dsl_genome
+        return sort_genome(dsl_genome)
 
     def generate_population(self) -> Population:
         """This method creates a population of new genomes"""
@@ -77,15 +82,32 @@ class EvolvingLanguage(GeneticAlgorithm):
         # 2) whether program that solves tasks was created
         # 3) number of iterations of searching
 
-        # genome_length = len(genome.get_bool_tokens() + genome.get_trans_tokens())
+        if genome.to_string() in genome_fitness_values.keys():
+            print("ALREADY IN", genome.to_string())
+            return genome_fitness_values[genome.to_string()]
 
-        runner = Runner(self.dsl)
+        # genome = StandardDomainSpecificLanguage("robot")
+        runner = Runner(dsl=genome,
+                        search_method=Brute(1, ObjectiveFun(self.domain).fun),
+                        max_test_cases=200)
+        results = runner.run()
 
-        avg_success_perc, avg_exec_time, perc_successful_programs, search_results = runner.run()
+        dsl_length = len(genome.get_bool_tokens() + genome.get_trans_tokens())
+        inverse_dsl_length = 1 / dsl_length
 
-        # max values: avg_success = 100, avg_exec_time = ?, perc_successful_programs = 100, search_results = ?
+        avg_exec_time = results["average_execution"]
+        inverse_avg_exec_time = 1 / (avg_exec_time + 0.000000001)
 
-        return avg_success_perc
+        success_percentage = results["average_success"]
+        success_percentage_scaled = success_percentage / 100
+
+        print(inverse_dsl_length, inverse_avg_exec_time, success_percentage_scaled)
+
+        fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
+
+        genome_fitness_values[genome.to_string()] = fitness_value
+
+        return fitness_value
 
     def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
         """This method applies the given crossover function with certain probability"""
@@ -120,13 +142,16 @@ class EvolvingLanguage(GeneticAlgorithm):
         population = self.generate_population()
 
         for genome in population:
-            print(genome.get_bool_tokens() + genome.get_trans_tokens())
-            # print(self.fitness(genome))
+            print(genome.to_string())
+            print(self.fitness(genome))
 
-        sorted_population = self.sort_population(population)
+        best_percentage = select_best_percentage(population=population, percentage=50, size=self.generation_size)
 
+        
+
+        sorted_population = sorted(population, key=lambda x: get_fitness(x), reverse=True)
         best_performer = sorted_population[0]
-        print(best_performer.get_bool_tokens() + best_performer.get_trans_tokens())
+        print(best_performer.to_string())
 
         return self.generate_population(), iteration_count
 
@@ -135,4 +160,20 @@ def sort_genome(genome: Genome) -> Genome:
     sorted_trans = sorted(genome.get_trans_tokens(), key=str, reverse=False)
     sorted_bool = sorted(genome.get_bool_tokens(), key=str, reverse=False)
 
-    return DomainSpecificLanguage(genome.domain_name, sorted_trans, sorted_bool)
+    return DomainSpecificLanguage(genome.domain_name, sorted_bool, sorted_trans)
+
+
+def genome_length(genome: Genome) -> int:
+    return len(genome.get_bool_tokens() + genome.get_trans_tokens())
+
+
+def get_fitness(genome: Genome):
+    return genome_fitness_values[genome.to_string()]
+
+
+def select_best_percentage(population: Population, percentage: float, size: int) -> Population:
+    sorted_population = sorted(population, key=lambda x: get_fitness(x), reverse=True)
+
+    max_to_get = round((percentage / 100) * size)
+    print(max_to_get)
+    return population[:max_to_get]
