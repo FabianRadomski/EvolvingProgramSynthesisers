@@ -8,6 +8,7 @@ from typing import Type, List
 from common.experiment import TestCase, Experiment
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.program_synthesis.objective import ObjectiveFun
 from example_parser.parser import Parser
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
@@ -20,11 +21,14 @@ from search.brute.brute import Brute
 @dataclass
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
-    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
-    search_method: Type[SearchAlgorithm] = Brute
+    domain = "robot"
+    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
+    search_method: SearchAlgorithm = Brute(10, ObjectiveFun(domain).fun)
+    MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
+    POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
+    MAX_TEST_CASES = 1000
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
-    MAX_EXECUTION_TIME_IN_SECONDS = 10
 
     # Create experiment runner using specified search and DSL
     def run(self):
@@ -42,8 +46,14 @@ class Runner:
                 for tc in test_cases:
                     result = pool.apply_async(self.run_single_test_case, args=(tc,))
                     results.append(result)
-
-                results = [r.get(timeout=5) for r in results]
+                new_results = []
+                for r in results:
+                    try:
+                        result = r.get(timeout=self.POOL_RUN_PROCESS_TIMEOUT)
+                        new_results.append(result)
+                    except:  # TimeoutError
+                        continue
+                results = new_results
         else:
             for tc in test_cases:
                 result = self.run_single_test_case(tc)
@@ -62,7 +72,12 @@ class Runner:
         average_execution_time = sum_of_execution_times_in_seconds / len(test_cases)
         percentage_of_completely_successful_programs = number_of_completely_successful_programs / len(test_cases) * 100
 
-        return average_success_percentage, average_execution_time, percentage_of_completely_successful_programs, search_results
+        return {
+            "average_success": average_success_percentage,
+            "average_execution": average_execution_time,
+            "completely_successful_percentage": percentage_of_completely_successful_programs,
+            "programs": search_results
+        }
 
     def _instantiate_parser(self) -> Parser:
         if self.dsl.domain_name == "pixel":
@@ -78,8 +93,12 @@ class Runner:
         test_cases = []
         directory = parser.path
 
+        num_test_cases = 0
         for file in os.listdir(directory):
+            if num_test_cases > self.MAX_TEST_CASES:
+                break
             test_cases.append(parser.parse_file(file))
+            num_test_cases += 1
 
         return test_cases
 
@@ -87,8 +106,8 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method(self.MAX_EXECUTION_TIME_IN_SECONDS) \
-            .run(test_case.training_examples, self.dsl.get_trans_tokens(), self.dsl.get_bool_tokens())
+        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
+                                                             self.dsl.get_bool_tokens())
 
         program: Program = search_result.dictionary["program"]
 
@@ -116,6 +135,7 @@ class Runner:
 """
 Example for running a test with the runner:
 """
-# if __name__ == '__main__':
-#     data = Runner().run()
-#     print(data)
+if __name__ == '__main__':
+    domain = "robot"
+    data = Runner(StandardDomainSpecificLanguage(domain), Brute(10, ObjectiveFun(domain).fun)).run()
+    print(data)

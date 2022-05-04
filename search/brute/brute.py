@@ -1,3 +1,5 @@
+from typing import Callable, Tuple
+
 from common.tokens.control_tokens import LoopIterationLimitReached
 from common.program import *
 from common.tokens.pixel_tokens import *
@@ -14,7 +16,8 @@ MAX_TOKEN_FUNCTION_DEPTH = 3
 
 class Brute(SearchAlgorithm):
 
-    def __init__(self, time_limit_sec: float, iterations_limit: int = 0, best_program: Program = Program([])):
+    def __init__(self, time_limit_sec: float, dist: Callable[[Environment, Environment], float], iterations_limit: int = 0, best_program: Program =
+    Program([])):
         super().__init__(time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
         self.token_functions = []
         self.sample_inputs: list[Environment] = []
@@ -22,6 +25,7 @@ class Brute(SearchAlgorithm):
         self.programs = []
         self.best_cost = float("inf")
         self.current_program: Program = self._best_program
+        self.dist = dist
 
 
     def setup(self, examples, trans_tokens, bool_tokens):
@@ -31,7 +35,7 @@ class Brute(SearchAlgorithm):
 
         self.sample_inputs = [e.input_environment for e in examples]
         self.sample_outputs = [e.output_environment for e in examples]
-        self.programs = [evaluate_program(self.current_program, self.sample_inputs, self.sample_outputs)]
+        self.programs = [evaluate_program(self.current_program, self.sample_inputs, self.sample_outputs, self.dist)]
         heapq.heapify(self.programs)
 
         self.number_of_explored_programs = 0
@@ -64,7 +68,7 @@ class Brute(SearchAlgorithm):
     def extend_program(self, best_program, programs, tokens: list[Token], sample_inputs, sample_outputs):
         for token in tokens:
             potentially_better_program = Program(best_program.sequence + [copy.copy(token)])
-            program_new = evaluate_program(potentially_better_program, sample_inputs, sample_outputs)
+            program_new = evaluate_program(potentially_better_program, sample_inputs, sample_outputs, self.dist)
             self.number_of_explored_programs += 1
             if program_new[0] != float('inf'):
                 heapq.heappush(programs, program_new)
@@ -87,8 +91,8 @@ def print_ps(ps):
     print(l)
 
 
-def loss(output_pairs):
-    return sum([p[0].distance(p[1]) for p in output_pairs])
+def loss(output_pairs, dist: Callable[[Environment, Environment], float]):
+    return sum([dist(p[0], p[1]) for p in output_pairs])
 
 
 def problem_solved(output_pairs):
@@ -96,14 +100,14 @@ def problem_solved(output_pairs):
 
 
 # takes 90 % of our time
-def evaluate_program(program, sample_inputs, sample_outputs):
+def evaluate_program(program, sample_inputs, sample_outputs, dist: Callable[[Environment, Environment], float]):
     program_outputs = []
     try:
         for input in sample_inputs:
             program_output = program.interp(input)
             program_outputs.append(program_output)
         output_pairs = list(zip(program_outputs, sample_outputs))
-        cum_loss = loss(output_pairs)
+        cum_loss = loss(output_pairs, dist)
         solved = problem_solved(output_pairs)
         if (solved):
             return (cum_loss, 0, program)
