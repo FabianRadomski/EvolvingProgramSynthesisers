@@ -15,10 +15,10 @@ class LNS(SearchAlgorithm):
     """Implements the abstract Large Neighborhood Search algorithm given an Accept, Destroy and Repair method. Also a
     time limit can be set."""
 
-    def __init__(self, time_limit: float, accept: Accept, destroy: Destroy, repair: Repair,
+    def __init__(self, time_limit_sec: float, accept: Accept, destroy: Destroy, repair: Repair,
                  max_invent_depth: int, max_invent_control_tokens, increase_depth_after: int, iterations_limit: int = 0, best_program: Program =
                  Program([]), debug: bool = False):
-        super().__init__(time_limit, iterations_limit=iterations_limit, best_program=best_program)
+        super().__init__(time_limit_sec=time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
         self.accept = accept
         self.destroy = destroy
         self.repair = repair
@@ -57,11 +57,16 @@ class LNS(SearchAlgorithm):
         self.stats["explored_per_depth"] = {k: 0 for k in range(1, self.stats["search_depth"] + 1)}
         self.stats["multiple_explored_per_depth"] = {k: 0 for k in range(1, self.stats["search_depth"] + 1)}
 
+
     def iteration(self, test_case: list[Example], tokens: list[EnvToken], bt) -> bool:
+        self.stats["iterations"] += 1
+        if self.cost_current == 0:
+            return False
         self.debug_print("\n")
         self.debug_print("-=-=-=[Iteration {}]=-=-=-".format(self.stats['iterations']))
         self.debug_print("Program ({}): {}".format(self.cost_current, self.sol_current))
         t_b = time.process_time()
+
 
         # Destroy current solution
         destroyed = self.destroy.destroy(self.sol_current)
@@ -117,7 +122,6 @@ class LNS(SearchAlgorithm):
 
         # Update stats
         self.stats["average_visited_length"] += x_temp.number_of_tokens()
-        self.stats["iterations"] += 1
         self.stats["time_destroy"] += t_d - t_b
         self.stats["time_repair"] += t_r - t_d
         self.stats["time_cost"] += t_c - t_r
@@ -126,8 +130,9 @@ class LNS(SearchAlgorithm):
         return c_temp != 0
 
     def extend_result(self, res: SearchResult) -> SearchResult:
+        res.dictionary['number_of_iterations'] = self.stats["iterations"]
         # Round times for readability
-        self.stats["average_visited_length"] /= self.stats["iterations"]
+        self.stats["average_visited_length"] = self.stats["average_visited_length"] / self.stats["iterations"] if self.stats["iterations"] != 0 else 0
         self.stats["number_of_explored_programs"] = len(self.cost_dict)
         self.stats["time_destroy"] = self.stats["time_destroy"].__round__(3)
         self.stats["time_repair"] = self.stats["time_repair"].__round__(3)

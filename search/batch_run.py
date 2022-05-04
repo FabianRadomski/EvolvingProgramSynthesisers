@@ -8,7 +8,7 @@ from itertools import chain
 from multiprocessing import Pool
 from typing import List, Type
 
-from common.prorgam import Program
+from common.program import Program
 from evaluation.experiment_procedure import extract_trans_tokens_from_domain_name, extract_bool_tokens_from_domain_name
 from example_parser.parser import Parser, TestCase
 from example_parser.pixel_parser import PixelParser
@@ -105,7 +105,7 @@ class BatchRun:
 
         return final
 
-    # THIS FUNCTION WAS USED FOR TESTING PURPOSES BEFORE THE RUNNER WAS PRESENT, CAN BE REMOVED
+    # THIS FUNCTION WAS USED FOR TESTING PURPOSES BEFORE THE RUNNER WAS PRESENT, CAN BE REMOVED ONCE NEW SEARCH IS DONE
     def run_seq(self, alg_seq: List[tuple[Type[SearchAlgorithm], int]]) -> list:
 
         results = []

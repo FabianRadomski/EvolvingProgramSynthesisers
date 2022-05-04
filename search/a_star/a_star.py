@@ -58,16 +58,15 @@ class AStar(SearchAlgorithm):
         gcost_child = 0
         for token in tokens:
             try:
-                child = copy.deepcopy(node)
-                map(token.apply, child)
+                child = tuple(map(token.apply, copy.deepcopy(node)))
                 # the g cost is 0 for every node
                 # gcost_child = gcost_child + token.number_of_tokens()
-                if child not in self.reached or gcost_child < self.reached[child][0]:
+                if child not in self.reached:
                     self.reached[child] = gcost_child, node, token
                     hcost_child = h(child, end_node)
                     fcost_child = f(gcost_child, hcost_child)
                     queue.insert(child, fcost_child)
-                node = child
+                node = copy.deepcopy(child)
 
             except(InvalidTransition, LoopIterationLimitReached):
                 pass

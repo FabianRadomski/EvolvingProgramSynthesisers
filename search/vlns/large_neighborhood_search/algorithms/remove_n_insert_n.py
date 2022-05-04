@@ -1,4 +1,4 @@
-from common.prorgam import Program
+from common.program import Program
 from search.vlns.large_neighborhood_search.accept.stochastic_accept import StochasticAccept
 from search.vlns.large_neighborhood_search.destroy.remove_n_destroy_2 import ExtractNDestroy2
 from search.vlns.large_neighborhood_search.large_neighborhood_search import LNS
@@ -7,9 +7,9 @@ from search.vlns.large_neighborhood_search.repair.insert_n_repair2 import Insert
 
 class RemoveNInsertN(LNS):
 
-    def __init__(self, time_limit=10, iterations_limit: int = 0, best_program: Program = Program([])):
+    def __init__(self, time_limit_sec=10, iterations_limit: int = 0, best_program: Program = Program([])):
         super().__init__(
-            time_limit=time_limit,
+            time_limit_sec=time_limit_sec,
             accept=StochasticAccept(initial_temperature=0.1, cooling_factor=0.9997),
             destroy=ExtractNDestroy2(initial_max_n=3, max_max_n=3),
             repair=InsertNRepair2(initial_max_n=3, max_max_n=3, w_trans=1, w_loop=1, w_if=0),

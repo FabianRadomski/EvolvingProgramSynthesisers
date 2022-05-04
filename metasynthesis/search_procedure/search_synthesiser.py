@@ -10,7 +10,7 @@ from search.vlns.large_neighborhood_search.algorithms.remove_n_insert_n import R
 class SearchSynthesiser:
 
     def seq_test(self):
-        alg_seq = [(Brute, 10), (AStar, 10)]
+        alg_seq = [(MetropolisHasting, 1000), (Brute, 10)]
         results = BatchRun(
             # Task domain
             domain="robot",
