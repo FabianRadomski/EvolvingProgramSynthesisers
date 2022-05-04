@@ -1,5 +1,6 @@
 from typing import Callable, Tuple
 
+from common.program_synthesis.objective import ObjectiveFun
 from common.tokens.control_tokens import LoopIterationLimitReached
 from common.program import *
 from common.tokens.pixel_tokens import *
@@ -16,8 +17,10 @@ MAX_TOKEN_FUNCTION_DEPTH = 3
 
 class Brute(SearchAlgorithm):
 
-    def __init__(self, time_limit_sec: float, dist: Callable[[Environment, Environment], float], iterations_limit: int = 0, best_program: Program =
-    Program([])):
+    def __init__(self, time_limit_sec: float,
+                 dist: Callable[[Environment, Environment], float] = ObjectiveFun("robot").fun,
+                 iterations_limit: int = 0,
+                 best_program: Program = Program([])):
         super().__init__(time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
         self.token_functions = []
         self.sample_inputs: list[Environment] = []
@@ -26,7 +29,6 @@ class Brute(SearchAlgorithm):
         self.best_cost = float("inf")
         self.current_program: Program = self._best_program
         self.dist = dist
-
 
     def setup(self, examples, trans_tokens, bool_tokens):
         self.programs = []
@@ -39,7 +41,7 @@ class Brute(SearchAlgorithm):
         heapq.heapify(self.programs)
 
         self.number_of_explored_programs = 0
-        self.cost_per_iteration = []   # save (iteration_number, cost) when new best_program is found
+        self.cost_per_iteration = []  # save (iteration_number, cost) when new best_program is found
         self.program_length_per_iteration = []  # (iteration_number, program_length)
         self.number_of_iterations = 0
 
@@ -114,6 +116,3 @@ def evaluate_program(program, sample_inputs, sample_outputs, dist: Callable[[Env
         return (cum_loss, 1, program)
     except (InvalidTransition, LoopIterationLimitReached) as e:
         return (float("inf"), 1, program)
-
-
-
