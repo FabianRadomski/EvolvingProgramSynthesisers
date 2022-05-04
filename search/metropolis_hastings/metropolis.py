@@ -19,14 +19,13 @@ class Mutation():
         return self.fun(program)
 
 class MetropolisHasting(SearchAlgorithm):
-    def __init__(self, time_limit_sec: float):
-        super().__init__(time_limit_sec)
+    def __init__(self, time_limit_sec: float, iterations_limit: int = 0, best_program: Program = Program([]) ):
+        super().__init__(time_limit_sec=time_limit_sec, iterations_limit=iterations_limit, best_program=best_program)
 
     def setup(self, examples: List[Example], trans_tokens, bool_tokens):
         self.number_of_explored_programs = 0
         self.number_of_iterations = 0
         self.cost_per_iteration = []
-        self._best_program: Program = Program([])
         self.cost = 100
         self.proposal_distribution = ProposalDistribution()
         fac = MutationFactory()
@@ -35,12 +34,14 @@ class MetropolisHasting(SearchAlgorithm):
         self.proposal_distribution.add_mutation(fac.add_loop(bool_tokens, trans_tokens), 10)
         self.proposal_distribution.add_mutation(fac.add_if_statement(bool_tokens, trans_tokens), 10)
         self.proposal_distribution.add_mutation(fac.start_over(), 2)
+        self.first_iteration = True
 
     def iteration(self, examples: List[Example], trans_tokens, bool_tokens) -> bool:
         self.number_of_iterations += 1
         self.number_of_explored_programs += 1
         mut: Mutation = self.proposal_distribution.sample()
-        self._best_program, newcost, solved = MetropolisHasting.maybe_apply_mutation(examples, self._best_program, self.cost, mut)
+        self._best_program, newcost, solved = MetropolisHasting.maybe_apply_mutation(examples, self._best_program, self.cost, mut, self.first_iteration)
+        self.first_iteration = False
         if(newcost != self.cost):
             self.cost_per_iteration.append((self.number_of_iterations, newcost))
         self.cost = newcost
@@ -52,8 +53,12 @@ class MetropolisHasting(SearchAlgorithm):
 
 
     @staticmethod
-    def maybe_apply_mutation(examples: List[Example], old_program: Program, ocost: int, mut: Mutation) -> Tuple[Program, int, int] :
-        new_program = mut.apply(old_program)
+    def maybe_apply_mutation(examples: List[Example], old_program: Program, ocost: int, mut: Mutation, first_iteration=False) -> Tuple[Program, int,
+                                                                                                                                   int] :
+        if not first_iteration:
+            new_program = mut.apply(old_program)
+        else:
+            new_program = old_program
         try:
             cost = 0
             

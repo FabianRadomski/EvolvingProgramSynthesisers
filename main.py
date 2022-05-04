@@ -45,6 +45,4 @@ if __name__ == "__main__":
         # Comment out argument to create new file.
         #file_name="VLNS-20211213-162128.txt"
     ).run()
-
-    for res in results:
-        print(res[0], res[1])
+        results.append(result)

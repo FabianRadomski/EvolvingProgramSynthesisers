@@ -1,3 +1,4 @@
+import copy
 import heapq
 import json
 import os
@@ -5,7 +6,9 @@ import time
 from collections import Iterable, Set
 from itertools import chain
 from multiprocessing import Pool
+from typing import List, Type
 
+from common.program import Program
 from evaluation.experiment_procedure import extract_trans_tokens_from_domain_name, extract_bool_tokens_from_domain_name
 from example_parser.parser import Parser, TestCase
 from example_parser.pixel_parser import PixelParser
@@ -101,6 +104,37 @@ class BatchRun:
         }
 
         return final
+
+    # THIS FUNCTION WAS USED FOR TESTING PURPOSES BEFORE THE RUNNER WAS PRESENT, CAN BE REMOVED ONCE NEW SEARCH IS DONE
+    def run_seq(self, alg_seq: List[tuple[Type[SearchAlgorithm], int]]) -> list:
+
+        results = []
+        for tc in self.test_cases:
+            ca = tc.path_to_result_file.split("-")
+            curr_program = Program([])
+            for alg in alg_seq:
+                search_algorithm = alg[0](time_limit_sec=0, iterations_limit=alg[1], best_program=curr_program)
+                result = search_algorithm.run(tc.training_examples, self.token_library, self.bools).dictionary
+
+                curr_program = result["program"]
+                result["program"] = str(curr_program)
+
+                info = {
+                    "file": "{}-{}-{}".format(ca[1], ca[2], ca[3]),
+                    "test_cost": SearchAlgorithm.cost(tc.test_examples, curr_program),
+                    "train_cost": SearchAlgorithm.cost(tc.training_examples, curr_program),
+                    "execution_time": result["execution_time"],
+                    "program_length": result["program_length"],
+                    "number_of_explored_programs": result["number_of_explored_programs"],
+                }
+
+                info.update(result)
+                self.debug_print(
+                    f"{alg[0].__class__.__name__}: {info['file']}, test_cost: {info['test_cost']}, train_cost: {info['train_cost']}, "
+                    f"time: {info['execution_time']}, length: {info['program_length']}, iterations: {info['number_of_iterations']}")
+                results.append(info)
+
+        return results
 
     def _test_case(self, test_case: TestCase) -> dict:
         search_algorithm = copy.deepcopy(self.search_algorithm)
