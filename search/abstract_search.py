@@ -1,4 +1,3 @@
-import math
 import time
 from statistics import mean
 from typing import List
@@ -7,6 +6,7 @@ from common.environment import StringEnvironment
 from common.program import Program
 from common.tokens.abstract_tokens import Token, InvalidTransition, EnvToken
 from common.experiment import Example
+from common.tokens.abstract_tokens import EnvToken, InvalidTransition
 from common.tokens.control_tokens import LoopIterationLimitReached
 from search.search_result import SearchResult
 
@@ -14,11 +14,12 @@ from search.search_result import SearchResult
 class SearchAlgorithm:
     """Abstract interface for a program synthesis search algorithm."""
 
-    def __init__(self, time_limit_sec: float):
+    def __init__(self, time_limit_sec: float, iterations_limit: int = 0, best_program: Program = Program([])):
         self.time_limit_sec = time_limit_sec
-        self._best_program = Program([])
+        self.iterations_limit = iterations_limit
+        self._best_program = best_program
         self.number_of_explored_programs = 0
-        self.cost_per_iteration = [(0, float("inf"))]   # save (iteration_number, cost) when new best_program is found
+        self.cost_per_iteration = [(0, float("inf"))]  # save (iteration_number, cost) when new best_program is found
         self.number_of_iterations = 0
 
     @property
@@ -59,10 +60,20 @@ class SearchAlgorithm:
         # Call setup.
         self.setup(training_examples, trans_tokens, bool_tokens)
 
-        # self.iteration returns whether a new iteration should be performed. Break the loop if time limit reached.
-        while self.iteration(training_examples, trans_tokens, bool_tokens):
-            if time.process_time() >= start_time + self.time_limit_sec:
-                break
+        # If no iteration limit was set, use the time limit.
+        if self.iterations_limit == 0:
+            # self.iteration returns whether a new iteration should be performed. Break the loop if time limit reached.
+            while self.iteration(training_examples, trans_tokens, bool_tokens):
+                timew = time.process_time()
+                if timew >= start_time + self.time_limit_sec:
+                    break
+        else:
+            # Iterate until the iteration limit is reached.
+            n_iteration = 1
+            while self.iteration(training_examples, trans_tokens, bool_tokens):
+                if n_iteration >= self.iterations_limit:
+                    break
+                n_iteration += 1
 
         run_time = time.process_time() - start_time
 

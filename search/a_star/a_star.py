@@ -1,3 +1,4 @@
+import copy
 from typing import Iterator, List, Union
 
 from common.experiment import Example
@@ -13,12 +14,15 @@ MAX_TOKEN_FUNCTION_DEPTH = 3
 
 
 class AStar(SearchAlgorithm):
-    def __init__(self, time_limit_sec: float, weight: int = False):
-        super().__init__(time_limit_sec)
+    def __init__(self, time_limit_sec: float, weight: int = False, iterations_limit: int = 0, best_program: Program = Program([])):
+        super().__init__(time_limit_sec, iterations_limit=iterations_limit)
         if weight is False:
             weight = 0.5
         assert 0 <= weight <= 1
         self.weight = weight
+        self.best_prev_program = None
+        if best_program is not None:
+            self.best_prev_program = best_program
 
     @property
     def best_program(self) -> Program:
@@ -29,7 +33,7 @@ class AStar(SearchAlgorithm):
         return self._find_program(self._best_f_program_node, self.reached)
 
     def setup(self, training_examples: List[Example], trans_tokens: set[Token], bool_tokens: set[Token]):
-        self.loss_function = lambda g, h: self.weight * g + (1-self.weight) * h
+        self.loss_function = lambda g, h: self.weight * g + (1 - self.weight) * h
         self.heuristic = self._heuristic_mean
         self.input_envs: tuple[Environment] = tuple(e.input_environment for e in training_examples)
         self.output_envs: tuple[Environment] = tuple(e.output_environment for e in training_examples)
@@ -45,6 +49,30 @@ class AStar(SearchAlgorithm):
         self.cost_per_iteration = []  # (iteration_number, h_cost)
         self.program_generator: Iterator[Union[Program, None]] = self.best_first_search_upq(
             self.input_envs, self.output_envs, self.tokens, self.loss_function, self.heuristic)
+
+    def build_from_program(self, program: Program, queue: UniquePriorityQueue, start_node: tuple[Environment], end_node: tuple[Environment], f,
+                           h):
+        """Builds a graph from the given program. All g costs of nodes in the graph are assigned to 0."""
+        tokens = program.sequence
+        node = copy.deepcopy(start_node)
+        gcost_child = 0
+        for token in tokens:
+            try:
+                child = tuple(map(token.apply, copy.deepcopy(node)))
+                # the g cost is 0 for every node
+                # gcost_child = gcost_child + token.number_of_tokens()
+                if child not in self.reached:
+                    self.reached[child] = gcost_child, node, token
+                    hcost_child = h(child, end_node)
+                    fcost_child = f(gcost_child, hcost_child)
+                    queue.insert(child, fcost_child)
+                node = copy.deepcopy(child)
+
+            except(InvalidTransition, LoopIterationLimitReached):
+                pass
+        return
+
+
 
     def iteration(self, training_example: List[Example], trans_tokens: set[Token], bool_tokens: set[Token]) -> bool:
         try:
@@ -111,6 +139,9 @@ class AStar(SearchAlgorithm):
         hcost = h(start_node, end_node)
         fcost = f(gcost, hcost)
         queue.insert(start_node, fcost)
+        # Add the previously found program to the queue
+        if self.best_prev_program is not None:
+            self.build_from_program(self.best_prev_program, queue, start_node, end_node, f, h)
         while queue:
             node, fcost = queue.pop()
             gcost, _, _ = self.reached[node]
