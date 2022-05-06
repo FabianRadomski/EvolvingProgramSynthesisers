@@ -2,6 +2,7 @@
 from search.a_star.a_star import AStar
 from search.batch_run import BatchRun
 from search.brute.brute import Brute
+from search.MCTS.mcts import MCTS
 from search.metropolis_hastings import metropolis
 from search.metropolis_hastings.metropolis import MetropolisHasting
 from search.vlns.large_neighborhood_search.algorithms.remove_n_insert_n import RemoveNInsertN
@@ -10,7 +11,7 @@ from search.vlns.large_neighborhood_search.algorithms.remove_n_insert_n import R
 class SearchSynthesiser:
 
     def seq_test(self):
-        alg_seq = [(MetropolisHasting, 1000), (Brute, 10)]
+        alg_seq = [(MetropolisHasting, 1000), (MCTS, 1000)]
         results = BatchRun(
             # Task domain
             domain="robot",
