@@ -35,12 +35,12 @@ class GeneticAlgorithm:
 
         raise NotImplementedError()
 
-    def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
+    def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
         """This method applies the given crossover function with certain probability"""
 
         raise NotImplementedError()
 
-    def mutation(self, genome: Genome, func: MutationFunc) -> Genome:
+    def mutation(self, genome: Genome) -> Genome:
         """This method applies mutation to a genome with certain probability"""
 
         raise NotImplementedError()
