@@ -24,10 +24,11 @@ class Runner:
     domain = "robot"
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
     search_method: SearchAlgorithm = Brute(10, ObjectiveFun(domain).fun)
+    print_results: bool = False
     MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
     POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
     MAX_TEST_CASES = 1000
-    MULTI_PROCESS = True
+    MULTI_PROCESS: bool = True
     NO_PROCESSES = os.cpu_count() - 1
 
     # Create experiment runner using specified search and DSL
@@ -107,7 +108,10 @@ class Runner:
 
         # # find program that satisfies training_examples
         search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
-                                                             self.dsl.get_bool_tokens())
+                                   self.dsl.get_bool_tokens())
+
+        if self.print_results:
+            self.print_info(self.get_result_info(test_case, search_result))
 
         program: Program = search_result.dictionary["program"]
 
@@ -131,6 +135,26 @@ class Runner:
         success_percentage = 100.0 * successes / len(test_case.test_examples)
         return success_percentage, execution_time_in_seconds, search_result
 
+    @staticmethod
+    def get_result_info(test_case: TestCase, result: SearchResult) -> dict:
+        result_dict = result.dictionary
+        file_path = test_case.path_to_result_file.split("-")
+        program = result_dict["program"]
+
+        info = {
+            "file": "{}-{}-{}".format(file_path[1], file_path[2], file_path[3]),
+            "test_cost": SearchAlgorithm.cost(test_case.test_examples, program),
+            "train_cost": SearchAlgorithm.cost(test_case.training_examples, program),
+            "execution_time": result_dict["execution_time"],
+            "program_length": result_dict["program_length"],
+            "iterations": result_dict["number_of_iterations"]
+        }
+
+        return info
+
+    @staticmethod
+    def print_info(result_info: dict):
+        print(result_info)
 
 """
 Example for running a test with the runner:

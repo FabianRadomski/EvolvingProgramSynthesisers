@@ -20,12 +20,12 @@ class CombinedSearch(SearchAlgorithm):
         if iterations_limit == 0:
             self.iterations_limit = sum(iter for alg, iter in algorithm_sequence)
 
-        assert iterations_limit == sum(iter for alg, iter in algorithm_sequence)
+        assert self.iterations_limit == sum(iter for alg, iter in algorithm_sequence)
 
         self.algorithm_sequence: List[Tuple[Type[SearchAlgorithm], int]] = algorithm_sequence
-        self.current_algorithm: SearchAlgorithm = algorithm_sequence[0][0](self.time_limit_sec, iterations_limit=algorithm_sequence[0][1])
+        self.current_algorithm: SearchAlgorithm = self.algorithm_sequence[0][0](time_limit_sec, iterations_limit=algorithm_sequence[0][1])
         self.sequence_pos: int = 0  # which position of the algorithm sequence is currently executed
-        self.next_switch: int = algorithm_sequence[0][1]  # at which iteration the next algorithm should be used
+        self.next_switch: int = 0  # at which iteration the next algorithm should be used
 
         self.training_examples: List[Example] = []
         self.trans_tokens: List[EnvToken] = []
@@ -36,10 +36,19 @@ class CombinedSearch(SearchAlgorithm):
         self.trans_tokens = trans_tokens
         self.bool_tokens = bool_tokens
 
+        self.number_of_explored_programs = 0
+        self.number_of_iterations = 0
+        self._best_program = Program([])
+
+        self.current_algorithm: SearchAlgorithm = self.algorithm_sequence[0][0](self.time_limit_sec, iterations_limit=self.algorithm_sequence[0][1])
+        self.current_algorithm.setup(training_examples, trans_tokens, bool_tokens)
+        self.next_switch = self.algorithm_sequence[0][1]
+
     def iteration(self, training_example: List[Example], trans_tokens: list[EnvToken], bool_tokens: list[EnvToken]) -> bool:
         if self.number_of_iterations == self.next_switch:
             if not self.switch_algorithm():
                 return False
+            self.current_algorithm.setup(training_example, trans_tokens, bool_tokens)
 
         self.number_of_iterations += 1
         return self.current_algorithm.iteration(training_example, trans_tokens, bool_tokens)
@@ -72,15 +81,17 @@ class CombinedSearch(SearchAlgorithm):
         """
         Switches algorithm to the next one in the chain. Returns false if the chain is all executed, true otherwise.
         """
-        # Update the current best program with the best program from the algorithm
-        self.update_info()
         # Propagate in the chain of algorithms
         self.sequence_pos += 1
         if self.sequence_pos >= len(self.algorithm_sequence):
             return False
 
+        # Update the current best program with the best program from the algorithm
+        self.update_info()
+
         # Update the current algorithm and the next_switch
         self.current_algorithm = self.algorithm_sequence[self.sequence_pos][0](self.time_limit_sec, best_program=self.best_program)
+        self.current_algorithm.setup(self.training_examples, self.trans_tokens, self.bool_tokens)
         self.next_switch = self.algorithm_sequence[self.sequence_pos][1] + self.number_of_iterations
         return True
 
