@@ -1,3 +1,4 @@
+import copy
 import math
 from collections import deque
 from typing import List, Union, Type, Tuple
@@ -45,6 +46,7 @@ class MCTS(SearchAlgorithm):
         self.cost_per_iteration = [(0, float("inf"))]  # save (iteration_number, cost) when new best_program is found
         self.best_found_programs: list[Program] = []
         self.number_of_iterations = 0
+        self.initial_program: Program
 
     # TODO make sure that the type of trans_ and bool_token is set[Type[Token]] and not set[Token]
     def setup(self, training_examples: list[Example], trans_tokens: set[TransToken],
@@ -79,7 +81,8 @@ class MCTS(SearchAlgorithm):
         self.number_of_explored_programs += 1
         self.number_of_iterations = 1
         self.cost_per_iteration = [(self.number_of_iterations, self.smallest_loss)]
-        self.best_found_programs = [self._best_program]
+        self.initial_program = copy.deepcopy(self.best_program)
+        self.best_found_programs = [self.initial_program]
 
         # set the max_expected_loss, which will be used to normalize the exploitation factor in the UCT
         self.max_expected_loss = self.smallest_loss
@@ -108,7 +111,7 @@ class MCTS(SearchAlgorithm):
         self.number_of_iterations += 1
 
         try:
-            (selected_node, program) = self.select(self.search_tree, Program([]))
+            (selected_node, program) = self.select(self.search_tree, copy.deepcopy(self.initial_program))
             new_node = self.expand(
                 node=selected_node,
                 program=program,
