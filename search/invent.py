@@ -1,19 +1,21 @@
 import itertools
+from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.tokens.control_tokens import If, LoopWhile
 from common.tokens.string_tokens import *
 
 
 # Generates all permutations of elements in a set where maxLength > len(per) > 1
-def generatePermutations(set, maxLength) -> list:
+def generatePermutations(dsl, maxLength) -> list:
     if (maxLength <= 0):
         return []
-    return list(itertools.permutations(set, maxLength)) + generatePermutations(set, maxLength - 1)
+    ret = list(filter(lambda p: p[-1] in dsl.get_trans_tokens(p[:-1]), itertools.permutations(dsl.get_trans_tokens(), maxLength))) + generatePermutations(dsl, maxLength - 1)
+    return ret
 
 
 # Composes tokens into Invented tokens
 # Returns a list of Invented tokens
-def inventTokens(tokenSet, maxLength) -> list:
-    perms = generatePermutations(tokenSet, maxLength)
+def inventTokens(dsl, maxLength) -> list:
+    perms = generatePermutations(dsl, maxLength)
     out = []
 
     # convert these into "invented tokens"
@@ -29,18 +31,18 @@ def inventTokens(tokenSet, maxLength) -> list:
 
 # Composes tokens into more elaborate Invented tokens
 # Also generates If and While tokens
-def invent2(tokenSet, boolTokenSet, maxLength) -> list:
+def invent2(dsl: DomainSpecificLanguage, maxLength) -> list:
     # Normal invention step
-    out = inventTokens(tokenSet, maxLength)
+    out = inventTokens(dsl, maxLength)
 
     # Generating if statements
     if_list = []
-    conditions = boolTokenSet
-    bodies = inventTokens(tokenSet, max(1, int(maxLength / 2)))  # TODO Arbitrary length!!
+    conditions = dsl.get_bool_tokens()
+    bodies = inventTokens(dsl, max(1, int(maxLength / 2)))  # TODO Arbitrary length!!
     for c in conditions:
         for lb in bodies:
             for rb in bodies:
-                if_list.append(If(c, [lb], [rb]))
+                if_list.append(If(c,  (lb if isinstance(lb, list) else [lb]),  (rb if isinstance(rb, list) else [rb])))
     out = out + if_list
 
     # Generating recurse statements
@@ -62,22 +64,23 @@ def invent2(tokenSet, boolTokenSet, maxLength) -> list:
     #     recurse_list.append(Recurse(None, [], [lb]))
     # out = out + recurse_list
     loop_list = []
-    bodies = inventTokens(tokenSet, max(1, int(maxLength / 2)))  # TODO Arbitrary length!!
+    bodies = inventTokens(dsl, max(1, int(maxLength / 2)))  # TODO Arbitrary length!!
     for c in conditions:
         for lb in bodies:
-            loop_list.append(LoopWhile(c, [lb]))
+            loop_list.append(LoopWhile(c, (lb if isinstance(lb, list) else [lb])))
     out = out + loop_list
     return out
 
 
 if __name__ == "__main__":
-    # Test for string environment
-    bool_tokens = {AtStart, AtEnd, IsLetter, IsNotLetter, IsUppercase, IsNotUppercase, IsLowercase, IsNotLowercase,
-                   IsNumber, IsNotNumber, IsSpace, IsNotSpace}
-    normal_tokens = {MoveRight, MoveLeft, Drop, MakeLowercase, MakeUppercase}
-
-    out = invent2(normal_tokens, bool_tokens, 5)
+    dsl = DomainSpecificLanguage('robot',
+                                 [AtStart()],
+                                 [MoveLeft(), MoveRight()],
+                                 True,
+                                 lambda x: [MoveLeft(), MakeLowercase()])
+    out = invent2(dsl, 2)
     print(len(out))
     for t in out:
+        print(t)
         if (not isinstance(t, Token)):
             print(t)

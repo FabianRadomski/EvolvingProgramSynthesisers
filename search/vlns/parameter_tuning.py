@@ -58,7 +58,7 @@ class ParameterTuning:
         correct_cases = {}
 
         for tc in self.test_cases:
-            r = search.run(tc.training_examples, self.env_tokens, self.bool_tokens)
+            r = search.run(tc.training_examples, self.bool_tokens)
 
             c = search.cost(tc.test_examples, r.dictionary["program"])
 

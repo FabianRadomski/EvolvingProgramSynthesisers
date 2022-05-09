@@ -1,4 +1,6 @@
 from typing import Callable, List, Tuple
+
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.tokens.abstract_tokens import InvalidTransition, Token
 from common.program import Program
 from common.experiment import Example, TestCase
@@ -22,7 +24,7 @@ class MetropolisHasting(SearchAlgorithm):
     def __init__(self, time_limit_sec: float):
         super().__init__(time_limit_sec)
 
-    def setup(self, examples: List[Example], trans_tokens, bool_tokens):
+    def setup(self, examples: List[Example], dsl: DomainSpecificLanguage):
         self.number_of_explored_programs = 0
         self.number_of_iterations = 0
         self.cost_per_iteration = []
@@ -30,13 +32,13 @@ class MetropolisHasting(SearchAlgorithm):
         self.cost = 100
         self.proposal_distribution = ProposalDistribution()
         fac = MutationFactory()
-        self.proposal_distribution.add_mutation(fac.add_random_token(trans_tokens), 10)
+        self.proposal_distribution.add_mutation(fac.add_random_token(dsl), 10)
         self.proposal_distribution.add_mutation(fac.remove_random_token(), 20)
-        self.proposal_distribution.add_mutation(fac.add_loop(bool_tokens, trans_tokens), 10)
-        self.proposal_distribution.add_mutation(fac.add_if_statement(bool_tokens, trans_tokens), 10)
+        self.proposal_distribution.add_mutation(fac.add_loop(dsl), 10)
+        self.proposal_distribution.add_mutation(fac.add_if_statement(dsl), 10)
         self.proposal_distribution.add_mutation(fac.start_over(), 2)
 
-    def iteration(self, examples: List[Example], trans_tokens, bool_tokens) -> bool:
+    def iteration(self, examples: List[Example], dsl: DomainSpecificLanguage) -> bool:
         self.number_of_iterations += 1
         self.number_of_explored_programs += 1
         mut: Mutation = self.proposal_distribution.sample()
@@ -102,13 +104,10 @@ class ProposalDistribution():
 
 # The operation must never be allowed to modify the Program that is passed in!
 class MutationFactory():
-    def __init__(self):
-        pass
-        
 
-    def add_random_token(self, trans_tokens) -> Mutation:
+    def add_random_token(self, dsl) -> Mutation:
         def operation(pro: Program) -> Program:
-            rand_token = random.choice(list(trans_tokens))
+            rand_token = random.choice(dsl.get_trans_tokens(pro))
             return Program(pro.sequence + [rand_token])
         return Mutation("Append random token to the end of the program", operation)
 
@@ -123,21 +122,21 @@ class MutationFactory():
         return Mutation("Remove random token of the end of the program", operation)
 
     
-    def add_loop(self, bool_tokens, trans_tokens) -> Mutation:
+    def add_loop(self, dsl: DomainSpecificLanguage) -> Mutation:
         def operation(pro: Program) -> Program:
 
-            rand_bool = random.choice(list(bool_tokens))
-            rand_token = random.choice(list(trans_tokens))
+            rand_bool = random.choice(dsl.get_bool_tokens())
+            rand_token = random.choice(dsl.get_trans_tokens(pro))
             return Program(pro.sequence + [LoopWhile(rand_bool, [rand_token])])
         return Mutation("Add random loop to the end of the program", operation)
     
     
-    def add_if_statement(self, bool_tokens, trans_tokens) -> Mutation:
+    def add_if_statement(self, dsl: DomainSpecificLanguage) -> Mutation:
         def operation(pro: Program) -> Program:
 
-            rand_bool = random.choice(list(bool_tokens))
-            rand_token = random.choice(list(trans_tokens))
-            rand_token2 = random.choice(list(trans_tokens))
+            rand_bool = random.choice(dsl.get_bool_tokens())
+            rand_token = random.choice(dsl.get_trans_tokens())
+            rand_token2 = random.choice(dsl.get_trans_tokens(rand_token))
             return Program(pro.sequence + [If(rand_bool, [rand_token], [rand_token2])])
         return Mutation("Add random if to the end of the program", operation)
 

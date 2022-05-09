@@ -3,6 +3,7 @@ import time
 from statistics import mean
 from typing import List
 
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.environment import StringEnvironment
 from common.program import Program
 from common.tokens.abstract_tokens import Token, InvalidTransition, EnvToken
@@ -25,14 +26,14 @@ class SearchAlgorithm:
     def best_program(self) -> Program:
         return self._best_program
 
-    def setup(self, training_examples: List[Example], trans_tokens: list[EnvToken], bool_tokens: list[EnvToken]):
+    def setup(self, training_examples: List[Example], dsl: DomainSpecificLanguage):
         """This method is called before a search is performed. The search will be performed for the given
         'training_examples'. Also the 'trans_tokens' and 'bool_tokens' that are available for the environment are given.
         """
 
         raise NotImplementedError()
 
-    def iteration(self, training_example: List[Example], trans_tokens: list[EnvToken], bool_tokens: list[EnvToken]) -> bool:
+    def iteration(self, training_example: List[Example], dsl: DomainSpecificLanguage) -> bool:
         """This method represents an iteration of the search algorithm. This method will get called over and over 
         again, as long as it returns True. It will stop whenever False is returned or a time limit is reached. The 
         search will be performed for the given 'training_examples'. Also the 'trans_tokens' and 'bool_tokens' that are
@@ -47,7 +48,7 @@ class SearchAlgorithm:
 
         return search_result
 
-    def run(self, training_examples: List[Example], trans_tokens: list[EnvToken], bool_tokens: list[EnvToken]) -> SearchResult:
+    def run(self, training_examples: List[Example], dsl: DomainSpecificLanguage) -> SearchResult:
         """"Runs the search method until a program is returned or the time limit is reached. First the setup method is
         called, followed by a repetition of the iteration method until either a result is obtained, or the time limit is
         reached"""
@@ -57,10 +58,10 @@ class SearchAlgorithm:
         StringEnvironment.distance_map = {}
 
         # Call setup.
-        self.setup(training_examples, trans_tokens, bool_tokens)
+        self.setup(training_examples, dsl)
 
         # self.iteration returns whether a new iteration should be performed. Break the loop if time limit reached.
-        while self.iteration(training_examples, trans_tokens, bool_tokens):
+        while self.iteration(training_examples, dsl):
             if time.process_time() >= start_time + self.time_limit_sec:
                 break
 

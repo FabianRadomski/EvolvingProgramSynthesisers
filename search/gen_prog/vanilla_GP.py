@@ -3,6 +3,7 @@
 import random, itertools, heapq
 from common.experiment import Example
 from common.program import Program
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.tokens.abstract_tokens import InvalidTransition, Token
 from common.tokens.control_tokens import LoopIterationLimitReached
 from search.abstract_search import SearchAlgorithm
@@ -178,8 +179,8 @@ class VanillaGP(SearchAlgorithm):
 	def __init__(self, time_limit_sec: float):
 		super().__init__(time_limit_sec)
 
-	def setup(self, training_examples: List[Example], trans_tokens: set[Token], bool_tokens: set[Token]):
-		self.token_functions = invent2(trans_tokens, bool_tokens, self.MAX_TOKEN_FUNCTION_DEPTH) + [token for token in list(trans_tokens)]
+	def setup(self, training_examples: List[Example], dsl: DomainSpecificLanguage):
+		self.token_functions = invent2(dsl, self.MAX_TOKEN_FUNCTION_DEPTH) + [token for token in list(dsl.get_trans_tokens())]
 		self.examples = training_examples
 
 		# Set the overall best results to the performance of the initial (empty) best program Program([])
@@ -199,7 +200,7 @@ class VanillaGP(SearchAlgorithm):
 
 		self.cost_per_iteration = []
 
-	def iteration(self, training_example: List[Example], trans_tokens: set[Token], bool_tokens: set[Token]) -> bool:
+	def iteration(self, training_example: List[Example], dsl: DomainSpecificLanguage) -> bool:
 		# print("----Gen ", self.current_gen_num, "----")
 		# [print(f, s, p) for f, s, p in self.current_gen_fitness]
 		current_best_fitness, current_best_solved, current_best_program = self.current_gen_fitness[0]

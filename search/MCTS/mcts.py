@@ -7,6 +7,7 @@ from anytree import RenderTree
 from common.environment import StringEnvironment, RobotEnvironment, PixelEnvironment, Environment
 from common.experiment import Example
 from common.program import Program
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.tokens.abstract_tokens import TransToken, BoolToken, InvalidTransition, InventedToken
 from common.tokens.control_tokens import LoopIterationLimitReached, If, LoopWhile
 
@@ -48,8 +49,7 @@ class MCTS(SearchAlgorithm):
         self.number_of_iterations = 0
 
     # TODO make sure that the type of trans_ and bool_token is set[Type[Token]] and not set[Token]
-    def setup(self, training_examples: list[Example], trans_tokens: set[TransToken],
-              bool_tokens: set[BoolToken]):
+    def setup(self, training_examples: list[Example], dsl: DomainSpecificLanguage):
 
         self._best_program: Program
         self.smallest_loss: float = float("inf")
@@ -86,7 +86,7 @@ class MCTS(SearchAlgorithm):
         self.max_expected_loss = self.smallest_loss
 
         # compute invented tokens that are composed of several other tokens
-        self.invented_tokens: List[InventedToken] = MCTS.MCTS_invent(trans_tokens=trans_tokens, bool_tokens=bool_tokens)
+        self.invented_tokens: List[InventedToken] = MCTS.MCTS_invent(dsl)
         # add each token to the dictionary with score 0
         for token in self.invented_tokens:
             self.token_scores_dict[token] = TokenScore(score=0, visits=0, max_token_try=self.MAX_TOKEN_TRY)
@@ -99,8 +99,7 @@ class MCTS(SearchAlgorithm):
         self.dict_with_obtained_output_environments[resulting_envs] = self.search_tree
 
     # TODO make sure that the type of trans_ and bool_token is set[Type[Token]] and not set[Token]
-    def iteration(self, training_example: List[Example], trans_tokens: set[Type[TransToken]],
-                  bool_tokens: set[Type[BoolToken]]) -> bool:
+    def iteration(self, training_example: List[Example], dsl: DomainSpecificLanguage) -> bool:
 
         # return False to indicate no other iterations are necessary
         if self.smallest_loss <= 0.0001:
@@ -156,7 +155,7 @@ class MCTS(SearchAlgorithm):
         return search_result
 
     @staticmethod
-    def MCTS_invent(trans_tokens: set[TransToken], bool_tokens: set[BoolToken]) -> List[InventedToken]:
+    def MCTS_invent(dsl: DomainSpecificLanguage) -> List[InventedToken]:
         """Returns a list of tokens invented using the given tokens.
         The invented tokens will be:
             - just a single token for each given trans_token
@@ -164,17 +163,17 @@ class MCTS(SearchAlgorithm):
             - an if and while token for each combination of bool_token and combo of two different_trans_tokens
         """
         invented_tokens: List[InventedToken] = []
-        for token_type in trans_tokens:
+        for token_type in dsl.get_trans_tokens():
             invented_tokens.append(InventedToken([token_type]))
 
-        for bool_token in bool_tokens:
-            for trans_token_1 in trans_tokens:
+        for bool_token in dsl.get_bool_tokens():
+            for trans_token_1 in dsl.get_trans_tokens():
                 invented_tokens.append(InventedToken([If(bool_token, [trans_token_1], [])]))
                 invented_tokens.append(InventedToken([LoopWhile(bool_token, [trans_token_1])]))
 
-        for bool_token in bool_tokens:
-            for trans_token_1 in trans_tokens:
-                for trans_token_2 in trans_tokens:
+        for bool_token in dsl.get_bool_tokens():
+            for trans_token_1 in dsl.get_trans_tokens():
+                for trans_token_2 in dsl.get_trans_tokens(partial_program=[trans_token_1]):
                     if trans_token_1 != trans_token_2:
                         invented_tokens.append(InventedToken([
                             If(bool_token, [trans_token_1, trans_token_2], [])

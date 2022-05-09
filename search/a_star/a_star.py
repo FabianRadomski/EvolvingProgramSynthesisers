@@ -4,6 +4,7 @@ from common.experiment import Example
 from common.program import Program
 from common.tokens.control_tokens import LoopIterationLimitReached
 from common.tokens.pixel_tokens import *
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from search.a_star.unique_priority_queue import UniquePriorityQueue
 from search.abstract_search import SearchAlgorithm
 from search.invent import invent2
@@ -28,12 +29,12 @@ class AStar(SearchAlgorithm):
     def best_f_program(self) -> Program:
         return self._find_program(self._best_f_program_node, self.reached)
 
-    def setup(self, training_examples: List[Example], trans_tokens: set[Token], bool_tokens: set[Token]):
+    def setup(self, training_examples: List[Example], dsl: DomainSpecificLanguage):
         self.loss_function = lambda g, h: self.weight * g + (1-self.weight) * h
         self.heuristic = self._heuristic_mean
         self.input_envs: tuple[Environment] = tuple(e.input_environment for e in training_examples)
         self.output_envs: tuple[Environment] = tuple(e.output_environment for e in training_examples)
-        self.tokens: list[Token] = invent2(trans_tokens, bool_tokens, MAX_TOKEN_FUNCTION_DEPTH)
+        self.tokens: list[Token] = invent2(dsl, MAX_TOKEN_FUNCTION_DEPTH)
         self.number_of_iterations: int = 0
         self._best_cost = float('inf')
         self._best_f_cost = float('inf')
@@ -46,7 +47,7 @@ class AStar(SearchAlgorithm):
         self.program_generator: Iterator[Union[Program, None]] = self.best_first_search_upq(
             self.input_envs, self.output_envs, self.tokens, self.loss_function, self.heuristic)
 
-    def iteration(self, training_example: List[Example], trans_tokens: set[Token], bool_tokens: set[Token]) -> bool:
+    def iteration(self, training_example: List[Example], dsl: DomainSpecificLanguage) -> bool:
         try:
             if node := next(self.program_generator):
                 # a solution was found: stop iterating

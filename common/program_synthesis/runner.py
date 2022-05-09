@@ -12,7 +12,10 @@ from example_parser.parser import Parser
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
 from example_parser.string_parser import StringParser
+from search.MCTS.mcts import MCTS
+from search.a_star.a_star import AStar
 from search.abstract_search import SearchAlgorithm
+from search.metropolis_hastings.metropolis import MetropolisHasting
 from search.search_result import SearchResult
 from search.brute.brute import Brute
 
@@ -93,8 +96,7 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
-                                                             self.dsl.get_bool_tokens())
+        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl)
 
         program: Program = search_result.dictionary["program"]
 

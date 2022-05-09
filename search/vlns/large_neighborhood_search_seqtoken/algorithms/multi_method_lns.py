@@ -63,7 +63,7 @@ if __name__ == "__main__0":
     envs = set([c() for c in extract_trans_tokens_from_domain_name("string")])
     bools = set([c() for c in extract_bool_tokens_from_domain_name("string")])
 
-    r= mmlns.run(tc.training_examples, envs, bools)
+    r= mmlns.run(tc.training_examples, bools)
     p = r.dictionary["program"]
     c = mmlns.cost(tc.test_examples, p)
 

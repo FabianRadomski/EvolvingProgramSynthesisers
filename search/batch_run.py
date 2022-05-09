@@ -104,7 +104,7 @@ class BatchRun:
 
     def _test_case(self, test_case: TestCase) -> dict:
         search_algorithm = copy.deepcopy(self.search_algorithm)
-        result = search_algorithm.run(test_case.training_examples, self.token_library, self.bools).dictionary
+        result = search_algorithm.run(test_case.training_examples, self.bools).dictionary
         program = result["program"]
         result["program"] = str(program)
 

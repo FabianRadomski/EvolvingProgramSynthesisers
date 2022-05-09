@@ -1,4 +1,5 @@
 from common.tokens.control_tokens import LoopIterationLimitReached
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.program import *
 from common.tokens.pixel_tokens import *
 import copy
@@ -25,11 +26,11 @@ class Brute(SearchAlgorithm):
         self.current_program: Program = Program([])
 
 
-    def setup(self, examples, trans_tokens, bool_tokens):
+    def setup(self, examples, dsl: DomainSpecificLanguage):
         self.programs = []
         self._best_program = Program([])
         # generate different token combinations
-        self.token_functions = invent2(trans_tokens, bool_tokens, MAX_TOKEN_FUNCTION_DEPTH)
+        self.token_functions = invent2(dsl, MAX_TOKEN_FUNCTION_DEPTH)
 
         self.sample_inputs = [e.input_environment for e in examples]
         self.sample_outputs = [e.output_environment for e in examples]
@@ -41,7 +42,7 @@ class Brute(SearchAlgorithm):
         self.program_length_per_iteration = []  # (iteration_number, program_length)
         self.number_of_iterations = 0
 
-    def iteration(self, examples, trans_tokens, bool_tokens) -> bool:
+    def iteration(self, examples, dsl) -> bool:
 
         (cost, solved, self.current_program) = heapq.heappop(self.programs)
 

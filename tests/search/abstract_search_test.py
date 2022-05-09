@@ -31,14 +31,14 @@ class MyTestCase(unittest.TestCase):
     def test_default(self):
         s = MySearch(10, 1)
 
-        s.run(None, None, None)
+        s.run(None, None)
 
         self.assertEqual(s.iter_number, 11)
 
     def test_timeout(self):
         s = MySearch(math.pow(10, 10), 1)
 
-        r = s.run(None, None, None)
+        r = s.run(None, None)
 
         self.assertEqual(len(s.best_program.sequence), 0)
 
