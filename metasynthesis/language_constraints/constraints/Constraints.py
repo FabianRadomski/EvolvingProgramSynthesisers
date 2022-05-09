@@ -50,6 +50,21 @@ class AbstractConstraint:
         """returns a list of tokens to be constrained for the given input"""
         raise NotImplementedError()
 
+    def get_values(self):
+        "returns the number of values this constraint can take for use in a genetic algorithm"
+        raise NotImplementedError()
+
+    def set_value(self, index: i):
+        "sets the value of this constraint can take for use in a genetic algorithm"
+        raise NotImplementedError()
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
 
 class PartialConstraint(AbstractConstraint):
 
@@ -59,20 +74,6 @@ class PartialConstraint(AbstractConstraint):
             self._allowed_constraint = constraints[0]
         else:
             self._allowed_constraint = []
-        self._constraint_dict = self._initialize_constraint_dict()
-
-    def _initialize_constraint_dict(self):
-        """Initializes a memoised default dict for returning constraint tokens"""
-        constraint_dict = {}
-        tokens = set(list(itertools.chain(*self._constraints)))
-        for token in tokens:
-            constraint_dict[token] = []
-            for constraint in self._constraints:
-                if not token in constraint or constraint[-1] == token or constraint == self._allowed_constraint:
-                    continue
-                # add the next constraint in sequence
-                constraint_dict[token].append(constraint[constraint.index(token) + 1])
-        return defaultdict(lambda: [], constraint_dict)
 
     def set_partial_constraint(self, allowed_constraint=None, index=-1) -> bool:
         """
@@ -81,12 +82,10 @@ class PartialConstraint(AbstractConstraint):
         """
         if allowed_constraint is not None and allowed_constraint in self._constraints:
             self._allowed_constraint = allowed_constraint
-            self._constraint_dict = self._initialize_constraint_dict()
             return True
 
         elif -1 < index < len(self._allowed_constraint):
             self._allowed_constraint = self._constraints[index]
-            self._constraint_dict = self._initialize_constraint_dict()
             return True
         return False
 
@@ -94,8 +93,19 @@ class PartialConstraint(AbstractConstraint):
         if len(seq) == 0 or not self.enabled:
             return []
         if self._check_constraint_relevance(seq):
-            return self._constraint_dict[seq[-1]]
+            return self._allowed_constraint[0:self._allowed_constraint.index(seq[-1])]
         return []
+
+    def get_values(self):
+        return len(self._constraints) + 1
+
+    def set_value(self, index: i):
+        if index == 0:
+            self.disable()
+        else:
+            self.enable()
+            self.set_partial_constraint(index=(index-1))
+        return self
 
 
 
@@ -103,25 +113,22 @@ class CompleteConstraint(AbstractConstraint):
 
     def __init__(self, constraints):
         super(CompleteConstraint, self).__init__(constraints)
-        self._constraint_dict = self._initialize_constraint_dict()
 
-    def _initialize_constraint_dict(self):
-        """Initializes a memoised default dict for returning constraint tokens"""
-        constraint_dict = {}
-        tokens = set(list(itertools.chain(*self._constraints)))
-        for token in tokens:
-            constraint_dict[token] = []
-            for constraint in self._constraints:
-                if not token in constraint or constraint[-1] == token:
-                    continue
-                # add the next constraint in sequence
-                constraint_dict[token].append(constraint[constraint.index(token) + 1])
-        return defaultdict(lambda: [], constraint_dict)
 
     def constraint(self, seq: Sequence) -> Constraints:
         if len(seq) == 0 or not self.enabled:
             return []
         if self._check_constraint_relevance(seq):
-            return self._constraint_dict[seq[-1]]
+            return self._constraints[0].remove(seq[-1])
         return []
+
+    def get_values(self):
+        return 2
+
+    def set_value(self, index: i):
+        if index == 0:
+            self.disable()
+        if index == 1:
+            self.enable()
+        return self
 
