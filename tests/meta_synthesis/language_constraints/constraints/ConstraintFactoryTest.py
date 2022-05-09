@@ -3,8 +3,8 @@ from common.environment import RobotEnvironment
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from common.tokens.robot_tokens import MoveUp, MoveDown, MoveLeft, MoveRight, Grab, Drop
 from metasynthesis.language_constraints.constraints.Constraints import CompleteConstraint, PartialConstraint
+from metasynthesis.language_constraints.properties.BinaryProperties import Identity, Independent
 from metasynthesis.language_constraints.properties.PropertyFactory import PropertyFactory
-from
 from metasynthesis.language_constraints.constraints.ConstraintFactory import ConstraintFactory
 
 

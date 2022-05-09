@@ -8,6 +8,7 @@ from common.tokens.string_tokens import *
 def generatePermutations(dsl, maxLength) -> list:
     if (maxLength <= 0):
         return []
+
     ret = list(filter(lambda p: p[-1] in dsl.get_trans_tokens(p[:-1]), itertools.permutations(dsl.get_trans_tokens(), maxLength))) + generatePermutations(dsl, maxLength - 1)
     return ret
 

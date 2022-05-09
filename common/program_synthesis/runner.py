@@ -65,7 +65,8 @@ class Runner:
         average_success_percentage = sum_of_success_percentages / len(test_cases)
         average_execution_time = sum_of_execution_times_in_seconds / len(test_cases)
         percentage_of_completely_successful_programs = number_of_completely_successful_programs / len(test_cases) * 100
-
+        print(average_success_percentage)
+        print(average_execution_time)
         return {
             "average_success": average_success_percentage,
             "average_execution": average_execution_time,

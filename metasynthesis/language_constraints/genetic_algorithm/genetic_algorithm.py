@@ -4,11 +4,32 @@ import numpy as np
 import random
 from typing import Tuple, List
 
+from common.environment import RobotEnvironment
 from common.tokens.abstract_tokens import Token
 from common.program_synthesis.runner import Runner
-from common.program_synthesis.dsl import DomainSpecificLanguage, robot_tokens, pixel_tokens, string_tokens
+from common.program_synthesis.dsl import DomainSpecificLanguage, robot_tokens, pixel_tokens, string_tokens, \
+    StandardDomainSpecificLanguage
 from metasynthesis.abstract_genetic import GeneticAlgorithm, Population, Genome, MutationFunc
+from metasynthesis.language_constraints.constraints.ConstraintFactory import ConstraintFactory
 from metasynthesis.language_constraints.constraints.Constraints import AbstractConstraint
+from metasynthesis.language_constraints.properties.BinaryProperties import Independent, Identity
+from metasynthesis.language_constraints.properties.PropertyFactory import PropertyFactory
+
+
+class ConstraintFunc:
+
+    def __init__(self, genome, bool_tokens, trans_tokens, constraints):
+        self.constraints = list(map(lambda c: deepcopy(c[0]).set_value(c[1]), zip(constraints, genome)))
+        self.bool_tokens = bool_tokens
+        self.trans_tokens = trans_tokens
+
+    def __call__(self, sequence: List[Token]):
+        to_remove = []
+        for constraint in self.constraints:
+            for active_constraint in constraint.constraint(sequence):
+                to_remove.append(active_constraint)
+
+        return [b for b in self.bool_tokens if b not in to_remove], [t for t in self.trans_tokens if t not in to_remove]
 
 
 class ConstraintGeneticAlgorithm(GeneticAlgorithm):
@@ -16,12 +37,13 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
     def __init__(self, fitness_limit: float,
                  generation_limit: int,
                  mutation_probability: float,
-                 constraints: List[Constraints],
-                 population_size: int = 20):
+                 constraints: List[AbstractConstraint],
+                 population_size: int = 20) -> object:
         super().__init__(fitness_limit, generation_limit, 0, mutation_probability)
         self.constraints = constraints
         self.max_genome_value = list(map(lambda c: c.get_values(), constraints))
         self.population_size = population_size
+        self.fitness_memory = {}
 
     def generate_genome(self, length: int = -1) -> Genome:
         genome = map(lambda x: math.floor(random.random() * x), self.max_genome_value)
@@ -29,26 +51,6 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
 
     def generate_population(self, size: int = -1) -> Population:
         return [self.generate_genome() for _ in range(self.population_size)]
-
-    def _derive_domain_func(self, genome: Genome, bool_tokens: List[Token], trans_tokens: List[Token]):
-        # generate constraints from genome
-        constraints = list(map(lambda c, v: c.deepcopy().set_value(v), zip(self.constraints, genome)))
-
-        def constraint_builder_func(constraints: List[AbstractConstraint], bool_tokens: List[Token],
-                                    trans_tokens: List[Token]):
-            def constraint_func(sequence: List[Token]):
-                bt = bool_tokens.copy()
-                tt = trans_tokens.copy()
-                for constraint in constraints:
-                    for active_constraint in constraint.constraint(sequence):
-                        bt.remove(active_constraint)
-                        tt.remove(active_constraint)
-
-                return bt, tt
-
-            return constraint_func
-
-        return constraint_builder_func(constraints, bool_tokens, trans_tokens)
 
     def _create_dsl(self, genome: Genome, domain):
         if domain == 'robot':
@@ -60,19 +62,24 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
 
         bt = module.BoolTokens
         tt = module.TransTokens
-        func = self._derive_domain_func(genome, bt, tt)
+        func = ConstraintFunc(genome, bt, tt, self.constraints)
 
         return DomainSpecificLanguage(domain, bt, tt, True, func)
 
     def fitness(self, genome: Genome) -> float:
+        if tuple(genome) in self.fitness_memory:
+            return self.fitness_memory[tuple(genome)]
         dsl = self._create_dsl(genome, 'robot')
         runner = Runner(dsl=dsl)
-        return self._fitness_metric(runner.run())
+        fitness = self._fitness_metric(runner.run())
+        self.fitness_memory[tuple(genome)] = fitness
+        print(fitness)
+        return fitness
 
     def _fitness_metric(self, data):
-        return data["average_execution"] * data["average_success"]
+        return (1/data["average_execution"]) * data["average_success"]
 
-    def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+    def crossover(self, a: Genome, b: Genome) -> Genome:
         crossed_over = []
         for _a, _b in zip(a, b):
             indicator = random.random()
@@ -80,12 +87,13 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
                 crossed_over.append(_b)
             else:
                 crossed_over.append(_a)
+        return crossed_over
 
     def mutation(self, genome: Genome, func: MutationFunc = None) -> Genome:
         for i, entry in enumerate(genome):
             mutation_throw = random.random()
             if mutation_throw < self.mutation_probability:
-                choices = [i for i in range(self.max_genome_value) if i != entry]
+                choices = [j for j in range(self.max_genome_value[i]) if j != entry]
                 genome[i] = random.choice(choices)
 
         return genome
@@ -99,8 +107,8 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         probability_distribution = list(map(lambda fit: fit / total_fitness, fitness_list))
         new_population = []
         for _ in range(self.population_size):
-            a, b = np.random.choice(population, 2, p=probability_distribution)
-            child = self.mutation(self.crossover(a, b))
+            a, b = np.random.choice(len(population), 2, p=probability_distribution)
+            child = self.mutation(self.crossover(population[a], population[b]))
             new_population.append(child)
 
         return new_population
@@ -108,8 +116,20 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
     def genome_to_string(self, genome: Genome) -> str:
         return "Genome(" + str(genome) + ")"
 
-    def run_evolution(self) -> Tuple[Population, int]:
+    def run_evolution(self):
+        total_fitness = 0
+        max_fitness = -1
+        max_fitness_constraints = -1
         population = self.generate_population()
-        for _ in range(self.generation_limit):
+        for i in range(self.generation_limit):
+            for pop in population:
+                fitness = self.fitness(pop)
+                print(self.genome_to_string(pop), self.fitness(pop))
+                total_fitness += fitness
+                if fitness > max_fitness:
+                    max_fitness = fitness
+                    max_fitness_constraints = sum([1 for gene in pop if gene > 0])
+
             population = self.create_new_generation(population)
-        return population
+            print(total_fitness/((i+1)*self.population_size), max_fitness, max_fitness_constraints)
+        return sorted(map(lambda pop: (pop, self.fitness(pop)), population), 1)

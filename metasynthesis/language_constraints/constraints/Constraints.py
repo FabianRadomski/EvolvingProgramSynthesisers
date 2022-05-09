@@ -1,4 +1,5 @@
 import itertools
+from copy import deepcopy
 from typing import Type, List
 from collections import defaultdict
 from common.tokens.abstract_tokens import Token
@@ -25,10 +26,12 @@ class AbstractConstraint:
         if len(seq) == 0:
             return False
         tokens = self._get_relevant_sequence(seq)
-
-        for i, token in enumerate(reversed(tokens)):
-            if not token == seq[-i]:
-                break
+        for token in tokens:
+            for constraint in self._constraints:
+                if token in constraint:
+                    break
+            else:
+                return False
         else:
             return True
 
@@ -54,7 +57,7 @@ class AbstractConstraint:
         "returns the number of values this constraint can take for use in a genetic algorithm"
         raise NotImplementedError()
 
-    def set_value(self, index: i):
+    def set_value(self, index: int):
         "sets the value of this constraint can take for use in a genetic algorithm"
         raise NotImplementedError()
 
@@ -63,7 +66,7 @@ class AbstractConstraint:
         result = cls.__new__(cls)
         memo[id(self)] = result
         for k, v in self.__dict__.items():
-            setattr(result, k, deepcopy(v, memo))
+            setattr(result, k, deepcopy(v))
         return result
 
 class PartialConstraint(AbstractConstraint):
@@ -99,7 +102,7 @@ class PartialConstraint(AbstractConstraint):
     def get_values(self):
         return len(self._constraints) + 1
 
-    def set_value(self, index: i):
+    def set_value(self, index: int):
         if index == 0:
             self.disable()
         else:
@@ -119,13 +122,13 @@ class CompleteConstraint(AbstractConstraint):
         if len(seq) == 0 or not self.enabled:
             return []
         if self._check_constraint_relevance(seq):
-            return self._constraints[0].remove(seq[-1])
+            return [c for c in self._constraints[0] if c is not seq[-1]]
         return []
 
     def get_values(self):
         return 2
 
-    def set_value(self, index: i):
+    def set_value(self, index: int):
         if index == 0:
             self.disable()
         if index == 1:

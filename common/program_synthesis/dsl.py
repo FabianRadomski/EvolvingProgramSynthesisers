@@ -31,7 +31,8 @@ class DomainSpecificLanguage:
             return self._trans_tokens
         if partial_program is None:
             partial_program = []
-        return self._constraint_func(partial_program)
+        _, trans = self._constraint_func(partial_program)
+        return trans
 
     def get_bool_tokens(self):
         """This method gets bool tokens"""

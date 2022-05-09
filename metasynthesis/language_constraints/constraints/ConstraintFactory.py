@@ -12,5 +12,5 @@ class ConstraintFactory:
     def create(self) -> List[AbstractConstraint]:
         """creates a list of constraints using a given PropertyFactory"""
         properties = self._property_factory.create()
-        return list(map(lambda prop: prop.derive_constraint, properties))
+        return list(map(lambda prop: prop.derive_constraint(), properties))
 
