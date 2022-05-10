@@ -158,7 +158,8 @@ class EvolvingLanguage(GeneticAlgorithm):
             print("AVERAGE GENERATION FITNESS", generation_cum_fitness / self.generation_size)
             # print("POP LENGTH", len(population))
 
-            best_percentage = select_best_percentage(population=new_population, percentage=50, size=self.generation_size)
+            best_percentage = select_best_percentage(population=new_population, percentage=50,
+                                                     size=self.generation_size)
 
             # ELITISM
             for elite_index in range(0, self.elite_genomes):
@@ -177,7 +178,8 @@ class EvolvingLanguage(GeneticAlgorithm):
                     crossed_a, crossed_b = self.crossover(a, b)
                     genome_count += 2
                     crossed_result = crossed_result + [a, b, crossed_a, crossed_b]
-                new_population[self.elite_genomes:self.generation_size] = crossed_result[0:self.generation_size - self.elite_genomes]
+                new_population[self.elite_genomes:self.generation_size] = crossed_result[
+                                                                          0:self.generation_size - self.elite_genomes]
 
             # MUTATION
             for genome_index in range(self.elite_genomes, self.generation_size):
@@ -195,8 +197,6 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.final_evaluation(full_dsl)
         print("EVOLVED DSL")
         self.final_evaluation(best_genome)
-
-
 
         return best_genome
 
@@ -221,6 +221,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         print("Success percentage:", success_percentage)
         print("Average program runtime:", average_execution_time)
         print("Average program length", avg_program_length)
+
 
 def sort_genome(genome: Genome) -> Genome:
     sorted_bool = sorted(genome.get_bool_tokens(), key=str, reverse=False)
@@ -309,4 +310,3 @@ def mutate_remove_token(genome: Genome) -> Genome:
     result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
     return result
 
-# TODO: add final_evaluation method that compares full dsl to evolved dsl, in terms of percentage solved and time taken (avg per solved and total for all)
