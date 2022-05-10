@@ -7,12 +7,7 @@
 #SBATCH --mail-type=END
 
 module load 2022r1
-module load intel/oneapi-all
-
-export I_MPI_PMI_LIBRARY=/cm/shared/apps/slurm/current/lib64/libpmi2.so
-
-
-module use /opt/insy/modulefiles
-module load miniconda/3.9
-
+module load compute
+module load miniconda
+conda create -n mypython python=3.9
 srun conda CMain.py
