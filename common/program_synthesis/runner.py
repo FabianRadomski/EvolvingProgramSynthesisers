@@ -27,7 +27,7 @@ class Runner:
     print_results: bool = False
     MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
     POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
-    MAX_TEST_CASES = 1000
+    MAX_TEST_CASES: int = 1000
     MULTI_PROCESS: bool = True
     NO_PROCESSES = os.cpu_count() - 1
 
