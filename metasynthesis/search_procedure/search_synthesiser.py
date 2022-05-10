@@ -90,7 +90,13 @@ class SearchSynthesiser(GeneticAlgorithm):
         pass
 
     def genome_to_string(self, genome: Genome) -> str:
-        return str(genome)
+        genome_str: str = "["
+        for i, gene in enumerate(genome):
+            genome_str += f"{str(gene[0].__name__)} {gene[1]}"
+            if i != len(genome)-1:
+                genome_str += " -> "
+        genome_str += "]"
+        return genome_str
 
     def population_to_string(self, population: Population) -> str:
         """
@@ -98,7 +104,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         """
         pop_str: str = f"Generation: {self.curr_iteration}/{self.generation_limit}\n"
         for individual in population:
-            pop_str += f"{self.genome_to_string(individual)} + with fitness + {str(self.fitness(individual))} + \n"
+            pop_str += f"{self.genome_to_string(individual)} with fitness {str(self.fitness(individual))}\n"
 
         return pop_str
 
@@ -106,6 +112,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         curr_population: Population = self.generate_population()
 
         for gen in range(self.generation_limit):
+            self.curr_iteration += 1
             curr_population = self.generate_new_generation(curr_population)
             if self.print_generations:
                 print(self.population_to_string(curr_population))
@@ -191,7 +198,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         point = random.randrange(0, len(genome))
         new_a = genome.copy()
-        new_a[point][1] = self.generate_iterations(new_a[point][0])
+        new_a[point] = (genome[point][0], self.generate_iterations(new_a[point][0]))
 
         return new_a
 
