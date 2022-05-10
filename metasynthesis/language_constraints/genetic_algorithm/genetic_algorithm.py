@@ -4,16 +4,12 @@ import numpy as np
 import random
 from typing import Tuple, List
 
-from common.environment import RobotEnvironment
 from common.tokens.abstract_tokens import Token
 from common.program_synthesis.runner import Runner
-from common.program_synthesis.dsl import DomainSpecificLanguage, robot_tokens, pixel_tokens, string_tokens, \
-    StandardDomainSpecificLanguage
+from common.program_synthesis.dsl import DomainSpecificLanguage, robot_tokens, pixel_tokens, string_tokens
 from metasynthesis.abstract_genetic import GeneticAlgorithm, Population, Genome, MutationFunc
-from metasynthesis.language_constraints.constraints.ConstraintFactory import ConstraintFactory
 from metasynthesis.language_constraints.constraints.Constraints import AbstractConstraint
-from metasynthesis.language_constraints.properties.BinaryProperties import Independent, Identity
-from metasynthesis.language_constraints.properties.PropertyFactory import PropertyFactory
+from search.brute.brute import Brute
 
 
 class ConstraintFunc:
@@ -70,7 +66,7 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         if tuple(genome) in self.fitness_memory:
             return self.fitness_memory[tuple(genome)]
         dsl = self._create_dsl(genome, 'robot')
-        runner = Runner(dsl=dsl)
+        runner = Runner(search_method=Brute(0.2), dsl=dsl)
         fitness = self._fitness_metric(runner.run())
         self.fitness_memory[tuple(genome)] = fitness
         print(fitness)

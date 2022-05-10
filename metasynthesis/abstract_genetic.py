@@ -34,6 +34,8 @@ class GeneticAlgorithm:
 
         raise NotImplementedError()
 
+
+
     def single_point_crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
         """This method combines first half of genome a with second half of b and vice versa with certain probability"""
 
@@ -61,7 +63,6 @@ class GeneticAlgorithm:
 
     def genome_to_string(self, genome: Genome) -> str:
         """This method converts a given genome to a string"""
-
         raise NotImplementedError()
 
     def run_evolution(self) -> Tuple[Population, int]:

@@ -15,7 +15,7 @@ def main():
     tests = [env1, env2, env3, env4]
     property_types = [Identity, Independent]
     factory = ConstraintFactory(PropertyFactory(dsl, property_types, tests))
-    gen = ConstraintGeneticAlgorithm(1, 10, 0.05, factory.create(), 20)
+    gen = ConstraintGeneticAlgorithm(1, 40, 0.05, factory.create(), 100)
     print(gen.run_evolution())
 
 if __name__ == '__main__':
