@@ -118,11 +118,6 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         return mutated_genome
 
-    def selection_pair(self, population: Population) -> Tuple[Genome, Genome]:
-        """This method selects a pair of solutions to be the parent of a new solution"""
-
-        raise NotImplementedError()
-
     def sort_population(self, population: Population) -> Population:
         """This method sorts the population based on the given fitness function"""
 
