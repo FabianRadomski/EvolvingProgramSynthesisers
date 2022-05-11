@@ -24,7 +24,7 @@ class SearchSynthesiser(GeneticAlgorithm):
                                                                           MCTS: (300, 10), RemoveNInsertN: (300, 100)}
 
     TOURN_SIZE = 2
-    TESTS_SIZE = 50
+    TESTS_SIZE = 200
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, print_generations: bool = False):
@@ -37,6 +37,9 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Dictionary containing genomes mapped to their fitness values, so that they only need to be calculated once
         self.calculated_fitness: Dict[Tuple[Tuple[Type[SearchAlgorithm], int]], float] = {}
+
+        # List of mutations that are performed
+        self.allowed_mutations: List[Type[MutationFunc]] = [self.replace_iteration_mutation, self.replace_search_mutation]
 
     def generate_genome(self, length: int) -> Genome:
         new_genome: Genome = []
@@ -61,6 +64,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         Fitness is calculated based on the average percent of successes.
         """
         # TODO: check other fitness metrics.
+        # Execution time vs number of iterations???
 
         # Check if the fitness has already been calculated
         if tuple(genome) in self.calculated_fitness.keys():
@@ -143,7 +147,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         for i, individual in enumerate(new_population):
             if random.random() < self.mutation_probability:
                 # TODO: check other mutation methods
-                new_population[i] = self.mutation(individual, self.replace_iteration_mutation)
+                new_population[i] = self.mutation(individual, random.choice(self.allowed_mutations))
 
         return new_population
 
@@ -215,12 +219,26 @@ class SearchSynthesiser(GeneticAlgorithm):
     def replace_iteration_mutation(self, genome: Genome):
         """Changes the number of iteration for a random search procedures in the genome."""
 
-        point = random.randrange(0, len(genome))
-        new_a = genome.copy()
-        new_a[point] = (genome[point][0], self.generate_iterations(new_a[point][0]))
+        point: int = random.randrange(0, len(genome))
+        new_genome: Genome = genome.copy()
+        new_genome[point] = (genome[point][0], self.generate_iterations(new_genome[point][0]))
 
-        return new_a
+        return new_genome
 
+    def replace_search_mutation(self, genome: Genome):
+        """
+        Replaces one search procedure in the genome with a different random one.
+        """
+        point: int = random.randrange(0, len(genome))
+
+        removed_search: Type[SearchAlgorithm] = genome[point][0]
+        searches: List[Type[SearchAlgorithm]] = self.allowed_searches.copy()
+        searches.remove(removed_search)
+
+        new_genome = genome.copy()
+        new_genome[point] = (random.choice(searches), genome[point][0])
+
+        return new_genome
 
 if __name__ == "__main__":
     SearchSynthesiser(0, 10, 0.6, 0.01, 10, 4, True).run_evolution()
