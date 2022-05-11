@@ -66,9 +66,9 @@ class EvolvingLanguage(GeneticAlgorithm):
         # 2) whether program that solves tasks was created
         # 3) number of iterations of searching
 
-        if genome.to_string() in genome_fitness_values.keys():
-            # print("ALREADY IN", genome.to_string())
-            return genome_fitness_values[genome.to_string()]
+        if str(genome) in genome_fitness_values.keys():
+            # print("ALREADY IN", str(genome))
+            return genome_fitness_values[str(genome)]
 
         # genome = StandardDomainSpecificLanguage("robot")
         runner = Runner(dsl=genome,
@@ -89,7 +89,7 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
 
-        genome_fitness_values[genome.to_string()] = fitness_value
+        genome_fitness_values[str(genome)] = fitness_value
 
         return fitness_value
 
@@ -143,7 +143,7 @@ class EvolvingLanguage(GeneticAlgorithm):
             print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
             for genome in population:
                 # self.fitness(genome)
-                print(round(self.fitness(genome), 5), genome.to_string())
+                print(round(self.fitness(genome), 5), str(genome))
 
             new_population = copy.deepcopy(population)
 
@@ -230,7 +230,7 @@ def genome_length(genome: Genome) -> int:
 
 
 def get_fitness(genome: Genome):
-    return genome_fitness_values[genome.to_string()]
+    return genome_fitness_values[str(genome)]
 
 
 def select_best_percentage(population: Population, percentage: float, size: int) -> Population:

@@ -47,20 +47,21 @@ class DomainSpecificLanguage:
 
         self._constraints_enabled = not self._constraints_enabled
 
-    def to_string(self):
+    def __str__(self):
         """Converts a domain specific language to a string"""
 
         return str(self._bool_tokens + self._trans_tokens)
+
 
 class StandardDomainSpecificLanguage(DomainSpecificLanguage):
 
     def __init__(self, domain_name):
         if domain_name == "robot":
-            super().__init__(domain_name, list(robot_tokens.BoolTokens),  list(robot_tokens.TransTokens))
+            super().__init__(domain_name, list(robot_tokens.BoolTokens), list(robot_tokens.TransTokens))
         elif domain_name == "pixel":
-            super().__init__(domain_name, list(pixel_tokens.BoolTokens),  list(pixel_tokens.TransTokens))
+            super().__init__(domain_name, list(pixel_tokens.BoolTokens), list(pixel_tokens.TransTokens))
         elif domain_name == "string":
-            super().__init__(domain_name, list(string_tokens.BoolTokens),  list(string_tokens.TransTokens))
+            super().__init__(domain_name, list(string_tokens.BoolTokens), list(string_tokens.TransTokens))
         else:
             raise NotImplementedError("this domain is not implemented, check whether you are using either "
                                       "\"robot\", \"pixel\" or \"string\" as domain_name")
