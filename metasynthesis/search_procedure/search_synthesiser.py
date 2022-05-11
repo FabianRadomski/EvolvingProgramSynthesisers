@@ -20,7 +20,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
-    initial_distribution: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (10, 3), AStar: (10, 3), MetropolisHasting: (100, 50),
+    initial_distribution: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (3, 3), AStar: (3, 3), MetropolisHasting: (30, 10),
                                                                           MCTS: (300, 10), RemoveNInsertN: (300, 100)}
 
     TOURN_SIZE = 2
@@ -165,7 +165,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         best_fitness: float = 0
         best_individual: Genome = pool[0]
         for individual in pool:
-            fitness: float = self.fitness(best_individual)
+            fitness: float = self.fitness(individual)
             if fitness >= best_fitness:
                 best_individual = individual
                 best_fitness = fitness
@@ -175,7 +175,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         """
         Uses normal distribution to generate a random iteration count for a given search.
         """
-        return round(random.gauss(self.initial_distribution[search_type][0], self.initial_distribution[search_type][1]))
+        return max(1, round(random.gauss(self.initial_distribution[search_type][0], self.initial_distribution[search_type][1])))
 
     @staticmethod
     def one_point_crossover(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
@@ -183,8 +183,8 @@ class SearchSynthesiser(GeneticAlgorithm):
         Simple one point mutation.
         """
 
-        a_point: int = random.randrange(0, len(a) + 1)
-        b_point: int = random.randrange(0, len(b) + 1)
+        a_point: int = random.randrange(1, len(a) + 1)
+        b_point: int = random.randrange(1, len(b)+1)
 
         new_a: Genome = a[:a_point].copy()
         new_b: Genome = b[:b_point].copy()
@@ -230,4 +230,4 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    SearchSynthesiser(0, 5, 0.8, 0.01, 10, 4, True).run_evolution()
+    SearchSynthesiser(0, 10, 0.6, 0.01, 10, 4, True).run_evolution()
