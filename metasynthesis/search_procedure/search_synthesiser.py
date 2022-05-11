@@ -134,7 +134,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             first_genome, second_genome = self.select_tournament(old_population, self.TOURN_SIZE)
             if random.random() < self.crossover_probability:
                 # TODO: check other crossover methods
-                new_population.extend(list(self.crossover(first_genome, second_genome, self.one_point_crossover)))
+                new_population.extend(list(self.crossover(first_genome, second_genome, self.two_point_crossover)))
             else:
                 new_population.append(first_genome)
                 new_population.append(second_genome)
@@ -180,7 +180,7 @@ class SearchSynthesiser(GeneticAlgorithm):
     @staticmethod
     def one_point_crossover(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
         """
-        Simple one point mutation.
+        Simple one point crossover.
         """
 
         a_point: int = random.randrange(1, len(a) + 1)
@@ -193,6 +193,25 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         return new_a, new_b
 
+    @staticmethod
+    def two_point_crossover(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+        """
+        Exchanges part of the genome of a random size.
+        """
+        exchange_size = random.randrange(1, min(len(a), len(b))+1)
+        a_point: int = random.randrange(0, len(a) + 1 - exchange_size)
+        b_point: int = random.randrange(0, len(b) + 1 - exchange_size)
+
+        new_a: Genome = a[:a_point].copy()
+        new_a.extend(b[b_point:b_point + exchange_size].copy())
+        new_a.extend(a[a_point + exchange_size:].copy())
+
+        new_b: Genome = b[:b_point].copy()
+        new_b.extend(a[a_point:a_point+exchange_size].copy())
+        new_b.extend(b[b_point + exchange_size:].copy())
+
+        return new_a, new_b
+
     def replace_iteration_mutation(self, genome: Genome):
         """Changes the number of iteration for a random search procedures in the genome."""
 
@@ -201,32 +220,6 @@ class SearchSynthesiser(GeneticAlgorithm):
         new_a[point] = (genome[point][0], self.generate_iterations(new_a[point][0]))
 
         return new_a
-
-    # def seq_test(self):
-    #     alg_seq = [(MetropolisHasting, 1000), (MCTS, 1000)]
-    #     results = BatchRun(
-    #         # Task domain
-    #         domain="robot",
-    #
-    #         # Iterables for files name. Use [] to use all values.
-    #         # This runs all files adhering to format "2-*-[0 -> 10]"
-    #         # Thus, ([], [], []) runs all files for a domain.
-    #         files=([], [], []),
-    #
-    #         # Search algorithm to be used
-    #         search_algorithm=Brute(10),
-    #
-    #         # Prints out result when a test case is finished
-    #         print_results=True,
-    #
-    #         # Use multi core processing
-    #         multi_core=True,
-    #
-    #         # Use file_name= to append to a file whenever a run got terminated
-    #         # Comment out argument to create new file.
-    #         # file_name="VLNS-20211213-162128.txt"
-    #     ).run_seq(alg_seq)
-    #     # print(result)
 
 
 if __name__ == "__main__":
