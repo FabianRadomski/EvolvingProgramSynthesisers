@@ -49,7 +49,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             iterations: int = self.generate_iterations(procedure)
             new_genome.append((procedure, iterations))
 
-        return self.coalesce_searches(new_genome)
+        return new_genome
 
     def generate_population(self) -> Population:
         new_population: Population = []
@@ -73,7 +73,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             search: SearchAlgorithm = CombinedSearch(0, genome)
-            runner: Runner = Runner(search_method=search, MAX_TEST_CASES=self.TESTS_SIZE)
+            runner: Runner = Runner(search_method=search, MAX_TEST_CASES=self.TESTS_SIZE, MULTI_PROCESS=False)
             result: float = runner.run()['average_success']
             self.calculated_fitness[tuple(genome)] = result
 
@@ -86,10 +86,10 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
         new_a, new_b = func(a, b)
-        return self.coalesce_searches(new_a), self.coalesce_searches(new_b)
+        return new_a, new_b
 
     def mutation(self, genome: Genome, func: MutationFunc) -> Genome:
-        return self.coalesce_searches(func(genome))
+        return func(genome)
 
     def selection_pair(self, population: Population) -> Tuple[Genome, Genome]:
         pass
@@ -259,7 +259,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         searches.remove(removed_search)
 
         new_genome = genome.copy()
-        new_genome[point] = (random.choice(searches), genome[point][0])
+        new_genome[point] = (random.choice(searches), genome[point][1])
 
         return new_genome
 
