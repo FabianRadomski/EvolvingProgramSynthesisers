@@ -24,7 +24,7 @@ class SearchSynthesiser(GeneticAlgorithm):
                                                                           MCTS: (300, 10), RemoveNInsertN: (300, 100)}
 
     TOURN_SIZE = 2
-    TESTS_SIZE = 200
+    TESTS_SIZE = 10
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, print_generations: bool = False):
@@ -49,7 +49,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             iterations: int = self.generate_iterations(procedure)
             new_genome.append((procedure, iterations))
 
-        return new_genome
+        return self.coalesce_searches(new_genome)
 
     def generate_population(self) -> Population:
         new_population: Population = []
@@ -85,10 +85,11 @@ class SearchSynthesiser(GeneticAlgorithm):
         return result
 
     def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
-        return func(a, b)
+        new_a, new_b = func(a, b)
+        return self.coalesce_searches(new_a), self.coalesce_searches(new_b)
 
     def mutation(self, genome: Genome, func: MutationFunc) -> Genome:
-        return func(genome)
+        return self.coalesce_searches(func(genome))
 
     def selection_pair(self, population: Population) -> Tuple[Genome, Genome]:
         pass
@@ -97,7 +98,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         genome_str: str = "["
         for i, gene in enumerate(genome):
             genome_str += f"{str(gene[0].__name__)} {gene[1]}"
-            if i != len(genome)-1:
+            if i != len(genome) - 1:
                 genome_str += " -> "
         genome_str += "]"
         return genome_str
@@ -114,6 +115,9 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def run_evolution(self):
         curr_population: Population = self.generate_population()
+
+        if self.print_generations:
+            print(self.population_to_string(curr_population))
 
         for gen in range(self.generation_limit):
             self.curr_iteration += 1
@@ -175,6 +179,25 @@ class SearchSynthesiser(GeneticAlgorithm):
                 best_fitness = fitness
         return best_individual
 
+    @staticmethod
+    def coalesce_searches(sequence: Genome) -> Genome:
+        """
+        Merges identical consequent searches in the sequence.
+        """
+        merged_sequence: Genome = []
+        curr_gene: (Type[SearchAlgorithm], int) = (sequence[0][0], sequence[0][1])
+        for i in range(len(sequence)):
+            if i == 0:
+                continue
+            if sequence[i][0] == sequence[i - 1][0]:
+                curr_gene = (curr_gene[0], curr_gene[1] + sequence[i][1])
+            else:
+                merged_sequence.append(curr_gene)
+                curr_gene = (sequence[i][0], sequence[i][1])
+        merged_sequence.append(curr_gene)
+
+        return merged_sequence
+
     def generate_iterations(self, search_type: Type[SearchAlgorithm]):
         """
         Uses normal distribution to generate a random iteration count for a given search.
@@ -188,7 +211,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         """
 
         a_point: int = random.randrange(1, len(a) + 1)
-        b_point: int = random.randrange(1, len(b)+1)
+        b_point: int = random.randrange(1, len(b) + 1)
 
         new_a: Genome = a[:a_point].copy()
         new_b: Genome = b[:b_point].copy()
@@ -202,7 +225,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         """
         Exchanges part of the genome of a random size.
         """
-        exchange_size = random.randrange(1, min(len(a), len(b))+1)
+        exchange_size = random.randrange(1, min(len(a), len(b)) + 1)
         a_point: int = random.randrange(0, len(a) + 1 - exchange_size)
         b_point: int = random.randrange(0, len(b) + 1 - exchange_size)
 
@@ -211,7 +234,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         new_a.extend(a[a_point + exchange_size:].copy())
 
         new_b: Genome = b[:b_point].copy()
-        new_b.extend(a[a_point:a_point+exchange_size].copy())
+        new_b.extend(a[a_point:a_point + exchange_size].copy())
         new_b.extend(b[b_point + exchange_size:].copy())
 
         return new_a, new_b
@@ -239,6 +262,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         new_genome[point] = (random.choice(searches), genome[point][0])
 
         return new_genome
+
 
 if __name__ == "__main__":
     SearchSynthesiser(0, 10, 0.6, 0.01, 10, 4, True).run_evolution()
