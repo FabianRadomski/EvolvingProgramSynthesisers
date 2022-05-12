@@ -1,3 +1,4 @@
+from ast import arg
 from common.environment import *
 
 
@@ -83,7 +84,28 @@ class InventedToken(EnvToken):
     def __repr__(self):
         return "[%s]" % ", ".join([str(t) for t in self.tokens])
 
+# assumptions: there's only one parameter called x, we apply it by substituting all x occurences by the arg_token which is a TransToken
+class FunctionDefinitionToken():
+    def __init__(self, body_tokens: list, arg_token: TransToken):
+        self.body_tokens = body_tokens
+        self.arg_token = arg_token
 
+class FunctionVariableToken(Token):
+    def __init__(self) -> None:
+        print("I'm a Variable Token, somebody is cooking up a function")
+        
+class FunctionApplicationToken(EnvToken):
+    def __init__(self, fd: FunctionDefinitionToken, param_token: TransToken):
+        self.param_token = param_token
+        self.function_definition = fd
+
+    # simple implementation with a single argument and parameter
+    def apply(self, env: Environment) -> Environment:
+        for token in self.function_definition.body_tokens:
+            if isinstance(token, FunctionVariableToken):
+                self.param_token.apply(env)
+            else: 
+                token.apply(env)
 class InvalidTransition(Exception):
     """This exception will be raised whenever an invalid state transition is performed on an Environment."""
     pass
