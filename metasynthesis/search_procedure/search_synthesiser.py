@@ -20,14 +20,17 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
-    initial_distribution: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (3, 3), AStar: (3, 3), MetropolisHasting: (30, 10),
-                                                                          MCTS: (300, 10), RemoveNInsertN: (300, 100)}
+    initial_distribution_normal: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (6, 5), AStar: (12, 7), MetropolisHasting: (500, 500),
+                                                                                 MCTS: (3000, 1000), RemoveNInsertN: (3000, 1000)}
 
+    initial_distribution_uniform: Dict[Type[SearchAlgorithm], int] = {
+        Brute: 13, MCTS: 3000, MetropolisHasting: 1500, AStar: 30, RemoveNInsertN: 3000  # 10000
+    }
     TOURN_SIZE = 2
-    TESTS_SIZE = 10
+    TESTS_SIZE = 1000
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
-                 mutation_probability: float, generation_size: int, max_seq_size: int = 4, print_generations: bool = False):
+                 mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Gauss", print_generations: bool = False):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
         self.max_seq_size: int = max_seq_size
@@ -35,18 +38,25 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.curr_iteration: int = 0
         self.print_generations = print_generations
 
-        # Dictionary containing genomes mapped to their fitness values, so that they only need to be calculated once
-        self.calculated_fitness: Dict[Tuple[Tuple[Type[SearchAlgorithm], int]], float] = {}
+        # Dictionary containing genomes mapped to their average success percentage and execution time, so that they only need to be calculated once
+        self.calculated_results: Dict[Tuple[Tuple[Type[SearchAlgorithm], dict]], dict] = {}
 
         # List of mutations that are performed
         self.allowed_mutations: List[Type[MutationFunc]] = [self.replace_iteration_mutation, self.replace_search_mutation]
+
+        # Determine how the number of each search type are distributed
+        self.dist_type = dist_type
+
+        # Used to determine the importance of metrics in the fitness function
+        self.success_weight = 0.5
+        self.time_weight = 0.5
 
     def generate_genome(self, length: int) -> Genome:
         new_genome: Genome = []
 
         for i in range(length):
             procedure: Type[SearchAlgorithm] = random.choices(self.allowed_searches)[0]
-            iterations: int = self.generate_iterations(procedure)
+            iterations: int = self.generate_iterations(procedure, dist_type=self.dist_type)
             new_genome.append((procedure, iterations))
 
         return new_genome
@@ -66,23 +76,31 @@ class SearchSynthesiser(GeneticAlgorithm):
         # TODO: check other fitness metrics.
         # Execution time vs number of iterations???
 
-        # Check if the fitness has already been calculated
-        if tuple(genome) in self.calculated_fitness.keys():
-            result: float = self.calculated_fitness[tuple(genome)]
+        # Check if the metrics have already been calculated
+        if tuple(genome) in self.calculated_results.keys():
+            average_success: float = self.calculated_results[tuple(genome)]['average_success']
+            average_time: float = self.calculated_results[tuple(genome)]['average_time']
 
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             search: SearchAlgorithm = CombinedSearch(0, genome)
-            runner: Runner = Runner(search_method=search, MAX_TEST_CASES=self.TESTS_SIZE, MULTI_PROCESS=False)
-            result: float = runner.run()['average_success']
-            self.calculated_fitness[tuple(genome)] = result
+            runner: Runner = Runner(search_method=search, MAX_TEST_CASES=self.TESTS_SIZE, MULTI_PROCESS=True)
+            results: dict = runner.run()
+            average_success: float = results['average_success']
+            average_time: float = results['average_execution']
+            self.calculated_results[tuple(genome)] = {'average_success': average_success, 'average_time': average_time}
 
         # Assign 0 as a fitness if the genome is empty
         else:
-            result = 0
-            self.calculated_fitness[tuple(genome)] = result
+            self.calculated_results[tuple(genome)] = {'average_success': 0, 'average_time': 0}
+            return 0
 
-        return result
+        # Only consider time if the programs are fully correct
+        if average_success == 100:
+            fitness = self.success_weight * average_success + self.time_weight * (1 / average_time)
+        else:
+            fitness = self.success_weight * average_success
+        return fitness
 
     def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
         new_a, new_b = func(a, b)
@@ -198,11 +216,16 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         return merged_sequence
 
-    def generate_iterations(self, search_type: Type[SearchAlgorithm]):
+    def generate_iterations(self, search_type: Type[SearchAlgorithm], dist_type: str = "Gauss"):
         """
         Uses normal distribution to generate a random iteration count for a given search.
         """
-        return max(1, round(random.gauss(self.initial_distribution[search_type][0], self.initial_distribution[search_type][1])))
+        if dist_type == "Gauss":
+            return max(1, round(random.gauss(self.initial_distribution_normal[search_type][0], self.initial_distribution_normal[search_type][1])))
+        elif dist_type == "Uniform":
+            return random.randrange(1, self.initial_distribution_uniform[search_type])
+        else:
+            raise Exception("The chosen iteration distribution is not allowed. Choose either Gauss or Uniform!")
 
     @staticmethod
     def one_point_crossover(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
@@ -244,7 +267,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         point: int = random.randrange(0, len(genome))
         new_genome: Genome = genome.copy()
-        new_genome[point] = (genome[point][0], self.generate_iterations(new_genome[point][0]))
+        new_genome[point] = (genome[point][0], self.generate_iterations(new_genome[point][0], dist_type=self.dist_type))
 
         return new_genome
 
@@ -258,11 +281,13 @@ class SearchSynthesiser(GeneticAlgorithm):
         searches: List[Type[SearchAlgorithm]] = self.allowed_searches.copy()
         searches.remove(removed_search)
 
-        new_genome = genome.copy()
-        new_genome[point] = (random.choice(searches), genome[point][1])
+        new_genome:Genome = genome.copy()
+        new_search: Type[SearchAlgorithm] = random.choice(searches)
+        new_genome[point] = (new_search, self.generate_iterations(new_search, dist_type=self.dist_type))
 
         return new_genome
 
 
 if __name__ == "__main__":
-    SearchSynthesiser(0, 10, 0.6, 0.01, 10, 4, True).run_evolution()
+    SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.6,
+                      mutation_probability=0.05, generation_size=10, max_seq_size=4, dist_type="Uniform", print_generations=True).run_evolution()
