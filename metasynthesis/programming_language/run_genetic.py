@@ -8,12 +8,12 @@ if __name__ == '__main__':
 
     genetic = EvolvingLanguage(fitness_limit=1,
                                generation_limit=30,
-                               crossover_probability=1,
+                               crossover_probability=0.8,
                                mutation_probability=0.3,
                                elite_genomes=2,
-                               generation_size=10,
+                               generation_size=18,
                                dsl=dsl,
-                               test_cases_per_genome=10,
-                               max_search_time=1)
+                               test_cases_per_genome=300,
+                               max_search_time=1.5)
     genetic.run_evolution()
 
