@@ -6,6 +6,8 @@ from typing import List, Callable, Tuple, Iterable
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.program_synthesis.objective import ObjectiveFun
 from common.program_synthesis.runner import Runner
+from common.tokens.abstract_tokens import Token, InventedToken, ControlToken
+from common.tokens.control_tokens import LoopWhile, If
 
 from metasynthesis.abstract_genetic import GeneticAlgorithm
 from search.brute.brute import Brute
@@ -14,6 +16,9 @@ Genome = DomainSpecificLanguage
 Population = List[Genome]
 
 genome_fitness_values = {}
+successful_tokens_counts = {}
+successful_tokens_weights = {}
+successful_tokens_objects = {}
 
 
 class EvolvingLanguage(GeneticAlgorithm):
@@ -54,6 +59,7 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         for i in range(0, self.generation_size):
             genome_length = randrange(1, max_dsl_length + 1)
+            # genome_length = 13
             population.append(self.generate_genome(genome_length))
 
         return population
@@ -85,9 +91,35 @@ class EvolvingLanguage(GeneticAlgorithm):
         success_percentage = results["average_success"]
         success_percentage_scaled = success_percentage / 100
 
-        # print(inverse_dsl_length, inverse_avg_exec_time, success_percentage_scaled)
+        # SPECIAL TOKEN EXTRACTION
+        search_results = results["programs"]
+        total_search_time = 0
 
-        fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
+        for result in search_results:
+            program = result.dictionary["program"]
+            tokens = program.sequence
+
+            total_search_time += result.dictionary["execution_time"]
+
+            for token in tokens:
+
+                if token not in self.trans_tokens:
+
+                    if str(token) not in successful_tokens_counts.keys():
+                        successful_tokens_counts[str(token)] = 1
+                        successful_tokens_objects[str(token)] = token
+                    else:
+                        successful_tokens_counts[str(token)] = successful_tokens_counts[str(token)] + 1
+
+                    # print(str(token), successful_tokens_counts[str(token)])
+
+        inverse_total_search_time = 1 / (total_search_time + 0.000000001)
+
+        # fitness_value = inverse_dsl_length * inverse_avg_exec_time * \
+        #                 success_percentage_scaled * inverse_total_search_time
+        fitness_value = success_percentage_scaled * inverse_total_search_time
+
+        # TODO: maybe add inverse program length
 
         genome_fitness_values[str(genome)] = fitness_value
 
@@ -100,8 +132,10 @@ class EvolvingLanguage(GeneticAlgorithm):
         crossed_a = None
         crossed_b = None
 
-        if 0 <= rand_float <= 1:
+        if 0 <= rand_float <= 0:
             crossed_a, crossed_b = crossover_exchange_trans_bool(a, b)
+        elif 0 < rand_float <= 1:
+            crossed_a, crossed_b = crossover_exchange_halve_category(a, b)
 
         return crossed_a, crossed_b
 
@@ -109,9 +143,11 @@ class EvolvingLanguage(GeneticAlgorithm):
         """This method applies mutation to a genome with certain probability"""
 
         rand_float = random.random()
-        mutated_genome = None
+        mutated_genome = genome
 
-        if 0 <= rand_float <= 0.5:
+        if 0 <= rand_float <= 0.4:
+            mutated_genome = mutate_add_special_token(genome)
+        if 0.4 < rand_float <= 0.5:
             mutated_genome = mutate_add_token(genome, self.dsl)
         elif 0.5 < rand_float <= 1:
             mutated_genome = mutate_remove_token(genome)
@@ -138,6 +174,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         population = self.generate_population()
 
         while iteration_count < self.generation_limit:
+            successful_tokens_weights.clear()
 
             # STATS
             print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
@@ -151,7 +188,6 @@ class EvolvingLanguage(GeneticAlgorithm):
             for genome in population:
                 generation_cum_fitness += self.fitness(genome)
             print("AVERAGE GENERATION FITNESS", generation_cum_fitness / self.generation_size)
-            # print("POP LENGTH", len(population))
 
             best_percentage = select_best_percentage(population=new_population, percentage=50,
                                                      size=self.generation_size)
@@ -175,6 +211,9 @@ class EvolvingLanguage(GeneticAlgorithm):
                     crossed_result = crossed_result + [a, b, crossed_a, crossed_b]
                 new_population[self.elite_genomes:self.generation_size] = crossed_result[
                                                                           0:self.generation_size - self.elite_genomes]
+
+            # SPECIAL TOKEN WEIGHTS
+            normalize_token_weights()
 
             # MUTATION
             for genome_index in range(self.elite_genomes, self.generation_size):
@@ -254,6 +293,32 @@ def crossover_exchange_trans_bool(a: Genome, b: Genome) -> Tuple[Genome, Genome]
     return crossed_a, crossed_b
 
 
+def crossover_exchange_halve_category(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+    # Select half of a, keep track of remainder
+    # Select half of b, keep track of remainder
+
+    # Merge halves, and remainders
+
+    a_bool_selected, a_bool_remainder = get_random_half_and_remainder(a.get_bool_tokens())
+    a_trans_selected, a_trans_remainder = get_random_half_and_remainder(a.get_trans_tokens())
+
+    b_bool_selected, b_bool_remainder = get_random_half_and_remainder(b.get_bool_tokens())
+    b_trans_selected, b_trans_remainder = get_random_half_and_remainder(b.get_trans_tokens())
+
+    crossed_a = sort_genome(DomainSpecificLanguage(a.domain_name, list(set(a_bool_selected + b_bool_selected)),
+                                       list(set(a_trans_selected + b_trans_selected))))
+    crossed_b = sort_genome(DomainSpecificLanguage(a.domain_name, list(set(a_bool_remainder + b_bool_remainder)),
+                                       list(set(a_trans_remainder + b_trans_remainder))))
+
+    return crossed_a, crossed_b
+
+
+def get_random_half_and_remainder(tokens: List[Token]) -> Tuple[List[Token], List[Token]]:
+    tokens_selected = random.sample(tokens, round(len(tokens) / 2))
+    tokens_remainder = [v for v in tokens if v not in tokens_selected]
+    return tokens_selected, tokens_remainder
+
+
 # MUTATION FUNCTIONS
 def mutate_add_token(genome: Genome, dsl: DomainSpecificLanguage) -> Genome:
     bool_tokens_genome = genome.get_bool_tokens()
@@ -305,3 +370,74 @@ def mutate_remove_token(genome: Genome) -> Genome:
     result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
     return result
 
+
+def mutate_add_special_token(genome: Genome) -> Genome:
+    bool_tokens_genome = genome.get_bool_tokens()
+    trans_tokens_genome = genome.get_trans_tokens()
+
+    randomly_selected_token = pick_random_weighted()
+    # print(type(randomly_selected_token), str(randomly_selected_token))
+    # print(str(flatten_token(randomly_selected_token)))
+
+    # Random chance of deleting the tokens that are already in the special token
+    rand_float = random.random()
+    if rand_float < 0.2:
+        genome = remove_specific_tokens(genome, list(flatten_token(randomly_selected_token)))
+
+    if randomly_selected_token not in trans_tokens_genome:
+        trans_tokens_genome.append(randomly_selected_token)
+
+    result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
+    return result
+
+
+def pick_random_weighted():
+    rand_val = random.random()
+    total = 0
+    for k, v in successful_tokens_weights.items():
+        total += v
+        if rand_val <= total:
+            return successful_tokens_objects[k]
+    return None
+
+
+def normalize_token_weights():
+    total_token_count = sum(successful_tokens_counts.values())
+
+    for key in successful_tokens_counts:
+        successful_tokens_weights[key] = successful_tokens_counts[key] / total_token_count
+
+
+def flatten_token(token: Token):
+    flat_token_set = set()
+
+    if type(token) is InventedToken:
+        base_tokens = token.tokens
+        for each_token in base_tokens:
+            flat_token_set.update(flatten_token(each_token))
+    elif type(token) is If:
+        flat_token_set.update(flatten_token(token.cond))
+        flat_token_set.update(flatten_token(token.e1))
+        flat_token_set.update(flatten_token(token.e2))
+    elif type(token) is LoopWhile:
+        flat_token_set.update(flatten_token(token.cond))
+        for body_token in token.loop_body:
+            flat_token_set.update(flatten_token(body_token))
+    else:
+        flat_token_set.add(token)
+
+    return flat_token_set
+
+
+def remove_specific_tokens(genome: Genome, tokens: List[Token]):
+    bool_tokens_genome = genome.get_bool_tokens()
+    trans_tokens_genome = genome.get_trans_tokens()
+
+    for token in tokens:
+        if token in bool_tokens_genome:
+            bool_tokens_genome.remove(token)
+        elif token in trans_tokens_genome:
+            trans_tokens_genome.remove(token)
+
+    result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
+    return result
