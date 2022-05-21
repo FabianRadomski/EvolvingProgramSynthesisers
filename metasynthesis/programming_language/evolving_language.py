@@ -134,8 +134,10 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         if 0 <= rand_float <= 0:
             crossed_a, crossed_b = crossover_exchange_trans_bool(a, b)
-        elif 0 < rand_float <= 1:
+        elif 0 < rand_float <= 0:
             crossed_a, crossed_b = crossover_exchange_halve_category(a, b)
+        elif 0 < rand_float <= 1:
+            crossed_a, crossed_b = crossover_exchange_halve_random(a, b)
 
         return crossed_a, crossed_b
 
@@ -294,8 +296,8 @@ def crossover_exchange_trans_bool(a: Genome, b: Genome) -> Tuple[Genome, Genome]
 
 
 def crossover_exchange_halve_category(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
-    # Select half of a, keep track of remainder
-    # Select half of b, keep track of remainder
+    # Select half of a bool and trans, keep track of remainders
+    # Select half of b bool and trans, keep track of remainders
 
     # Merge halves, and remainders
 
@@ -306,11 +308,25 @@ def crossover_exchange_halve_category(a: Genome, b: Genome) -> Tuple[Genome, Gen
     b_trans_selected, b_trans_remainder = get_random_half_and_remainder(b.get_trans_tokens())
 
     crossed_a = sort_genome(DomainSpecificLanguage(a.domain_name, list(set(a_bool_selected + b_bool_selected)),
-                                       list(set(a_trans_selected + b_trans_selected))))
+                                                   list(set(a_trans_selected + b_trans_selected))))
     crossed_b = sort_genome(DomainSpecificLanguage(a.domain_name, list(set(a_bool_remainder + b_bool_remainder)),
-                                       list(set(a_trans_remainder + b_trans_remainder))))
+                                                   list(set(a_trans_remainder + b_trans_remainder))))
 
     return crossed_a, crossed_b
+
+
+def crossover_exchange_halve_random(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+    # Select half of a, keep track of remainder
+    # Select half of b, keep track of remainder
+
+    a_tokens = a.get_bool_tokens() + a.get_trans_tokens()
+    b_tokens = b.get_bool_tokens() + b.get_trans_tokens()
+
+    a_tokens_selected, a_tokens_remainder = get_random_half_and_remainder(a_tokens)
+    b_tokens_selected, b_tokens_remainder = get_random_half_and_remainder(b_tokens)
+
+    return create_dsl_from_tokens(a.domain_name, list(set(a_tokens_selected + b_tokens_selected))), \
+           create_dsl_from_tokens(a.domain_name, list(set(a_tokens_remainder + b_tokens_remainder)))
 
 
 def get_random_half_and_remainder(tokens: List[Token]) -> Tuple[List[Token], List[Token]]:
@@ -318,6 +334,19 @@ def get_random_half_and_remainder(tokens: List[Token]) -> Tuple[List[Token], Lis
     tokens_remainder = [v for v in tokens if v not in tokens_selected]
     return tokens_selected, tokens_remainder
 
+
+def create_dsl_from_tokens(domain: str, tokens: List[Token]) -> Genome:
+    bool_tokens = []
+    trans_tokens = []
+
+    dsl = StandardDomainSpecificLanguage(domain)
+    for token in tokens:
+        if token in dsl.get_bool_tokens():
+            bool_tokens.append(token)
+        else:
+            trans_tokens.append(token)
+
+    return sort_genome(DomainSpecificLanguage(dsl.domain_name, bool_tokens, trans_tokens))
 
 # MUTATION FUNCTIONS
 def mutate_add_token(genome: Genome, dsl: DomainSpecificLanguage) -> Genome:

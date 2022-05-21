@@ -13,7 +13,7 @@ if __name__ == '__main__':
                                elite_genomes=2,
                                generation_size=10,
                                dsl=dsl,
-                               test_cases_per_genome=20,
-                               max_search_time=0.5)
+                               test_cases_per_genome=10,
+                               max_search_time=1)
     genetic.run_evolution()
 
