@@ -81,6 +81,7 @@ class CombinedSearch(SearchAlgorithm):
         """
         Switches algorithm to the next one in the chain. Returns false if the chain is all executed, true otherwise.
         """
+        # TODO: Don't switch if the next algorithm is the same as current, just add iterations
         # Propagate in the chain of algorithms
         self.sequence_pos += 1
         if self.sequence_pos >= len(self.algorithm_sequence):

@@ -57,6 +57,8 @@ class AStar(SearchAlgorithm):
         node = copy.deepcopy(start_node)
         gcost_child = 0
         for token in tokens:
+            self.number_of_iterations += 1
+            self.number_of_explored_programs += 1
             try:
                 child = tuple(map(token.apply, copy.deepcopy(node)))
                 # the g cost is 0 for every node
@@ -128,8 +130,7 @@ class AStar(SearchAlgorithm):
         if fcost < self._best_f_cost:
             self._best_f_cost = fcost
             self._best_f_program_node = node
-        self.number_of_iterations += 1
-        self.number_of_explored_programs += 1
+
 
     def best_first_search_upq(self, start_node: tuple[Environment], end_node: tuple[Environment],
                               tokens: list[Token], f, h) -> Iterator[Program]:
@@ -154,6 +155,8 @@ class AStar(SearchAlgorithm):
                 yield None
             node_copies = [copy.deepcopy(node) for _ in tokens]
             for token, node_copy in zip(tokens, node_copies):
+                self.number_of_iterations += 1
+                self.number_of_explored_programs += 1
                 try:
                     child = tuple(map(token.apply, node_copy))
                     gcost_child = gcost + token.number_of_tokens()

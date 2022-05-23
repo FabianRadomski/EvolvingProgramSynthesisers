@@ -20,14 +20,16 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
-    initial_distribution_normal: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (6, 5), AStar: (12, 7), MetropolisHasting: (500, 500),
-                                                                                 MCTS: (3000, 1000), RemoveNInsertN: (3000, 1000)}
+    initial_distribution_normal: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (4, 3), AStar: (10, 6), MetropolisHasting: (300, 150),
+                                                                                 MCTS: (2000, 1000), RemoveNInsertN: (1500, 1000)}
 
     initial_distribution_uniform: Dict[Type[SearchAlgorithm], int] = {
-        Brute: 13, MCTS: 3000, MetropolisHasting: 1500, AStar: 30, RemoveNInsertN: 3000  # 10000
+        Brute: 6, MCTS: 4000, MetropolisHasting: 400, AStar: 15, RemoveNInsertN: 2800  # 10000
     }
+
+    TIME_MAX = 1
     TOURN_SIZE = 2
-    TESTS_SIZE = 1000
+    TESTS_SIZE = 10
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Gauss", print_generations: bool = False):
@@ -290,4 +292,4 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 if __name__ == "__main__":
     SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.6,
-                      mutation_probability=0.05, generation_size=10, max_seq_size=4, dist_type="Uniform", print_generations=True).run_evolution()
+                      mutation_probability=0.05, generation_size=20, max_seq_size=4, dist_type="Uniform", print_generations=True).run_evolution()

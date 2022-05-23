@@ -59,7 +59,6 @@ class Brute(SearchAlgorithm):
             # return False to indicate no more iterations are necessary
             return False
 
-        self.number_of_iterations += 1
 
         self.programs = self.extend_program(
             self.current_program, self.programs, self.token_functions, self.sample_inputs, self.sample_outputs)
@@ -72,6 +71,7 @@ class Brute(SearchAlgorithm):
             potentially_better_program = Program(best_program.sequence + [copy.copy(token)])
             program_new = evaluate_program(potentially_better_program, sample_inputs, sample_outputs, self.dist)
             self.number_of_explored_programs += 1
+            self.number_of_iterations += 1
             if program_new[0] != float('inf'):
                 heapq.heappush(programs, program_new)
         # updated_programs = sorted(updated_programs, key=lambda x: (x[2], x[1]))
