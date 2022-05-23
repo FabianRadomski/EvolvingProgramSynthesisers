@@ -86,7 +86,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             search: SearchAlgorithm = CombinedSearch(0, genome)
-            runner: Runner = Runner(search_method=search, MAX_TEST_CASES=self.TESTS_SIZE, MULTI_PROCESS=True)
+            runner: Runner = Runner(search_method=search, max_test_cases=self.TESTS_SIZE)
             results: dict = runner.run()
             average_success: float = results['average_success']
             average_time: float = results['average_execution']
@@ -104,11 +104,11 @@ class SearchSynthesiser(GeneticAlgorithm):
             fitness = self.success_weight * average_success
         return fitness
 
-    def crossover(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
+    def crossover_func(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
         new_a, new_b = func(a, b)
         return new_a, new_b
 
-    def mutation(self, genome: Genome, func: MutationFunc) -> Genome:
+    def mutation_func(self, genome: Genome, func: MutationFunc) -> Genome:
         return func(genome)
 
     def selection_pair(self, population: Population) -> Tuple[Genome, Genome]:
@@ -162,7 +162,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             first_genome, second_genome = self.select_tournament(old_population, self.TOURN_SIZE)
             if random.random() < self.crossover_probability:
                 # TODO: check other crossover methods
-                new_population.extend(list(self.crossover(first_genome, second_genome, self.two_point_crossover)))
+                new_population.extend(list(self.crossover_func(first_genome, second_genome, self.two_point_crossover)))
             else:
                 new_population.append(first_genome)
                 new_population.append(second_genome)
@@ -171,7 +171,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         for i, individual in enumerate(new_population):
             if random.random() < self.mutation_probability:
                 # TODO: check other mutation methods
-                new_population[i] = self.mutation(individual, random.choice(self.allowed_mutations))
+                new_population[i] = self.mutation_func(individual, random.choice(self.allowed_mutations))
 
         return new_population
 
