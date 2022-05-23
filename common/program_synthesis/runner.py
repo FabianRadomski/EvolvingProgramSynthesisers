@@ -3,9 +3,9 @@ import time
 from dataclasses import dataclass, field
 # takes as input a DSL,
 from multiprocessing import Pool
-from typing import Type, List
+from typing import List
 
-from common.experiment import TestCase, Experiment
+from common.experiment import TestCase
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.program_synthesis.objective import ObjectiveFun
@@ -23,12 +23,11 @@ class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
     domain = "robot"
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
-    search_method: SearchAlgorithm = Brute(10, ObjectiveFun(domain).fun)
+    search_method: SearchAlgorithm = Brute(5, ObjectiveFun(domain).fun)
     print_results: bool = False
-    MAX_EXECUTION_TIME = 1  # Must be lower than POOL_RUN_PROCESS_TIMEOUT
-    POOL_RUN_PROCESS_TIMEOUT = 5  # Must be higher than MAX_EXECUTION_TIME
-    MAX_TEST_CASES: int = 1000
-    MULTI_PROCESS: bool = True
+    max_test_cases: int = 1000
+    POOL_RUN_PROCESS_TIMEOUT = 10  # Must be higher than MAX_EXECUTION_TIME
+    MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
 
     # Create experiment runner using specified search and DSL
@@ -96,7 +95,7 @@ class Runner:
 
         num_test_cases = 0
         for file in os.listdir(directory):
-            if num_test_cases > self.MAX_TEST_CASES:
+            if num_test_cases > self.max_test_cases:
                 break
             test_cases.append(parser.parse_file(file))
             num_test_cases += 1
