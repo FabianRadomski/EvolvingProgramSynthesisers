@@ -8,6 +8,9 @@
 
 module load 2022r1
 module load compute
-module load miniconda
-conda create -n mypython python=3.9
-srun conda CMain.py
+module load miniconda3
+
+unset CONDA_SHLVL
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate mypython
+python CMain.py
