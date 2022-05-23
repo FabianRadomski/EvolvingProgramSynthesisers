@@ -15,7 +15,6 @@ class CombinedSearchTime(SearchAlgorithm):
                  best_program: Program = Program([])):
         super().__init__(time_limit_sec, best_program=best_program)
 
-
         self.algorithm_sequence: List[Tuple[Type[SearchAlgorithm], int]] = algorithm_sequence
         self.sequence_pos: int = 0  # which position of the algorithm sequence is currently executed
         self.current_algorithm: SearchAlgorithm = self.algorithm_sequence[self.sequence_pos][0](self.algorithm_sequence[self.sequence_pos][1])
@@ -40,7 +39,8 @@ class CombinedSearchTime(SearchAlgorithm):
          If the search is based on time instead of iterations, this function runs next search procedure in chain.
         """
 
-        self.current_algorithm = self.algorithm_sequence[self.sequence_pos][0](self.algorithm_sequence[self.sequence_pos][1])
+        self.current_algorithm = self.algorithm_sequence[self.sequence_pos][0](self.algorithm_sequence[self.sequence_pos][1],
+                                                                               best_program=self.best_program)
 
         self.current_algorithm.run(self.training_examples, self.trans_tokens, self.bool_tokens)
 
@@ -60,6 +60,7 @@ class CombinedSearchTime(SearchAlgorithm):
         StringEnvironment.distance_map = {}
 
         # Call setup
+
         self.setup(training_examples, trans_tokens, bool_tokens)
 
         while self.iteration(training_examples, trans_tokens, bool_tokens):

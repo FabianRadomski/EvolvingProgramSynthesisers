@@ -8,6 +8,7 @@ from search.a_star.a_star import AStar
 from search.abstract_search import SearchAlgorithm
 from search.brute.brute import Brute
 from search.combined_search.combined_search import CombinedSearch
+from search.combined_search.combined_search_time import CombinedSearchTime
 from search.MCTS.mcts import MCTS
 from search.metropolis_hastings.metropolis import MetropolisHasting
 from search.vlns.large_neighborhood_search.algorithms.remove_n_insert_n import RemoveNInsertN
@@ -27,12 +28,16 @@ class SearchSynthesiser(GeneticAlgorithm):
         Brute: 6, MCTS: 4000, MetropolisHasting: 400, AStar: 15, RemoveNInsertN: 2800  # 10000
     }
 
+    initial_distribution_time: Dict[Type[SearchAlgorithm], float] = {
+        Brute: 0.5, MCTS: 0.5, MetropolisHasting: 0.5, AStar: 0.5, RemoveNInsertN: 0.5  # 10000
+    }
+
     TIME_MAX = 1
     TOURN_SIZE = 2
-    TESTS_SIZE = 10
+    TESTS_SIZE = 100
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
-                 mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Gauss", print_generations: bool = False):
+                 mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", print_generations: bool = False):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
         self.max_seq_size: int = max_seq_size
@@ -85,7 +90,10 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
-            search: SearchAlgorithm = CombinedSearch(0, genome)
+            if self.dist_type == "Time":
+                search: SearchAlgorithm = CombinedSearchTime(0, genome)
+            else:
+                search: SearchAlgorithm = CombinedSearch(0, genome)
             runner: Runner = Runner(search_method=search, max_test_cases=self.TESTS_SIZE)
             results: dict = runner.run()
             average_success: float = results['average_success']
@@ -226,6 +234,8 @@ class SearchSynthesiser(GeneticAlgorithm):
             return max(1, round(random.gauss(self.initial_distribution_normal[search_type][0], self.initial_distribution_normal[search_type][1])))
         elif dist_type == "Uniform":
             return random.randrange(1, self.initial_distribution_uniform[search_type])
+        elif dist_type == "Time":
+            return random.uniform(0, self.initial_distribution_time[search_type])
         else:
             raise Exception("The chosen iteration distribution is not allowed. Choose either Gauss or Uniform!")
 
@@ -291,5 +301,5 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.6,
-                      mutation_probability=0.05, generation_size=20, max_seq_size=4, dist_type="Uniform", print_generations=True).run_evolution()
+    SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
+                      mutation_probability=0.02, generation_size=20, max_seq_size=6, dist_type="Time", print_generations=True).run_evolution()
