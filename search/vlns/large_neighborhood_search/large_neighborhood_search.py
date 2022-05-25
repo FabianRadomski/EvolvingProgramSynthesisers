@@ -131,6 +131,8 @@ class LNS(SearchAlgorithm):
 
     def extend_result(self, res: SearchResult) -> SearchResult:
         res.dictionary['number_of_iterations'] = self.stats["iterations"]
+        self.number_of_iterations = self.stats["iterations"]
+        self.number_of_explored_programs = self.stats["number_of_explored_programs"]
         # Round times for readability
         self.stats["average_visited_length"] = self.stats["average_visited_length"] / self.stats["iterations"] if self.stats["iterations"] != 0 else 0
         self.stats["number_of_explored_programs"] = len(self.cost_dict)
