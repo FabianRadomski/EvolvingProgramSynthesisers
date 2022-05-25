@@ -3,8 +3,7 @@ import time
 
 import numpy as np
 
-from common.environment import RobotEnvironment
-from metasynthesis.performance_function.evolving_function import rand_env, EvolvingFunction
+from metasynthesis.performance_function.evolving_function import rand_env
 from metasynthesis.performance_function.expr_tree import ExpressionTree, generate_complete_tree, generate_high_tree, \
     printN
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
