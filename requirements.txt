@@ -1,5 +1,4 @@
-anytree~=2.8.0
-networkx~=2.8
-
-numpy~=1.22.3
-matplotlib~=3.5.2
+anytree
+networkx
+numpy
+numpy

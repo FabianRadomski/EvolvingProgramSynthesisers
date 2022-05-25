@@ -9,6 +9,7 @@ from common.experiment import TestCase
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.program_synthesis.objective import ObjectiveFun
+# TODO fix these imports
 from example_parser.parser import Parser
 from example_parser.pixel_parser import PixelParser
 from example_parser.robot_parser import RobotParser
