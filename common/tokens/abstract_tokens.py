@@ -84,28 +84,42 @@ class InventedToken(EnvToken):
     def __repr__(self):
         return "[%s]" % ", ".join([str(t) for t in self.tokens])
 
-# assumptions: there's only one parameter called x, we apply it by substituting all x occurences by the arg_token which is a TransToken
-class FunctionDefinitionToken():
-    def __init__(self, body_tokens: list, arg_token: TransToken):
+
+# should there be more arguments than one?
+class FunctionDefinitionToken(Token):
+    def __init__(self, body_tokens: list, param_token: Token):
         self.body_tokens = body_tokens
-        self.arg_token = arg_token
+        self.param_token = param_token
+
+    def apply(self, env: Environment):
+        print("fd apply")
+
+    def __str__(self):
+        return "[%s]" % ", ".join([str(t) for t in self.body_tokens])
+
 
 class FunctionVariableToken(Token):
-    def __init__(self) -> None:
-        print("I'm a Variable Token, somebody is cooking up a function")
-        
-class FunctionApplicationToken(EnvToken):
-    def __init__(self, fd: FunctionDefinitionToken, param_token: TransToken):
-        self.param_token = param_token
+    def __init__(self, name) -> None:
+        self.name = name
+
+    def apply(self, env: Environment):
+        print("fv apply")
+
+
+class PatternToken(EnvToken):
+    def __init__(self, fd: FunctionDefinitionToken, arg_token: TransToken):
+        self.arg_token = arg_token
         self.function_definition = fd
 
     # simple implementation with a single argument and parameter
     def apply(self, env: Environment) -> Environment:
         for token in self.function_definition.body_tokens:
             if isinstance(token, FunctionVariableToken):
-                self.param_token.apply(env)
+                self.arg_token.apply(env)
             else: 
                 token.apply(env)
+
+
 class InvalidTransition(Exception):
     """This exception will be raised whenever an invalid state transition is performed on an Environment."""
     pass

@@ -1,11 +1,12 @@
 import random
 from common.program_synthesis.dsl import DomainSpecificLanguage
-from common.tokens.abstract_tokens import BoolToken, InventedToken, TransToken
+from common.tokens.abstract_tokens import BoolToken, InventedToken, TransToken, Token, FunctionDefinitionToken, FunctionVariableToken, PatternToken
 from metasynthesis.abstract_genetic import GeneticAlgorithm, Genome, Population
 from typing import List, Callable, Tuple, Iterable
 
-Genome = DomainSpecificLanguage
+Genome = List[PatternToken]
 Population = List[Genome]
+
 
 class EvolvingDesignPatterns(GeneticAlgorithm):
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
@@ -16,29 +17,41 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
         self.mutation_probability = mutation_probability
         self.generation_size = generation_size
         self.dsl = dsl
-        self.trans_tokens = dsl.get_trans_tokens
-        self.bool_tokens = dsl.get_bool_tokens
+        self.trans_tokens = dsl.get_trans_tokens()
+        self.bool_tokens = dsl.get_bool_tokens()
+
+    def generate_function(self, body_length: int, param_occurrences: int) -> FunctionDefinitionToken:
+        """This method creates a function definition for a pattern"""
+        if body_length <= 1 and body_length <= param_occurrences:
+            raise ValueError()
+        tokens: list[Token] = random.choices(self.trans_tokens, k=body_length - param_occurrences)
+        for i in range(param_occurrences):
+            tokens.insert(random.randint(0, len(tokens)), FunctionVariableToken("a"))
+        return FunctionDefinitionToken(tokens, FunctionVariableToken("a"))
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
-        all_tokens = self.bool_tokens + self.trans_tokens
-
-
-        # rework to add invented tokens
-        # invented_token = invent_token()
-        selected_tokens = random.sample(all_tokens, length)
-
-        bool_tokens = [x for x in selected_tokens if isinstance(x, BoolToken)]
-        trans_tokens = [x for x in selected_tokens if isinstance(x, TransToken)]
-
-        dsl = DomainSpecificLanguage(self.domain, bool_tokens, trans_tokens)
-        
-        return sort_genome(dsl)
+        genome = []
+        # max_body_length = 6
+        # max_param_occurrences = 3
+        # param_occurrences = random.randint(1, max_param_occurrences)
+        # body_length = random.randint(max(2, param_occurrences), max_body_length)
+        body_length = 3
+        param_occurrences = 1
+        for i in range(length):
+            genome.append(self.generate_function(body_length, param_occurrences))
+        return genome
 
     def generate_population(self) -> Population:
         """This method creates a population of new genomes"""
+        max_number_of_patterns = 4
+        population = []
 
-        raise NotImplementedError()
+        for i in range(self.generation_size):
+            genome_length = random.randint(1, max_number_of_patterns)
+            population.append(self.generate_genome(genome_length))
+
+        return population
 
     def fitness(self, genome: Genome) -> float:
         """This method calculates the fitness of the specified genome"""
@@ -69,13 +82,3 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
         """This method runs the evolution process"""
 
         raise NotImplementedError()
-
-
-def sort_genome(genome: Genome) -> Genome:
-    sorted_bool = sorted(genome.get_bool_tokens(), key=str, reverse=False)
-    sorted_trans = sorted(genome.get_trans_tokens(), key=str, reverse=False)
-
-    return DomainSpecificLanguage(genome.domain_name, sorted_bool, sorted_trans)
-    
-
-
