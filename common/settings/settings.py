@@ -1,3 +1,5 @@
+from typing import Callable
+
 from common.environment.environment import Environment
 from common.tokens.abstract_tokens import Token, TransToken, BoolToken
 
@@ -9,7 +11,8 @@ class Settings:
         self.domain = domain
         self.trans_tokens = trans_tokens
         self.bool_tokens = bool_tokens
+        self.dist_fun = None
 
     def distance(self, inp: Environment, out: Environment) -> float:
-        """Returns the settings between two given Environments."""
+        """Returns the distance between two given Environments."""
         raise NotImplementedError()
