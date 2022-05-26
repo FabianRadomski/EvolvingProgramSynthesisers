@@ -81,20 +81,20 @@ class EvolvingLanguage(GeneticAlgorithm):
                         suffix="",
                         dsl=genome)
         results = runner.run()
+        print(results)
 
-        dsl_length = len(genome.get_bool_tokens() + genome.get_trans_tokens())
-        inverse_dsl_length = 1 / dsl_length
+        # avg_exec_time = results["average_execution"]
+        # inverse_avg_exec_time = 1 / (avg_exec_time + 0.000000001)
+        #
+        # success_percentage = results["average_success"]
+        # success_percentage_scaled = success_percentage / 100
+        #
+        # # print(inverse_dsl_length, inverse_avg_exec_time, success_percentage_scaled)
+        #
+        # fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
+        #
 
-        avg_exec_time = results["average_execution"]
-        inverse_avg_exec_time = 1 / (avg_exec_time + 0.000000001)
-
-        success_percentage = results["average_success"]
-        success_percentage_scaled = success_percentage / 100
-
-        # print(inverse_dsl_length, inverse_avg_exec_time, success_percentage_scaled)
-
-        fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
-
+        fitness_value = results
         genome_fitness_values[str(genome)] = fitness_value
 
         return fitness_value

@@ -56,7 +56,7 @@ class Runner:
 
         if len(all_cases) == 0:
             print("All test cases were already run")
-            return 0, 0
+            return 0
 
         total_examples = [0] * len(self.files[2])
         solved_examples = [0] * len(self.files[2])
@@ -100,7 +100,7 @@ class Runner:
 if __name__ == "__main__":
     time_limit = 1
     debug = False
-    store = True  # sets wether to write date to file
+    store = True  # sets whether to write date to file
     setting = "RO"
     algo = "Brute"
     test_cases = "debug"
