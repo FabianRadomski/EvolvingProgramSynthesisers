@@ -1,3 +1,5 @@
+from typing import Callable
+
 from common.environment.environment import Environment
 from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.tokens.abstract_tokens import Token, TransToken, BoolToken
@@ -17,7 +19,10 @@ class Settings:
     @property
     def bool_tokens(self):
         return self.dsl.get_bool_tokens()
+        self.trans_tokens = trans_tokens
+        self.bool_tokens = bool_tokens
+        self.dist_fun = None
 
     def distance(self, inp: Environment, out: Environment) -> float:
-        """Returns the settings between two given Environments."""
+        """Returns the distance between two given Environments."""
         raise NotImplementedError()

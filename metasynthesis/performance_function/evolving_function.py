@@ -4,17 +4,14 @@ from typing import Tuple, List
 from random import randint, random, choice
 import numpy as np
 
-from common.environment import RobotEnvironment
-from common.program_synthesis.dsl import StandardDomainSpecificLanguage
+from common.environment.robot_environment import RobotEnvironment
 from common.program_synthesis.objective import ObjectiveFun
-from common.program_synthesis.runner import Runner
 from metasynthesis.abstract_genetic import GeneticAlgorithm, MutationFunc, CrossoverFunc
 from metasynthesis.performance_function.dom_dist_fun.pixel_dist_fun import PixelDistFun
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.dom_dist_fun.string_dist_fun import StringDistFun
 from metasynthesis.performance_function.expr_tree import ExpressionTree, printN
 from metasynthesis.performance_function.symbol import TermSym, OpSym
-from search.brute.brute import Brute
 
 Genome = ExpressionTree
 Population = List[Genome]

@@ -5,7 +5,7 @@ from random import choice
 from typing import List, Tuple
 import numpy as np
 
-from common.environment import Environment
+from common.environment.environment import Environment
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.symbol import Symbol, OpSym, TermSym
 import copy

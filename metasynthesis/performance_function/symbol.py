@@ -1,8 +1,8 @@
 from typing import Callable
 
-from common.environment import Environment
 from operator import add, sub, mul, truediv as div
 
+from common.environment.environment import Environment
 from metasynthesis.performance_function.dom_dist_fun.pixel_dist_fun import PixelDistFun
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.dom_dist_fun.string_dist_fun import StringDistFun

@@ -1,6 +1,6 @@
 from typing import Tuple, Callable, List
 
-from common.environment import RobotEnvironment
+from common.environment.robot_environment import RobotEnvironment
 from metasynthesis.performance_function.dom_dist_fun.domain_dist_fun import DomainDistFun
 
 

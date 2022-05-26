@@ -1,6 +1,6 @@
 from typing import List, Callable
 
-from common.environment import Environment
+from common.environment.environment import Environment
 
 
 class DomainDistFun(object):

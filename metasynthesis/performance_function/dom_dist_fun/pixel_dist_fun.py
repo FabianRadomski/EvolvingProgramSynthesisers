@@ -1,6 +1,6 @@
 from typing import Callable, List
 
-from common.environment import PixelEnvironment
+from common.environment.pixel_environment import PixelEnvironment
 from metasynthesis.performance_function.dom_dist_fun.domain_dist_fun import DomainDistFun
 
 

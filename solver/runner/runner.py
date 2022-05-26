@@ -1,8 +1,14 @@
 import os
 from multiprocessing import Pool
 from statistics import mean
+from typing import Callable
 
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.environment.environment import Environment
+from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
+from metasynthesis.performance_function.evolving_function import distance_default_expr_tree
+from metasynthesis.performance_function.expr_tree import ExpressionTree
+from metasynthesis.performance_function.symbol import TermSym
 from solver.runner.algorithms import dicts
 from solver.runner.file_manager import FileManager
 from solver.runner.test_case_retriever import get_test_cases
@@ -18,17 +24,19 @@ class Runner:
                  debug: bool = False,
                  store: bool = True,
                  suffix: str = "",
-                 dsl: DomainSpecificLanguage = None):
-
-
+                 dsl: DomainSpecificLanguage = None,
+                 dist_fun: Callable[[Environment, Environment], float] = None):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
         self.store = store
 
         self.algorithm = lib["algorithms"][algo][setting]
         self.settings = lib["settings"][setting]
+
         if dsl is not None:
             self.settings.dsl = dsl
+
+        self.settings.dist_fun = dist_fun
 
         self.files = lib["test_cases"][test_cases][setting[0]]
 
@@ -90,11 +98,11 @@ class Runner:
 
 
 if __name__ == "__main__":
-    time_limit = 10
+    time_limit = 1
     debug = False
     store = True  # sets wether to write date to file
-    setting = "RE"
-    algo = "AS"
+    setting = "RO"
+    algo = "Brute"
     test_cases = "debug"
     # params = [0, 0.1, 0.5, 1, 1.5, 2]
 
@@ -102,6 +110,12 @@ if __name__ == "__main__":
     param = 0
     store = False if test_cases == "param" else store
 
-    mean1 = Runner(dicts(), algo, setting, test_cases, time_limit, debug, store).run()
+    functions = RobotDistFun.partial_dist_funs()
+    terms = list(map(lambda x: TermSym(x), functions))
+    rand_obj_fun = ExpressionTree.generate_random_expression(terms=terms, max_depth=4)
+    dist_fun = rand_obj_fun.distance_fun
+    # dist_fun = distance_default_expr_tree
+    print(dist_fun)
+    mean1 = Runner(dicts(), algo, setting, test_cases, time_limit, debug, store, dist_fun=dist_fun).run()
 
     print(f"Solved {str(mean1)}")

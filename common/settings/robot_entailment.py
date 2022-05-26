@@ -8,8 +8,11 @@ class RobotEntailment(Settings):
         super().__init__("robot", StandardDomainSpecificLanguage('robot'))
 
     def distance(self, inp: RobotEnvironment, out: RobotEnvironment) -> float:
-        return 0 if inp.rx == out.rx and \
-                    inp.ry == out.ry and \
-                    inp.bx == out.bx and \
-                    inp.by == out.by and \
-                    inp.holding == out.holding else 1
+        if self.dist_fun is None:
+            return 0 if inp.rx == out.rx and \
+                        inp.ry == out.ry and \
+                        inp.bx == out.bx and \
+                        inp.by == out.by and \
+                        inp.holding == out.holding else 1
+        else:
+            return self.dist_fun(inp, out)
