@@ -2,7 +2,17 @@ from metasynthesis.programming_language.evolving_language import EvolvingLanguag
 
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 
-dsl = StandardDomainSpecificLanguage("pixel")
+domain = "string"
+search_setting = ""
+
+if domain == "pixel":
+    search_setting = "PO"
+elif domain == "robot":
+    search_setting = "RO"
+elif domain == "string":
+    search_setting = "SO"
+
+dsl = StandardDomainSpecificLanguage(domain)
 
 if __name__ == '__main__':
 
@@ -13,7 +23,7 @@ if __name__ == '__main__':
                                elite_genomes=2,
                                generation_size=10,
                                dsl=dsl,
-                               test_cases_per_genome=30,
+                               search_setting=search_setting,
                                max_search_time=1)
     genetic.run_evolution()
 

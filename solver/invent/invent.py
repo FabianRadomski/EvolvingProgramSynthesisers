@@ -15,7 +15,6 @@ class Invent:
         self.ifs = []
         self.perms = []
 
-    # TODO instead of trans_tokens and bool_tokens pass DSL
     def setup(self, dsl: DomainSpecificLanguage):
         self._dsl = dsl
         self._trans_tokens = dsl.get_trans_tokens()
