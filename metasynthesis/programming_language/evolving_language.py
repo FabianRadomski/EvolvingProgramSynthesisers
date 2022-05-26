@@ -67,11 +67,6 @@ class EvolvingLanguage(GeneticAlgorithm):
     def fitness(self, genome: Genome) -> float:
         """This method calculates the fitness of the specified genome"""
 
-        # need a combination of
-        # 1) length of genome
-        # 2) whether program that solves tasks was created
-        # 3) number of iterations of searching
-
         if str(genome) in genome_fitness_values.keys():
             # print("ALREADY IN", str(genome))
             return genome_fitness_values[str(genome)]
@@ -81,9 +76,6 @@ class EvolvingLanguage(GeneticAlgorithm):
                         search_method=Brute(self.max_search_time, ObjectiveFun(self.domain).fun),
                         max_test_cases=self.test_cases_per_genome)
         results = runner.run()
-
-        dsl_length = len(genome.get_bool_tokens() + genome.get_trans_tokens())
-        inverse_dsl_length = 1 / dsl_length
 
         avg_exec_time = results["average_execution"]
         inverse_avg_exec_time = 1 / (avg_exec_time + 0.000000001)
@@ -102,7 +94,6 @@ class EvolvingLanguage(GeneticAlgorithm):
             total_search_time += result.dictionary["execution_time"]
 
             for token in tokens:
-
                 if token not in self.trans_tokens:
 
                     if str(token) not in successful_tokens_counts.keys():
@@ -115,8 +106,6 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         inverse_total_search_time = 1 / (total_search_time + 0.000000001)
 
-        # fitness_value = inverse_dsl_length * inverse_avg_exec_time * \
-        #                 success_percentage_scaled * inverse_total_search_time
         fitness_value = success_percentage_scaled * inverse_total_search_time
 
         # TODO: maybe add inverse program length
@@ -147,9 +136,9 @@ class EvolvingLanguage(GeneticAlgorithm):
         rand_float = random.random()
         mutated_genome = genome
 
-        if 0 <= rand_float <= 0.4:
+        if 0 <= rand_float <= 0.45:
             mutated_genome = mutate_add_special_token(genome)
-        if 0.4 < rand_float <= 0.5:
+        elif 0.45 < rand_float <= 0.5:
             mutated_genome = mutate_add_token(genome, self.dsl)
         elif 0.5 < rand_float <= 1:
             mutated_genome = mutate_remove_token(genome)
@@ -325,9 +314,19 @@ def crossover_exchange_halve_random(a: Genome, b: Genome) -> Tuple[Genome, Genom
     a_tokens_selected, a_tokens_remainder = get_random_half_and_remainder(a_tokens)
     b_tokens_selected, b_tokens_remainder = get_random_half_and_remainder(b_tokens)
 
-    return create_dsl_from_tokens(a.domain_name, list(set(a_tokens_selected + b_tokens_selected))), \
-           create_dsl_from_tokens(a.domain_name, list(set(a_tokens_remainder + b_tokens_remainder)))
+    selected_unduplicated = remove_duplicates(a_tokens_selected + b_tokens_selected)
+    remainder_unduplicated = remove_duplicates(a_tokens_remainder + b_tokens_remainder)
 
+    return create_dsl_from_tokens(a.domain_name, selected_unduplicated), \
+           create_dsl_from_tokens(a.domain_name, remainder_unduplicated)
+
+# Had to be introduced because we can't do set conversion for some tokens
+def remove_duplicates(tokens: List[Token]) -> List[Token]:
+    final_tokens = []
+    for token in tokens:
+        if token not in final_tokens:
+            final_tokens.append(token)
+    return final_tokens
 
 def get_random_half_and_remainder(tokens: List[Token]) -> Tuple[List[Token], List[Token]]:
     tokens_selected = random.sample(tokens, round(len(tokens) / 2))
@@ -431,10 +430,16 @@ def pick_random_weighted():
 
 
 def normalize_token_weights():
+
+    # Since we want enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
+    for key in successful_tokens_counts:
+        successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.1)
+
     total_token_count = sum(successful_tokens_counts.values())
 
     for key in successful_tokens_counts:
         successful_tokens_weights[key] = successful_tokens_counts[key] / total_token_count
+        # print(str(key), successful_tokens_weights[key])
 
 
 def flatten_token(token: Token):
@@ -452,6 +457,9 @@ def flatten_token(token: Token):
         flat_token_set.update(flatten_token(token.cond))
         for body_token in token.loop_body:
             flat_token_set.update(flatten_token(body_token))
+    elif type(token) is List:
+        for t in token:
+            flat_token_set.update(flatten_token(t))
     else:
         flat_token_set.add(token)
 
