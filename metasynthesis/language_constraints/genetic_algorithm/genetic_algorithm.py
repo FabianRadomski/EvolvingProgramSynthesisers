@@ -9,7 +9,6 @@ from common.program_synthesis.runner import Runner
 from common.program_synthesis.dsl import DomainSpecificLanguage, robot_tokens, pixel_tokens, string_tokens
 from metasynthesis.abstract_genetic import GeneticAlgorithm, Population, Genome, MutationFunc
 from metasynthesis.language_constraints.constraints.Constraints import AbstractConstraint
-from search.brute.brute import Brute
 
 
 class ConstraintFunc:
@@ -66,24 +65,26 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         if tuple(genome) in self.fitness_memory:
             return self.fitness_memory[tuple(genome)]
         dsl = self._create_dsl(genome, 'robot')
-        runner = Runner(search_method=Brute(0.2), dsl=dsl)
+        runner = Runner(search_method=Brute(0.1), dsl=dsl)
         fitness = self._fitness_metric(runner.run())
         self.fitness_memory[tuple(genome)] = fitness
         print(fitness)
         return fitness
 
     def _fitness_metric(self, data):
-        return (1/data["average_execution"]) * data["average_success"]
+        return (1/data["average_execution"]) * data["average_success"]**2
 
-    def crossover(self, a: Genome, b: Genome) -> Genome:
-        crossed_over = []
+    def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+        _1, _2 = [], []
         for _a, _b in zip(a, b):
             indicator = random.random()
             if indicator > 0.5:
-                crossed_over.append(_b)
+                _1.append(_b)
+                _2.append(_a)
             else:
-                crossed_over.append(_a)
-        return crossed_over
+                _1.append(_a)
+                _2.append(_b)
+        return _1, _2
 
     def mutation(self, genome: Genome, func: MutationFunc = None) -> Genome:
         for i, entry in enumerate(genome):
@@ -102,10 +103,13 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         total_fitness = sum(fitness_list)
         probability_distribution = list(map(lambda fit: fit / total_fitness, fitness_list))
         new_population = []
-        for _ in range(self.population_size):
+        for _ in range(round(self.population_size/2)):
             a, b = np.random.choice(len(population), 2, p=probability_distribution)
-            child = self.mutation(self.crossover(population[a], population[b]))
-            new_population.append(child)
+            child1, child2 = self.crossover(population[a], population[b])
+            child1 = self.mutation(child1)
+            child2 = self.mutation(child2)
+            new_population.append(child1)
+            new_population.append(child2)
 
         return new_population
 

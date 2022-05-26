@@ -1,5 +1,6 @@
+from typing import List
 from unittest import TestCase
-from common.environment import RobotEnvironment
+from common.environment.robot_environment import RobotEnvironment
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from common.tokens.robot_tokens import MoveUp, MoveDown, MoveLeft, MoveRight, Grab, Drop
 from metasynthesis.language_constraints.constraints.Constraints import CompleteConstraint, PartialConstraint
@@ -21,11 +22,11 @@ class TestRobotConstraintFactory(TestCase):
         self.factory = ConstraintFactory(PropertyFactory(dsl, property_types, tests))
 
     def contains(self, p, q, _const, constraints):
-        return _const([[p,q],[q,p]]) in constraints
+        return (_const, {p, q}) in map(lambda c: (c.__class__, c.tokens), constraints)
 
     def testDefiniteProperties(self):
         props = self.factory.create()
-
+        print(props)
         self.assertTrue(self.contains(MoveLeft(), MoveRight(), CompleteConstraint, props))
         self.assertTrue(self.contains(MoveUp(), MoveDown(), CompleteConstraint, props))
         self.assertTrue(self.contains(Grab(), Drop(), CompleteConstraint, props))

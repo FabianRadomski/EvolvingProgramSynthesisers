@@ -45,7 +45,7 @@ class Runner:
                     result = pool.apply_async(self.run_single_test_case, args=(tc,))
                     results.append(result)
 
-                results = [r.get(timeout=5) for r in results]
+                results = [r.get() for r in results]
 
 
         else:

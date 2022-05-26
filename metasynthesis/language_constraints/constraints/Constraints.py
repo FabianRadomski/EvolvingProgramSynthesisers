@@ -11,7 +11,11 @@ Constraints = List[Token]
 class AbstractConstraint:
 
     def __init__(self, constraints: List[Constraints]):
-        self._constraints = constraints
+        self.constraints = constraints
+        self.tokens = []
+        for tokens in constraints:
+            self.tokens += tokens
+        self.tokens = set(self.tokens)
         self.enabled = True
 
     def _get_relevant_sequence(self, seq: Sequence) -> Sequence:
@@ -26,16 +30,8 @@ class AbstractConstraint:
         if len(seq) == 0:
             return False
         tokens = self._get_relevant_sequence(seq)
-        for token in tokens:
-            for constraint in self._constraints:
-                if token in constraint:
-                    break
-            else:
-                return False
-        else:
-            return True
 
-        return False
+        return set(tokens) <= self.tokens
 
     def disable(self) -> None:
         """disables the constraint"""
@@ -69,6 +65,10 @@ class AbstractConstraint:
             setattr(result, k, deepcopy(v))
         return result
 
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + str(self.tokens) + ")"
+
+
 class PartialConstraint(AbstractConstraint):
 
     def __init__(self, constraints):
@@ -83,12 +83,12 @@ class PartialConstraint(AbstractConstraint):
         A partial constraint is a constraint that only allows one of several sequences. This function allows for a
         change in what function is allowed.
         """
-        if allowed_constraint is not None and allowed_constraint in self._constraints:
+        if allowed_constraint is not None and allowed_constraint in self.constraints:
             self._allowed_constraint = allowed_constraint
             return True
 
         elif -1 < index < len(self._allowed_constraint):
-            self._allowed_constraint = self._constraints[index]
+            self._allowed_constraint = self.constraints[index]
             return True
         return False
 
@@ -100,16 +100,15 @@ class PartialConstraint(AbstractConstraint):
         return []
 
     def get_values(self):
-        return len(self._constraints) + 1
+        return len(self.constraints) + 1
 
     def set_value(self, index: int):
         if index == 0:
             self.disable()
         else:
             self.enable()
-            self.set_partial_constraint(index=(index-1))
+            self.set_partial_constraint(index=(index - 1))
         return self
-
 
 
 class CompleteConstraint(AbstractConstraint):
@@ -117,12 +116,11 @@ class CompleteConstraint(AbstractConstraint):
     def __init__(self, constraints):
         super(CompleteConstraint, self).__init__(constraints)
 
-
     def constraint(self, seq: Sequence) -> Constraints:
         if len(seq) == 0 or not self.enabled:
             return []
         if self._check_constraint_relevance(seq):
-            return [c for c in self._constraints[0] if c is not seq[-1]]
+            return [c for c in self.constraints[0] if c is not seq[-1]]
         return []
 
     def get_values(self):
@@ -135,3 +133,47 @@ class CompleteConstraint(AbstractConstraint):
             self.enable()
         return self
 
+
+class MixedConstraint(AbstractConstraint):
+
+    def __init__(self, partial_constraints, complete_constraints):
+        self.partial = PartialConstraint(partial_constraints)
+        self.complete = complete_constraints
+        self.tokens = self.partial.tokens.union(CompleteConstraint(complete_constraints).tokens)
+        super().__init__([])
+
+    def _get_relevant_sequence(self, seq):
+        relevant = []
+        for token in seq:
+            if token in self.tokens:
+                relevant.append(token)
+            else:
+                relevant = []
+        return relevant
+
+    def get_values(self):
+        return self.partial.get_values()
+
+    def set_value(self, index: int):
+        if index == 0:
+            self.disable()
+        else:
+            self.partial.set_value(index)
+            self.enable()
+        return self
+
+    def constraint(self, seq: Sequence) -> Constraints:
+        if not self.enabled or len(seq) == 0:
+            return []
+        relevant_sequence = self._get_relevant_sequence(seq)
+        constraints = set(self.partial.constraint(seq))
+
+        for token in set(relevant_sequence):
+            for complete_constraint in self.complete:
+                if token in complete_constraint:
+                    constraints.union(set(complete_constraint).difference({token}))
+
+        return list(constraints)
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(Partial["+str(self.partial.tokens)+"], Complete["+str(CompleteConstraint(self.complete).tokens)+"])"

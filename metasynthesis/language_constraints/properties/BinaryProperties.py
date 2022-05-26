@@ -1,6 +1,6 @@
 from typing import Tuple, List
 
-from common.environment import Environment
+from common.environment.environment import Environment
 from common.program import Program
 from common.tokens.abstract_tokens import Token, InvalidTransition
 from metasynthesis.language_constraints.properties.AbstractProperties import BoolAbstractProperty, \
