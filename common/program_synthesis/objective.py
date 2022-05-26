@@ -1,6 +1,7 @@
 from typing import Callable
 
-from common.environment import Environment
+from common.environment.environment import Environment
+from common.settings.robot_optimized_steps import RobotOptimizedSteps
 
 
 class ObjectiveFun:
@@ -14,4 +15,7 @@ class ObjectiveFun:
 
     @staticmethod
     def env_dist_fun(env1: Environment, env2: Environment) -> float:
-        return env1.distance(env2)
+        return RobotOptimizedSteps().distance(env1, env2)
+
+if __name__ == '__main__':
+    print(ObjectiveFun('robot').fun)
