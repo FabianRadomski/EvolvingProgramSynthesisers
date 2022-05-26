@@ -84,6 +84,8 @@ class InventedToken(EnvToken):
     def __repr__(self):
         return "[%s]" % ", ".join([str(t) for t in self.tokens])
 
+    def __hash__(self):
+        return hash((self.__class__, tuple(self.tokens)))
 
 class InvalidTransition(Exception):
     """This exception will be raised whenever an invalid state transition is performed on an Environment."""

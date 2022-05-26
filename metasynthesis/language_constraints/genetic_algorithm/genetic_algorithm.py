@@ -4,27 +4,32 @@ import numpy as np
 import random
 from typing import Tuple, List
 
-from common.tokens.abstract_tokens import Token
+from common.tokens.abstract_tokens import Token, EnvToken
 from common.program_synthesis.runner import Runner
 from common.program_synthesis.dsl import DomainSpecificLanguage, robot_tokens, pixel_tokens, string_tokens
 from metasynthesis.abstract_genetic import GeneticAlgorithm, Population, Genome, MutationFunc
-from metasynthesis.language_constraints.constraints.Constraints import AbstractConstraint
+from metasynthesis.language_constraints.constraints.ConstraintFactory import ConstraintCombiner
+from metasynthesis.language_constraints.constraints.Constraints import AbstractConstraint, InvalidSequenceException
+from metasynthesis.language_constraints.genetic_algorithm.Constraint_Checker import Constraint_Walker
 
 
 class ConstraintFunc:
 
     def __init__(self, genome, bool_tokens, trans_tokens, constraints):
-        self.constraints = list(map(lambda c: deepcopy(c[0]).set_value(c[1]), zip(constraints, genome)))
+        self.constraints = list(map(lambda c: deepcopy(c[0]).set_value(c[1]-1), filter(lambda c: c[1] == 0,  zip(constraints, genome))))
+        self.constraints = ConstraintCombiner(self.constraints, trans_tokens).combine_all()
         self.bool_tokens = bool_tokens
         self.trans_tokens = trans_tokens
 
-    def __call__(self, sequence: List[Token]):
-        to_remove = []
-        for constraint in self.constraints:
-            for active_constraint in constraint.constraint(sequence):
-                to_remove.append(active_constraint)
 
-        return [b for b in self.bool_tokens if b not in to_remove], [t for t in self.trans_tokens if t not in to_remove]
+    def __call__(self, sequence: List[EnvToken]) -> bool:
+        try:
+            walker = Constraint_Walker(deepcopy(self.constraints))
+            for token in sequence:
+                walker(token)
+            return True
+        except InvalidSequenceException:
+            return False
 
 
 class ConstraintGeneticAlgorithm(GeneticAlgorithm):
@@ -94,9 +99,6 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
                 genome[i] = random.choice(choices)
 
         return genome
-
-    def selection_pair(self, population: Population) -> Tuple[Genome, Genome]:
-        return None
 
     def create_new_generation(self, population: Population):
         fitness_list = list(map(lambda genome: self.fitness(genome), population))

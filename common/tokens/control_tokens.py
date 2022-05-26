@@ -51,6 +51,8 @@ class If(ControlToken):
             )
         return result
 
+    def __hash__(self):
+        return hash((self.__class__, self.cond, tuple(self.e1), tuple(self.e2)))
 
 class LoopWhile(ControlToken):
     """Loop ControlToken."""
@@ -101,6 +103,9 @@ class LoopWhile(ControlToken):
         )
         return result
 
+    def __hash__(self):
+        return hash((self.__class__, self.cond, tuple(self.loop_body)))
+
 class LoopWhileThen(ControlToken):
     """LoopWhileThen ControlToken."""
 
@@ -144,6 +149,9 @@ class LoopWhileThen(ControlToken):
     def __repr__(self):
         return "LoopWhileThen(%s [%s], [%s])" % \
                (self.cond, ", ".join(list(map(str, self.loop_body))), ", ".join(list(map(str, self.then_body))))
+
+    def __hash__(self):
+        return hash((self.__class__, self.cond, tuple(self.loop_body), tuple(self.then_body)))
 
 class LoopIterationLimitReached(Exception):
     """"Exception raised when the recursive call limit, set in the Program constructor is reached."""

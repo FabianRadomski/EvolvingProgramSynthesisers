@@ -46,7 +46,7 @@ class Independent(TransitiveAbstractProperty):
         p = self.tokens[0]
         q = self.tokens[1]
 
-        return PartialConstraint([[p, q], [q, p]])
+        return PartialConstraint([p, q])
 
     @classmethod
     def property_type(self):
@@ -67,7 +67,7 @@ class Identity(TransitiveAbstractProperty):
         p = self.tokens[0]
         q = self.tokens[1]
 
-        return CompleteConstraint([[p, q], [q, p]])
+        return CompleteConstraint([p, q])
 
     @classmethod
     def property_type(self):

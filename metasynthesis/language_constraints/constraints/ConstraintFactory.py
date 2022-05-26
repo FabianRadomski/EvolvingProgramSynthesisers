@@ -1,4 +1,5 @@
 import itertools
+from functools import reduce
 from typing import List, Set
 
 import networkx
@@ -39,36 +40,32 @@ class ConstraintCombiner:
 
     def combine(self, constraint_a: AbstractConstraint, constraint_b: AbstractConstraint):
         if isinstance(constraint_a, PartialConstraint) and isinstance(constraint_b, PartialConstraint):
-            final_tokens: Set[Token] = constraint_a.tokens.union(constraint_b.tokens)
-            constraints = list(map(list, itertools.permutations(final_tokens)))
-            return PartialConstraint(constraints)
+            final_tokens: Set[Token] = constraint_a.token_set.union(constraint_b.token_set)
+            return PartialConstraint(final_tokens)
 
     def _combine_partial(self, partial_constraints: List[PartialConstraint], complete_constraints: List[CompleteConstraint]):
         G = networkx.Graph()
         G.add_nodes_from(self._trans_tokens)
-        G.add_edges_from([c.tokens for c in partial_constraints])
+        G.add_edges_from([c.token_set for c in partial_constraints])
 
         cliques = list(nx.find_cliques(G))
-        constraint_cliques_p = [list(filter(lambda t: set(t.tokens) <= set(clique), partial_constraints)) for clique in cliques]
-        constraint_cliques_c = [list(filter(lambda t: set(t.tokens) <= set(clique), complete_constraints)) for clique in cliques]
+        constraint_cliques_p = [list(filter(lambda t: t.token_set <= set(clique), partial_constraints)) for clique in cliques]
+        constraint_cliques_c = [list(filter(lambda t: t.token_set <= set(clique), complete_constraints)) for clique in cliques]
+        left_over_complete = [constraint for constraint in complete_constraints if constraint not in [c for clique in constraint_cliques_c for c in clique]]
+        left_over_partial = [constraint for constraint in partial_constraints if constraint not in [c for clique in constraint_cliques_p for c in clique]]
+
         final_constraints = []
+
         for clique_p, clique_c in zip(constraint_cliques_p, constraint_cliques_c):
-            c = None
+            tokens = set()
             for constraint in clique_p:
-                if c is None:
-                    c = constraint
-                else:
-                    c = self.combine(c, constraint)
+                tokens = tokens.union(constraint.token_set)
 
-            cc = []
-            for constraint in clique_c:
-                cc += constraint.constraints
-
-            if c is not None:
-                final_constraints.append(MixedConstraint(c.constraints, cc))
+            if clique_p and clique_c:
+                final_constraints.append(MixedConstraint(tokens, clique_c))
 
 
-        return final_constraints
+        return final_constraints+left_over_partial+left_over_complete
 
 
 
@@ -83,8 +80,8 @@ if __name__ == '__main__':
     property_types = [Identity, Independent]
     factory = ConstraintFactory(PropertyFactory(dsl, property_types, tests))
     constraints = factory.create()
+    #print(constraints)
     tokens = dsl.get_trans_tokens()
     combiner = ConstraintCombiner(constraints, tokens)
-    c = combiner.combine_all()[0]
-    c.enable()
-    print(c.constraint([MoveDown()]))
+    c = combiner.combine_all()
+    print(c)
