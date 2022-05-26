@@ -4,11 +4,11 @@ from random import randrange
 from typing import List, Callable, Tuple, Iterable
 
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
-from common.program_synthesis.objective import ObjectiveFun
-from common.program_synthesis.runner import Runner
+from solver.runner.runner import Runner
+from solver.runner.algorithms import dicts
+
 
 from metasynthesis.abstract_genetic import GeneticAlgorithm
-from search.brute.brute import Brute
 
 Genome = DomainSpecificLanguage
 Population = List[Genome]
@@ -21,14 +21,14 @@ class EvolvingLanguage(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  elite_genomes: int, mutation_probability: float, generation_size: int,
-                 dsl: DomainSpecificLanguage, test_cases_per_genome: int, max_search_time: float):
+                 dsl: DomainSpecificLanguage, search_setting: str, max_search_time: float):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
         self.bool_tokens = dsl.get_bool_tokens()
         self.elite_genomes = elite_genomes
         self.trans_tokens = dsl.get_trans_tokens()
-        self.test_cases_per_genome = test_cases_per_genome
+        self.search_setting = search_setting
         self.max_search_time = max_search_time
 
     def generate_genome(self, length: int) -> Genome:
@@ -71,9 +71,15 @@ class EvolvingLanguage(GeneticAlgorithm):
             return genome_fitness_values[str(genome)]
 
         # genome = StandardDomainSpecificLanguage("robot")
-        runner = Runner(dsl=genome,
-                        search_method=Brute(self.max_search_time, ObjectiveFun(self.domain).fun),
-                        max_test_cases=self.test_cases_per_genome)
+        runner = Runner(lib=dicts(0),
+                        algo="Brute",
+                        setting=self.search_setting,
+                        test_cases="debug",  # set to "eval" for final
+                        time_limit_sec=self.max_search_time,
+                        debug=False,
+                        store=False,
+                        suffix="",
+                        dsl=genome)
         results = runner.run()
 
         dsl_length = len(genome.get_bool_tokens() + genome.get_trans_tokens())
@@ -196,9 +202,15 @@ class EvolvingLanguage(GeneticAlgorithm):
         return best_genome
 
     def final_evaluation(self, genome: Genome):
-        runner = Runner(dsl=genome,
-                        search_method=Brute(self.max_search_time, ObjectiveFun(self.domain).fun),
-                        max_test_cases=self.test_cases_per_genome)
+        runner = Runner(dicts(0),
+                        algo="Brute",
+                        setting=self.search_setting,
+                        test_cases="debug",  # set to "eval" for final
+                        time_limit_sec=self.max_search_time,
+                        debug=False,
+                        store=False,
+                        suffix="",
+                        dsl=genome)
         results = runner.run()
 
         success_percentage = results["completely_successful_percentage"]

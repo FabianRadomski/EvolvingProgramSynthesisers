@@ -1,127 +1,144 @@
 import itertools
-from typing import Type, List
-from collections import defaultdict
-from common.tokens.abstract_tokens import Token
+from typing import List
 
-Sequence = List[Token]
-Constraints = List[Token]
+from common.tokens.abstract_tokens import Token
 
 
 class AbstractConstraint:
 
-    def __init__(self, constraints: List[Constraints]):
-        self._constraints = constraints
-        self.enabled = True
+    def __init__(self, tokens):
+        self.state = 0
+        self.tokens = tokens
+        self.token_set = set(tokens)
 
-    def _get_relevant_sequence(self, seq: Sequence) -> Sequence:
-        """returns the relevant subsequence for the given constraint"""
-        if len(seq) > 0:
-            return [seq[-1]]
-        else:
-            return []
-
-    def _check_constraint_relevance(self, seq: Sequence) -> bool:
-        """returns wether the given token sequence is relevant for this constraint"""
-        if len(seq) == 0:
-            return False
-        tokens = self._get_relevant_sequence(seq)
-
-        for i, token in enumerate(reversed(tokens)):
-            if not token == seq[-i]:
-                break
-        else:
-            return True
-
-        return False
-
-    def disable(self) -> None:
-        """disables the constraint"""
-        self.enabled = False
-
-    def enable(self) -> None:
-        """enables the constraint"""
-        self.enabled = True
-
-    def toggle_enable(self) -> None:
-        """toggles whether the constraint is enabled"""
-        self.enabled = not self.enabled
-
-    def constraint(self, seq: Sequence) -> Constraints:
-        """returns a list of tokens to be constrained for the given input"""
+    def check_token(self, token):
+        """takes state and an input tokens, returns False if the input token can't be added"""
         raise NotImplementedError()
+
+    def update_state(self, token):
+        """updates the state of the constraint with the given input token"""
+        if token in self.get_constraint():
+            raise InvalidSequenceException()
+
+    def constraint(self, tokens: List[Token]):
+        for token in tokens:
+            self.update_state(token)
+        constraints = self.get_constraint()
+        self.state = 0
+        return constraints
+
+    def get_constraint(self):
+        """gets the constained tokens from the given state"""
+        raise NotImplementedError()
+
+    def get_values(self):
+        "returns the number of values this constraint can take for use in a genetic algorithm"
+        raise NotImplementedError()
+
+    def set_value(self, index: int):
+        "sets the value of this constraint can take for use in a genetic algorithm"
+        raise NotImplementedError()
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + str(self.tokens) + ")"
 
 
 class PartialConstraint(AbstractConstraint):
 
-    def __init__(self, constraints):
-        super().__init__(constraints)
-        if len(constraints) > 0:
-            self._allowed_constraint = constraints[0]
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.perms = list(itertools.permutations(tokens))
+        self.active = 0
+
+    def check_token(self, token):
+        """takes state and an input tokens, returns False if the input token can't be added"""
+        if token not in self.tokens:
+            return True
+        if token in self.get_constraint():
+            return False
+        return True
+
+    def get_constraint(self):
+        allowed = {token for i, token in enumerate(self.perms[self.active]) if i >= self.state-1}
+
+        return {token for token in self.perms[self.active] if token not in allowed}
+
+    def update_state(self, token):
+        super(PartialConstraint, self).update_state(token)
+        if token in self.perms[self.active]:
+            self.state = self.perms[self.active].index(token)+1
         else:
-            self._allowed_constraint = []
-        self._constraint_dict = self._initialize_constraint_dict()
+            self.state = 0
 
-    def _initialize_constraint_dict(self):
-        """Initializes a memoised default dict for returning constraint tokens"""
-        constraint_dict = {}
-        tokens = set(list(itertools.chain(*self._constraints)))
-        for token in tokens:
-            constraint_dict[token] = []
-            for constraint in self._constraints:
-                if not token in constraint or constraint[-1] == token or constraint == self._allowed_constraint:
-                    continue
-                # add the next constraint in sequence
-                constraint_dict[token].append(constraint[constraint.index(token) + 1])
-        return defaultdict(lambda: [], constraint_dict)
+    def get_values(self):
+        return len(self.perms)
 
-    def set_partial_constraint(self, allowed_constraint=None, index=-1) -> bool:
-        """
-        A partial constraint is a constraint that only allows one of several sequences. This function allows for a
-        change in what function is allowed.
-        """
-        if allowed_constraint is not None and allowed_constraint in self._constraints:
-            self._allowed_constraint = allowed_constraint
-            self._constraint_dict = self._initialize_constraint_dict()
-            return True
-
-        elif -1 < index < len(self._allowed_constraint):
-            self._allowed_constraint = self._constraints[index]
-            self._constraint_dict = self._initialize_constraint_dict()
-            return True
-        return False
-
-    def constraint(self, seq: Sequence) -> Constraints:
-        if len(seq) == 0 or not self.enabled:
-            return []
-        if self._check_constraint_relevance(seq):
-            return self._constraint_dict[seq[-1]]
-        return []
-
-
+    def set_value(self, index: int):
+        self.active = index
 
 class CompleteConstraint(AbstractConstraint):
 
-    def __init__(self, constraints):
-        super(CompleteConstraint, self).__init__(constraints)
-        self._constraint_dict = self._initialize_constraint_dict()
+    def __init__(self, tokens):
+        self.active = 1
+        super().__init__(tokens)
 
-    def _initialize_constraint_dict(self):
-        """Initializes a memoised default dict for returning constraint tokens"""
-        constraint_dict = {}
-        tokens = set(list(itertools.chain(*self._constraints)))
-        for token in tokens:
-            constraint_dict[token] = []
-            for constraint in self._constraints:
-                if not token in constraint or constraint[-1] == token:
-                    continue
-                # add the next constraint in sequence
-                constraint_dict[token].append(constraint[constraint.index(token) + 1])
-        return defaultdict(lambda: [], constraint_dict)
 
-    def constraint(self, seq: Sequence) -> Constraints:
-        if len(seq) == 0 or not self.enabled:
-            return []
-        if self._check_constraint_relevance(seq):
-            return self._constraint_dict[seq[-1]]
-        return []
+    def check_token(self, token):
+        return token not in self.tokens or self.state == 0
 
+    def update_state(self, token):
+        super(CompleteConstraint, self).update_state(token)
+        if token not in self.tokens:
+            self.state = 0
+        else:
+            self.state = self.tokens.index(token)+1
+
+    def get_constraint(self):
+        if self.state == 0:
+            return set()
+        else:
+            return {t for t in self.tokens if t is not self.tokens[self.state-1]}
+
+    def get_values(self):
+        return 1
+
+    def set_value(self, index: int):
+        self.active = index
+
+
+class MixedConstraint(PartialConstraint):
+
+    def __init__(self, partial_tokens, complete_constraints):
+        super(MixedConstraint, self).__init__(partial_tokens)
+        self.complete_constraints = complete_constraints
+
+    def check_token(self, token):
+        if super().check_token(token):
+            for cc in self.complete_constraints:
+                if token in cc.get_constraint():
+                    return False
+            else:
+                return True
+        return False
+
+    def update_state(self, token):
+        if self.state == 0:
+            for cc in self.complete_constraints:
+                cc.state = 0
+        else:
+            for cc in self.complete_constraints:
+                if cc.state == 0:
+                    cc.update_state(token)
+
+    def get_constraint(self):
+        constraints = super(MixedConstraint, self).get_constraint()
+        for cc in self.complete_constraints:
+            constraints = constraints.union(cc.get_constraint())
+        return constraints
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + repr(self.tokens) + ", " + repr(self.complete_constraints) + ")"
+
+
+class InvalidSequenceException(Exception):
+    pass

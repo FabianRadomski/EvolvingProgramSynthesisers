@@ -85,6 +85,8 @@ class InventedToken(EnvToken):
     def __repr__(self):
         return "[%s]" % ", ".join([str(t) for t in self.tokens])
 
+    def __hash__(self):
+        return hash((self.__class__, tuple(self.tokens)))
 
 # should there be more arguments than one?
 class FunctionDefinitionToken(Token):

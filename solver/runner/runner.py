@@ -3,6 +3,7 @@ from multiprocessing import Pool
 from statistics import mean
 from typing import Callable
 
+from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.environment.environment import Environment
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.evolving_function import distance_default_expr_tree
@@ -23,6 +24,7 @@ class Runner:
                  debug: bool = False,
                  store: bool = True,
                  suffix: str = "",
+                 dsl: DomainSpecificLanguage = None,
                  dist_fun: Callable[[Environment, Environment], float] = None):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
@@ -30,7 +32,12 @@ class Runner:
 
         self.algorithm = lib["algorithms"][algo][setting]
         self.settings = lib["settings"][setting]
+
+        if dsl is not None:
+            self.settings.dsl = dsl
+
         self.settings.dist_fun = dist_fun
+
         self.files = lib["test_cases"][test_cases][setting[0]]
 
         self.file_manager = FileManager(algo, setting, suffix)

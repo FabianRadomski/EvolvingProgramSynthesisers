@@ -2,7 +2,7 @@ import enum
 import itertools
 from typing import List, Type, Dict, Iterable
 
-from common.environment import Environment
+from common.environment.environment import Environment
 from common.tokens.abstract_tokens import Token
 from common.program_synthesis.dsl import DomainSpecificLanguage
 from metasynthesis.language_constraints.properties.AbstractProperties import AbstractProperty, PropertyType, \

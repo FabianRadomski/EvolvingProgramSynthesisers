@@ -17,7 +17,7 @@ def test_search():
     start_state = PixelEnvironment(2, 2, 0, 0, [[False, False], [False, False]])
     end_state = PixelEnvironment(2, 2, 1, 1, [[False, False], [False, True]])
     num_iterations = 3
-    best_program, _, solved = Brute(10).run([Example(start_state, end_state)], tokens, set())
+    best_program, _, solved = Brute(10).run([Example(start_state, end_state)], set())
     print_p(best_program)
     print(solved)
 

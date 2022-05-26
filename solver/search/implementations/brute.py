@@ -31,6 +31,9 @@ class Brute(SearchAlgorithm):
             return False
 
         for token in self.tokens:
+            if not self.settings.dsl.check_sequence_allowed(program.sequence + [token]):
+                continue
+
             new_program = Program(program.sequence + [token])
             new_cost, new_state, _ = self.evaluate(new_program)
             self.statistics["no._explored_programs"] += 1

@@ -1,6 +1,6 @@
+from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from common.settings.settings import Settings
 from common.environment.string_environment import StringEnvironment
-from common.tokens.string_tokens import TransTokens, BoolTokens
 
 
 class StringOptimizedAlignment(Settings):
@@ -10,7 +10,7 @@ class StringOptimizedAlignment(Settings):
     _map = {}
 
     def __init__(self):
-        super().__init__("string", TransTokens, BoolTokens)
+        super().__init__("string", StandardDomainSpecificLanguage('string'))
 
     def distance(self, inp: StringEnvironment, out: StringEnvironment) -> float:
         if self.dist_fun is None:

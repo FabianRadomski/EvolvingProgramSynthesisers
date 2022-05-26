@@ -80,7 +80,7 @@ def test_vanillaGP():
     #     print(search_result.dictionary)
     #     print(search_result.dictionary["program"])
     search_method = VanillaGP(10.0)
-    search_result = search_method.run([Example(start_state, end_state)], trans_tokens, bool_tokens)
+    search_result = search_method.run([Example(start_state, end_state)], bool_tokens)
     print(search_result.dictionary)
     print(search_result.dictionary["program"])
 
