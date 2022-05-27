@@ -25,7 +25,7 @@ class EvolvingLanguage(GeneticAlgorithm):
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  elite_genomes: int, mutation_probability: float, generation_size: int,
                  dsl: DomainSpecificLanguage, search_setting: str, max_search_time: float,
-                 search_mode: str):
+                 search_mode: str, search_algo: str):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -35,6 +35,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.search_setting = search_setting
         self.max_search_time = max_search_time
         self.search_mode = search_mode
+        self.search_algo = search_algo
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
@@ -72,7 +73,7 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         # genome = StandardDomainSpecificLanguage("robot")
         runner = Runner(lib=dicts(0),
-                        algo="AS",
+                        algo=self.search_algo,
                         setting=self.search_setting,
                         test_cases=self.search_mode,
                         time_limit_sec=self.max_search_time,
@@ -211,7 +212,7 @@ class EvolvingLanguage(GeneticAlgorithm):
 
     def final_evaluation(self, genome: Genome):
         runner = Runner(dicts(0),
-                        algo="Brute",
+                        algo=self.search_algo,
                         setting=self.search_setting,
                         test_cases=self.search_mode,
                         time_limit_sec=self.max_search_time,
@@ -224,7 +225,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         mean_ratio_correct, mean_search_time_correct, best_programs = \
             process_search_results(runner.search_results, self.domain)
 
-        avg_program_length = sum(map(lambda x: len(x.sequence), best_programs)) / len(best_programs)
+        avg_program_length = sum(map(lambda program: program.number_of_tokens(), best_programs)) / len(best_programs)
 
         print("Mean search time", mean_search_time_correct)
         print("Mean ratio correct:", mean_ratio_correct)
@@ -236,10 +237,6 @@ def sort_genome(genome: Genome) -> Genome:
     sorted_trans = sorted(genome.get_trans_tokens(), key=str, reverse=False)
 
     return DomainSpecificLanguage(genome.domain_name, sorted_bool, sorted_trans)
-
-
-def genome_length(genome: Genome) -> int:
-    return len(genome.get_bool_tokens() + genome.get_trans_tokens())
 
 
 def get_fitness(genome: Genome):
@@ -297,14 +294,14 @@ def crossover_exchange_halve_random(a: Genome, b: Genome) -> Tuple[Genome, Genom
     a_tokens_selected, a_tokens_remainder = get_random_half_and_remainder(a_tokens)
     b_tokens_selected, b_tokens_remainder = get_random_half_and_remainder(b_tokens)
 
-    selected_unduplicated = remove_duplicates(a_tokens_selected + b_tokens_selected)
-    remainder_unduplicated = remove_duplicates(a_tokens_remainder + b_tokens_remainder)
+    selected_no_duplicates = remove_duplicates(a_tokens_selected + b_tokens_selected)
+    remainder_no_duplicates = remove_duplicates(a_tokens_remainder + b_tokens_remainder)
 
-    return create_dsl_from_tokens(a.domain_name, selected_unduplicated), \
-           create_dsl_from_tokens(a.domain_name, remainder_unduplicated)
+    return create_dsl_from_tokens(a.domain_name, selected_no_duplicates), \
+           create_dsl_from_tokens(a.domain_name, remainder_no_duplicates)
 
 
-# Had to be introduced because we can't do set conversion for some tokens
+# Created because we can't do set conversion for some tokens
 def remove_duplicates(tokens: List[Token]) -> List[Token]:
     final_tokens = []
     for token in tokens:
