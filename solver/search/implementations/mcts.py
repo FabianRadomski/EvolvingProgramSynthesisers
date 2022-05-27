@@ -14,8 +14,7 @@ from solver.search.search_algorithm import SearchAlgorithm
 
 class MCTS(SearchAlgorithm):
 
-    def __init__(self, settings: Settings, time_limit_sec: float, debug: bool, c_exploration: float, rollout_depth: int):
-        super().__init__(settings, time_limit_sec, debug)
+    def __init__(self, c_exploration: float, rollout_depth: int):
 
         self.c_exploration = c_exploration
         self.rollout_depth = rollout_depth
@@ -141,7 +140,7 @@ class MCTS(SearchAlgorithm):
         return state
 
     def _reconstruct_program(self, state):
-        program = []
+        program = self.best_program.sequence
 
         while state in self.came_from:
             program.append(self.token[state])

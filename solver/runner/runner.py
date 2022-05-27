@@ -1,7 +1,11 @@
 import os
 from multiprocessing import Pool
 from statistics import mean
+from typing import List, Tuple
 
+import numpy as np
+
+from common.program import Program
 from solver.runner.algorithms import dicts
 from solver.runner.file_manager import FileManager
 from solver.runner.test_case_retriever import get_test_cases
@@ -16,7 +20,8 @@ class Runner:
                  time_limit_sec: float,
                  debug: bool = False,
                  store: bool = True,
-                 suffix: str = ""):
+                 suffix: str = "",
+                 multi_thread: bool = True):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
         self.store = store
@@ -26,6 +31,7 @@ class Runner:
         self.files = lib["test_cases"][test_cases][setting[0]]
 
         self.file_manager = FileManager(algo, setting, suffix)
+        self.multi_thread = multi_thread
 
     def run(self):
         Runner.algo = self.algorithm
@@ -45,7 +51,7 @@ class Runner:
 
         total_examples = [0] * len(self.files[2])
         solved_examples = [0] * len(self.files[2])
-
+        run_time = 0
         for i, trial in enumerate(self.files[2]):
             if self.debug:
                 print("Running trial #{}...".format(trial))
@@ -57,26 +63,40 @@ class Runner:
                 total_examples[i] = 0
                 solved_examples[i] = -1
                 continue
-
-            # with Pool(processes=1) as pool:
-            with Pool(processes=os.cpu_count() - 1) as pool:
-                results = pool.map_async(self.execute_test_case, cases)
-                # if True:
-                # results = [self.execute_test_case(c) for c in cases]
-
+            if not self.multi_thread:
                 stats_list = []
-                for program, stats in results.get():
-                    stats_list.append(stats)
-
+                for case in cases:
+                    program, stats = self.execute_test_case(case)
                     total_examples[i] += stats["test_total"]
                     solved_examples[i] += stats["test_correct"]
+                    run_time += stats["execution_time"]
 
-                if self.store:
-                    self.file_manager.append_result(stats_list)
+                    stats_list.append(stats)
+                    if self.store:
+                        self.file_manager.append_result(stats_list)
+
+            else:
+                # with Pool(processes=1) as pool:
+                with Pool(processes=os.cpu_count() - 1) as pool:
+                    results = pool.map_async(self.execute_test_case, cases)
+                    # if True:
+                    # results = [self.execute_test_case(c) for c in cases]
+
+                    stats_list = []
+                    for program, stats in results.get():
+                        stats_list.append(stats)
+
+                        total_examples[i] += stats["test_total"]
+                        solved_examples[i] += stats["test_correct"]
+                        run_time += stats["execution_time"]
+
+                    if self.store:
+                        self.file_manager.append_result(stats_list)
 
         accuracies = [float(s) / t for s, t in zip(solved_examples, total_examples)]
+        average_time = run_time / np.sum(total_examples)
 
-        return mean(accuracies)
+        return mean(accuracies), average_time
 
     def execute_test_case(self, test_case):
         return self.algorithm.run(self.settings, self.time_limit_sec, self.debug, test_case)
@@ -95,6 +115,6 @@ if __name__ == "__main__":
     param = 0
     store = False if test_cases == "param" else store
 
-    mean1 = Runner(dicts(), algo, setting, test_cases, time_limit, debug, store).run()
+    mean1, run_time = Runner(dicts(), algo, setting, test_cases, time_limit, debug, store).run()
 
     print(f"Solved {str(mean1)}")

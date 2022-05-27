@@ -1,60 +1,57 @@
 import unittest
 
-from common.program_synthesis.runner import Runner
-from search.a_star.a_star import AStar
-from search.brute.brute import Brute
-from search.combined_search.combined_search import CombinedSearch
-from search.combined_search.combined_search_time import CombinedSearchTime
-from search.MCTS.mcts import MCTS
-from search.metropolis_hastings.metropolis import MetropolisHasting
-from search.vlns.large_neighborhood_search.algorithms.remove_n_insert_n import RemoveNInsertN
+from solver.runner.algorithms import dicts
+from solver.runner.runner import Runner
 
 
 class CombinedSearchTests(unittest.TestCase):
+    setting = "RE"
+    test_cases = "eval"
 
-    def run_combined(self, alg_seq):
-        search = CombinedSearchTime(0, alg_seq)
-        runner = Runner(search_method=search)
-        results = runner.run()
-        print("combined: " + str(alg_seq) + " with success rate " + str(results['average_success']) + "\n")
-        return results['average_success']
+    def run_combined(self, alg_seq, setting):
+        runner = Runner(dicts(alg_sequence=alg_seq), algo="CS", setting=setting, test_cases=self.test_cases, time_limit_sec=10, debug=False,
+                        store=False, multi_thread=False)
+        avg_success, average_time = runner.run()
+        print("combined: " + str(alg_seq) + " with success rate " + str(avg_success) + "\n")
+        return avg_success
 
-    def run_solo(self, alg, time):
-        search = alg(time)
-        runner = Runner(search_method=search)
-        results = runner.run()
-        print("solo: " + str(alg.__name__) + " with success rate " + str(results['average_success']) + "\n")
-        return results['average_success']
+    def run_solo(self, alg, time, setting):
+        runner = Runner(dicts(), algo=alg, setting=setting, test_cases=self.test_cases, time_limit_sec=time, debug=False,
+                        store=False)
+        avg_success, average_time = runner.run()
+        print("solo: " + str(alg) + " with success rate " + str(avg_success) + "\n")
+        print("avg time" + str(average_time) + "\n")
+        return avg_success
 
-    def compare_algs(self, alg1, t1, alg2, t2):
-        success_combined = self.run_combined([(alg1, t1), (alg2, t2)])
-        success1 = self.run_solo(alg1, t1)
-        success2 = self.run_solo(alg2, t2)
+    def compare_algs(self, alg1, t1, alg2, t2, setting):
+        success_combined = self.run_combined([(alg1, t1), (alg2, t2)], setting)
+        success1 = self.run_solo(alg1, t1, setting)
+        success2 = self.run_solo(alg2, t2, setting)
         self.assertTrue(success_combined >= success1)
         self.assertTrue(success_combined >= success2)
 
     def test_combination1(self):
-        self.compare_algs(Brute, 0.1, MetropolisHasting, 0.2)
+        self.compare_algs("Brute", 0.2, "MH", 0.2, self.setting)
 
     def test_combination2(self):
-        self.compare_algs(AStar, 0.4, Brute, 0.2)
+        self.compare_algs("AS", 0.2, "Brute", 0.2, self.setting)
 
     def test_combination3(self):
-        self.compare_algs(Brute, 0.1, AStar, 0.3)
+        self.compare_algs("Brute", 0.2, "AS", 0.2, self.setting)
 
     def test_combination4(self):
-        self.compare_algs(MetropolisHasting, 0.3, RemoveNInsertN, 0.5)
+        self.compare_algs("MH", 0.2, "LNS", 0.2, self.setting)
 
     def test_combination5(self):
-        self.compare_algs(RemoveNInsertN, 0.1, MCTS, 0.2)
+        self.compare_algs("LNS", 0.2, "MCTS", 0.2, self.setting)
 
     def test_longer_chain(self):
-        success_combined = self.run_combined([(Brute, 0.3), (AStar, 0.3), (MetropolisHasting, 0.2), (RemoveNInsertN, 0.1), (MCTS, 0.4)])
-        success1 = self.run_solo(Brute, 0.3)
-        success2 = self.run_solo(AStar, 0.3)
-        success3 = self.run_solo(MetropolisHasting,  0.2)
-        success4 = self.run_solo(RemoveNInsertN, 0.1)
-        success5 = self.run_solo(MCTS, 0.4)
+        success_combined = self.run_combined([("Brute", 0.2), ("AS", 0.2), ("MH", 0.2), ("LNS", 0.2), ("MCTS", 0.2)], self.setting)
+        success1 = self.run_solo("Brute", 0.2, self.setting)
+        success2 = self.run_solo("AS", 0.2, self.setting)
+        success3 = self.run_solo("MH", 0.2, self.setting)
+        success4 = self.run_solo("LNS", 0.2, self.setting)
+        success5 = self.run_solo("MCTS", 0.2, self.setting)
         self.assertTrue(success_combined >= success1)
         self.assertTrue(success_combined >= success2)
         self.assertTrue(success_combined >= success3)

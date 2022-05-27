@@ -1,5 +1,6 @@
 import copy
 import heapq
+import math
 from math import exp
 
 from common.program import Program, InvalidTransition
@@ -29,7 +30,9 @@ class AStar(SearchAlgorithm):
         self.token = {}
         self.g_score = {}
         self.f_score = {}
-
+        if self.best_cost == math.inf:
+            self.best_program = Program([])
+            self.best_cost, self.best_state, _ = self.evaluate(self.best_program)
         self.open_states = [(self.best_cost * (1 - self.weight), self.best_state)]
         self.g_score[self.best_state] = 0
         self.f_score[self.best_state] = self.best_cost
@@ -40,7 +43,7 @@ class AStar(SearchAlgorithm):
         _, state = heapq.heappop(self.open_states)
 
         if self.f_score[state] == 0:
-            self.best_program = self._reconstruct_program(state)
+            self.best_program = self._reconstruct_program(copy.deepcopy(state))
             self.best_cost = 0
 
             return False
@@ -72,6 +75,8 @@ class AStar(SearchAlgorithm):
             program.append(self.token[state])
             state = self.came_from[state]
 
+        reconstructed_program = copy.deepcopy(self.best_program.sequence)
         program.reverse()
+        reconstructed_program.extend(program)
 
-        return Program(program)
+        return Program(reconstructed_program)

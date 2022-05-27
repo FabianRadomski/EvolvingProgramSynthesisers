@@ -2,34 +2,32 @@
 import random
 from typing import Dict, List, Optional, Tuple, Type
 
-from common.program_synthesis.runner import Runner
 from metasynthesis.abstract_genetic import CrossoverFunc, GeneticAlgorithm, Genome, MutationFunc, Population
-from search.a_star.a_star import AStar
-from search.abstract_search import SearchAlgorithm
-from search.brute.brute import Brute
-from search.combined_search.combined_search import CombinedSearch
-from search.combined_search.combined_search_time import CombinedSearchTime
-from search.MCTS.mcts import MCTS
-from search.metropolis_hastings.metropolis import MetropolisHasting
-from search.vlns.large_neighborhood_search.algorithms.remove_n_insert_n import RemoveNInsertN
-
+from solver.runner.algorithms import dicts
+from solver.runner.runner import Runner
+from solver.search.implementations.a_star import AStar
+from solver.search.implementations.brute import Brute
+from solver.search.implementations.large_neighborhood_search import LNS
+from solver.search.implementations.MCTS.mcts import MCTS
+from solver.search.implementations.metropolis import MetropolisHasting
 
 class SearchSynthesiser(GeneticAlgorithm):
     # Search procedures considered while constructing a genome
     # TODO: add vanillaGP
-    allowed_searches: List[Type[SearchAlgorithm]] = [Brute, MCTS, MetropolisHasting, AStar, RemoveNInsertN]
+    allowed_searches: List[str] = ["Brute", "AS", "MCTS", "LNS", "MH", "GP"]
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
-    initial_distribution_normal: Dict[Type[SearchAlgorithm], Tuple[int, int]] = {Brute: (4, 3), AStar: (10, 6), MetropolisHasting: (300, 150),
-                                                                                 MCTS: (2000, 1000), RemoveNInsertN: (1500, 1000)}
+    initial_distribution_normal: Dict[str, Tuple[int, int]] = {"Brute": (4, 3), "AS": (10, 6), "MH": (300, 150),
+                                                               "MCTS": (2000, 1000), "LNS": (1500, 1000), "GP": (2, 5)}
 
-    initial_distribution_uniform: Dict[Type[SearchAlgorithm], int] = {
-        Brute: 6, MCTS: 4000, MetropolisHasting: 400, AStar: 15, RemoveNInsertN: 2800  # 10000
+    initial_distribution_uniform: Dict[str, int] = {
+        Brute: 6, MCTS: 4000, MetropolisHasting: 400, AStar: 15, LNS: 2800  # 10000
     }
 
-    initial_distribution_time: Dict[Type[SearchAlgorithm], float] = {
-        Brute: 0.5, MCTS: 0.5, MetropolisHasting: 0.5, AStar: 0.5, RemoveNInsertN: 0.5  # 10000
+    initial_distribution_time: Dict[str, float] = {
+        "Brute": 0.5, "AS": 0.5, "MH": 0.5,
+        "MCTS": 0.5, "LNS": 0.5, "GP": 0.5  # 10000
     }
 
     TIME_MAX = 1
@@ -37,7 +35,8 @@ class SearchSynthesiser(GeneticAlgorithm):
     TESTS_SIZE = 100
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
-                 mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", print_generations: bool = False):
+                 mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", setting: str =
+                 "RE", print_generations: bool = False):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
         self.max_seq_size: int = max_seq_size
@@ -46,13 +45,16 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.print_generations = print_generations
 
         # Dictionary containing genomes mapped to their average success percentage and execution time, so that they only need to be calculated once
-        self.calculated_results: Dict[Tuple[Tuple[Type[SearchAlgorithm], dict]], dict] = {}
+        self.calculated_results: Dict[Tuple[Tuple[str, dict]], dict] = {}
 
         # List of mutations that are performed
         self.allowed_mutations: List[Type[MutationFunc]] = [self.replace_iteration_mutation, self.replace_search_mutation]
 
         # Determine how the number of each search type are distributed
         self.dist_type = dist_type
+
+        # Determine the exact type of the domain, including the parameters
+        self.setting = setting
 
         # Used to determine the importance of metrics in the fitness function
         self.success_weight = 0.5
@@ -62,7 +64,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         new_genome: Genome = []
 
         for i in range(length):
-            procedure: Type[SearchAlgorithm] = random.choices(self.allowed_searches)[0]
+            procedure: str = random.choices(self.allowed_searches)[0]
             iterations: int = self.generate_iterations(procedure, dist_type=self.dist_type)
             new_genome.append((procedure, iterations))
 
@@ -90,14 +92,12 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
-            if self.dist_type == "Time":
-                search: SearchAlgorithm = CombinedSearchTime(0, genome)
-            else:
-                search: SearchAlgorithm = CombinedSearch(0, genome)
-            runner: Runner = Runner(search_method=search, max_test_cases=self.TESTS_SIZE)
-            results: dict = runner.run()
-            average_success: float = results['average_success']
-            average_time: float = results['average_execution']
+            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, "eval", 10, debug=False, store=False, multi_thread=False)
+            average_success, average_time = runner.run()
+        #     if self.dist_type == "Time":
+        #         search: SearchAlgorithm = CombinedSearchTime(genome)
+        #     else:
+        #         search: SearchAlgorithm = CombinedSearch(0, genome)
             self.calculated_results[tuple(genome)] = {'average_success': average_success, 'average_time': average_time}
 
         # Assign 0 as a fitness if the genome is empty
@@ -125,7 +125,7 @@ class SearchSynthesiser(GeneticAlgorithm):
     def genome_to_string(self, genome: Genome) -> str:
         genome_str: str = "["
         for i, gene in enumerate(genome):
-            genome_str += f"{str(gene[0].__name__)} {gene[1]}"
+            genome_str += f"{str(gene[0])} {gene[1]}"
             if i != len(genome) - 1:
                 genome_str += " -> "
         genome_str += "]"
@@ -213,7 +213,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         Merges identical consequent searches in the sequence.
         """
         merged_sequence: Genome = []
-        curr_gene: (Type[SearchAlgorithm], int) = (sequence[0][0], sequence[0][1])
+        curr_gene: (str, int) = (sequence[0][0], sequence[0][1])
         for i in range(len(sequence)):
             if i == 0:
                 continue
@@ -226,7 +226,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         return merged_sequence
 
-    def generate_iterations(self, search_type: Type[SearchAlgorithm], dist_type: str = "Gauss"):
+    def generate_iterations(self, search_type: str, dist_type: str = "Gauss"):
         """
         Uses normal distribution to generate a random iteration count for a given search.
         """
@@ -289,12 +289,12 @@ class SearchSynthesiser(GeneticAlgorithm):
         """
         point: int = random.randrange(0, len(genome))
 
-        removed_search: Type[SearchAlgorithm] = genome[point][0]
-        searches: List[Type[SearchAlgorithm]] = self.allowed_searches.copy()
+        removed_search: str = genome[point][0]
+        searches: List[str] = self.allowed_searches.copy()
         searches.remove(removed_search)
 
-        new_genome:Genome = genome.copy()
-        new_search: Type[SearchAlgorithm] = random.choice(searches)
+        new_genome: Genome = genome.copy()
+        new_search: str = random.choice(searches)
         new_genome[point] = (new_search, self.generate_iterations(new_search, dist_type=self.dist_type))
 
         return new_genome

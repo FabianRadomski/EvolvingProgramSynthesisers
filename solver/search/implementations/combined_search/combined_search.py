@@ -1,12 +1,9 @@
 import time
 from typing import List, Tuple, Type
 
-from common.environment import StringEnvironment
-from common.experiment import Example
 from common.program import Program
 from common.tokens.abstract_tokens import EnvToken
-from search.abstract_search import SearchAlgorithm
-from search.search_result import SearchResult
+from solver.search.search_algorithm import SearchAlgorithm
 
 
 class CombinedSearch(SearchAlgorithm):
