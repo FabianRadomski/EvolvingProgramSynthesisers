@@ -9,7 +9,6 @@ from common.tokens.control_tokens import LoopWhile, If
 from solver.runner.runner import Runner
 from solver.runner.algorithms import dicts
 
-
 from metasynthesis.abstract_genetic import GeneticAlgorithm
 
 Genome = DomainSpecificLanguage
@@ -84,38 +83,8 @@ class EvolvingLanguage(GeneticAlgorithm):
                         dsl=genome)
         runner.run()
 
-        search_results = runner.search_results
-
-        total_cases = 0
-        cumulative_ratios_correct = 0
-        cumulative_search_time_correct = 0
-        best_programs = []
-
-        for key, value in search_results.items():
-            total_cases += 1
-            current_search_result = value
-            search_time = current_search_result["search_time"]
-            test_total = current_search_result["test_total"]
-            best_programs.append(current_search_result["best_program"])
-
-
-            current_ratio_correct = 0
-            # If we use string domain we should use tests, instead of training examples
-            if self.domain == "string":
-                test_correct = current_search_result["test_correct"]
-                current_ratio_correct += test_correct / test_total
-            else:
-                train_correct = current_search_result["train_correct"]
-                current_ratio_correct += train_correct / test_total
-
-            cumulative_ratios_correct += current_ratio_correct
-            if current_ratio_correct > 0:
-                cumulative_search_time_correct += search_time
-            else:
-                cumulative_search_time_correct += self.max_search_time
-
-        mean_ratio_correct = cumulative_ratios_correct / total_cases
-        mean_search_time_correct = cumulative_search_time_correct / total_cases
+        mean_ratio_correct, mean_search_time_correct, best_programs = \
+            process_search_results(runner.search_results, self.domain)
 
         if mean_search_time_correct == 0:
             fitness_value = 0
@@ -124,25 +93,8 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         print("correct:", mean_ratio_correct, "search:", mean_search_time_correct, "fitness:", fitness_value)
 
-
         # SPECIAL TOKEN EXTRACTION
-        # total_search_time = 0
-
-        for program in best_programs:
-            tokens = program.sequence
-
-            # total_search_time += result.dictionary["execution_time"]
-
-            for token in tokens:
-                if token not in self.trans_tokens:
-
-                    if str(token) not in successful_tokens_counts.keys():
-                        successful_tokens_counts[str(token)] = 1
-                        successful_tokens_objects[str(token)] = token
-                    else:
-                        successful_tokens_counts[str(token)] = successful_tokens_counts[str(token)] + 1
-
-                    # print(str(token), successful_tokens_counts[str(token)])
+        extract_special_tokens(best_programs, self.dsl)
 
         genome_fitness_values[str(genome)] = fitness_value
 
@@ -224,7 +176,6 @@ class EvolvingLanguage(GeneticAlgorithm):
             random_crossover_probability = random.random()
             # CROSSOVER
             if random_crossover_probability < self.crossover_probability:
-                # TODO: now we take crossover probability as if we apply it on the whole generation, want to apply per genome (pair)
 
                 crossed_result = []
                 genome_count = 0
@@ -269,25 +220,16 @@ class EvolvingLanguage(GeneticAlgorithm):
                         store=False,
                         suffix="",
                         dsl=genome)
-        perc_solved = runner.run()
+        runner.run()
 
-        print(perc_solved)
+        mean_ratio_correct, mean_search_time_correct, best_programs = \
+            process_search_results(runner.search_results, self.domain)
 
-        # success_percentage = results["completely_successful_percentage"]
-        # average_execution_time = results["average_execution"]
-        #
-        # search_results = results["programs"]
-        # cum_program_length = 0
-        # total_search_time = 0
-        # for result in search_results:
-        #     total_search_time += result.dictionary["execution_time"]
-        #     cum_program_length += result.dictionary["program_length"]
-        #
-        # avg_program_length = cum_program_length / len(search_results)
-        # print("Total search time", total_search_time)
-        # print("Success percentage:", success_percentage)
-        # print("Average program runtime:", average_execution_time)
-        # print("Average program length", avg_program_length)
+        avg_program_length = sum(map(lambda x: len(x), best_programs)) / len(best_programs)
+
+        print("Mean search time", mean_search_time_correct)
+        print("Mean ratio correct:", mean_ratio_correct)
+        print("Average program length", avg_program_length)
 
 
 def sort_genome(genome: Genome) -> Genome:
@@ -362,6 +304,7 @@ def crossover_exchange_halve_random(a: Genome, b: Genome) -> Tuple[Genome, Genom
     return create_dsl_from_tokens(a.domain_name, selected_unduplicated), \
            create_dsl_from_tokens(a.domain_name, remainder_unduplicated)
 
+
 # Had to be introduced because we can't do set conversion for some tokens
 def remove_duplicates(tokens: List[Token]) -> List[Token]:
     final_tokens = []
@@ -369,6 +312,7 @@ def remove_duplicates(tokens: List[Token]) -> List[Token]:
         if token not in final_tokens:
             final_tokens.append(token)
     return final_tokens
+
 
 def get_random_half_and_remainder(tokens: List[Token]) -> Tuple[List[Token], List[Token]]:
     tokens_selected = random.sample(tokens, round(len(tokens) / 2))
@@ -388,6 +332,7 @@ def create_dsl_from_tokens(domain: str, tokens: List[Token]) -> Genome:
             trans_tokens.append(token)
 
     return sort_genome(DomainSpecificLanguage(dsl.domain_name, bool_tokens, trans_tokens))
+
 
 # MUTATION FUNCTIONS
 def mutate_add_token(genome: Genome, dsl: DomainSpecificLanguage) -> Genome:
@@ -446,13 +391,6 @@ def mutate_add_special_token(genome: Genome) -> Genome:
     trans_tokens_genome = genome.get_trans_tokens()
 
     randomly_selected_token = pick_random_weighted()
-    # print(type(randomly_selected_token), str(randomly_selected_token))
-    # print(str(flatten_token(randomly_selected_token)))
-
-    # Random chance of deleting the tokens that are already in the special token
-    rand_float = random.random()
-    if rand_float < 0.2:
-        genome = remove_specific_tokens(genome, list(flatten_token(randomly_selected_token)))
 
     if randomly_selected_token not in trans_tokens_genome:
         trans_tokens_genome.append(randomly_selected_token)
@@ -472,7 +410,6 @@ def pick_random_weighted():
 
 
 def normalize_token_weights():
-
     # Since we want enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
     for key in successful_tokens_counts:
         successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.1)
@@ -482,30 +419,6 @@ def normalize_token_weights():
     for key in successful_tokens_counts:
         successful_tokens_weights[key] = successful_tokens_counts[key] / total_token_count
         # print(str(key), successful_tokens_weights[key])
-
-
-def flatten_token(token: Token):
-    flat_token_set = set()
-
-    if type(token) is InventedToken:
-        base_tokens = token.tokens
-        for each_token in base_tokens:
-            flat_token_set.update(flatten_token(each_token))
-    elif type(token) is If:
-        flat_token_set.update(flatten_token(token.cond))
-        flat_token_set.update(flatten_token(token.e1))
-        flat_token_set.update(flatten_token(token.e2))
-    elif type(token) is LoopWhile:
-        flat_token_set.update(flatten_token(token.cond))
-        for body_token in token.loop_body:
-            flat_token_set.update(flatten_token(body_token))
-    elif type(token) is List:
-        for t in token:
-            flat_token_set.update(flatten_token(t))
-    else:
-        flat_token_set.add(token)
-
-    return flat_token_set
 
 
 def remove_specific_tokens(genome: Genome, tokens: List[Token]):
@@ -520,3 +433,53 @@ def remove_specific_tokens(genome: Genome, tokens: List[Token]):
 
     result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
     return result
+
+
+def process_search_results(search_results: dict, domain: str) -> Tuple[float, float, List]:
+    total_cases = 0
+    cumulative_ratios_correct = 0
+    cumulative_search_time_correct = 0
+    best_programs = []
+
+    for key, value in search_results.items():
+        total_cases += 1
+        current_search_result = value
+        search_time = current_search_result["search_time"]
+        test_total = current_search_result["test_total"]
+        best_programs.append(current_search_result["best_program"])
+
+        current_ratio_correct = 0
+        # If we use string domain we should use tests, instead of training examples
+        if domain == "string":
+            test_correct = current_search_result["test_correct"]
+            current_ratio_correct += test_correct / test_total
+        else:
+            train_correct = current_search_result["train_correct"]
+            current_ratio_correct += train_correct / test_total
+
+        cumulative_ratios_correct += current_ratio_correct
+        if current_ratio_correct > 0:
+            cumulative_search_time_correct += search_time
+        else:
+            cumulative_search_time_correct += 1  # TODO, find better way to compensate for this
+
+    mean_ratio_correct = cumulative_ratios_correct / total_cases
+    mean_search_time_correct = cumulative_search_time_correct / total_cases
+
+    return mean_ratio_correct, mean_search_time_correct, best_programs
+
+
+def extract_special_tokens(best_programs: List, dsl: DomainSpecificLanguage):
+    for program in best_programs:
+        tokens = program.sequence
+
+        for token in tokens:
+            if token not in dsl.get_trans_tokens():
+
+                if str(token) not in successful_tokens_counts.keys():
+                    successful_tokens_counts[str(token)] = 1
+                    successful_tokens_objects[str(token)] = token
+                else:
+                    successful_tokens_counts[str(token)] = successful_tokens_counts[str(token)] + 1
+
+                # print(str(token), successful_tokens_counts[str(token)])
