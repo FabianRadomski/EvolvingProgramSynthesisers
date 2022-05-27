@@ -1,11 +1,10 @@
 import copy
 import random
 from random import randrange
-from typing import List, Callable, Tuple, Iterable
+from typing import List, Tuple
 
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
-from common.tokens.abstract_tokens import Token, InventedToken, ControlToken
-from common.tokens.control_tokens import LoopWhile, If
+from common.tokens.abstract_tokens import Token
 from solver.runner.runner import Runner
 from solver.runner.algorithms import dicts
 
@@ -225,7 +224,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         mean_ratio_correct, mean_search_time_correct, best_programs = \
             process_search_results(runner.search_results, self.domain)
 
-        avg_program_length = sum(map(lambda x: len(x), best_programs)) / len(best_programs)
+        avg_program_length = sum(map(lambda x: len(x.sequence), best_programs)) / len(best_programs)
 
         print("Mean search time", mean_search_time_correct)
         print("Mean ratio correct:", mean_ratio_correct)
