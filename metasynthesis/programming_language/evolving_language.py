@@ -1,5 +1,11 @@
 import copy
+import os
 import random
+import sys
+from multiprocessing import Pool
+from multiprocessing import get_context
+
+import time
 from random import randrange
 from typing import List, Tuple
 
@@ -64,12 +70,12 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         return population
 
-    def fitness(self, genome: Genome) -> float:
+    def fitness(self, genome: Genome):
         """This method calculates the fitness of the specified genome"""
 
         if str(genome) in genome_fitness_values.keys():
             # print("ALREADY IN", str(genome))
-            return genome_fitness_values[str(genome)]
+            return genome, genome_fitness_values[str(genome)], []
 
         # genome = StandardDomainSpecificLanguage("robot")
         runner = Runner(lib=dicts(0),
@@ -91,14 +97,16 @@ class EvolvingLanguage(GeneticAlgorithm):
         else:
             fitness_value = mean_ratio_correct * (1 / mean_search_time_correct)
 
-        print("correct:", mean_ratio_correct, "search:", mean_search_time_correct, "fitness:", fitness_value)
+        print("correct:", round(mean_ratio_correct, 5),
+              "search:",  round(mean_search_time_correct, 5),
+              "fitness:",  round(fitness_value, 5))
 
-        # SPECIAL TOKEN EXTRACTION
-        extract_special_tokens(best_programs, self.dsl)
+        # # SPECIAL TOKEN EXTRACTION
+        # extract_special_tokens(best_programs, self.dsl)
+        #
+        # genome_fitness_values[str(genome)] = fitness_value
 
-        genome_fitness_values[str(genome)] = fitness_value
-
-        return fitness_value
+        return genome, fitness_value, best_programs
 
     def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
         """This method applies the given crossover function with certain probability"""
@@ -134,7 +142,7 @@ class EvolvingLanguage(GeneticAlgorithm):
     def sort_population(self, population: Population) -> Population:
         """This method sorts the population based on the given fitness function"""
 
-        return sorted(population, key=lambda genome: self.fitness(genome), reverse=True)
+        return sorted(population, key=lambda genome: self.fitness(genome)[1], reverse=True)
 
     def genome_to_string(self, genome: Genome) -> str:
         """This method converts a given genome to a string"""
@@ -144,8 +152,11 @@ class EvolvingLanguage(GeneticAlgorithm):
     def run_evolution(self):
         """This method runs the evolution process"""
 
+        t1_start = time.perf_counter()
+
         full_dsl = sort_genome(StandardDomainSpecificLanguage(self.domain))
-        print("FULL DSL FITNESS", self.fitness(full_dsl))
+
+        print("FULL DSL FITNESS", self.fitness(full_dsl)[1])
 
         iteration_count = 0
         population = self.generate_population()
@@ -153,17 +164,39 @@ class EvolvingLanguage(GeneticAlgorithm):
         while iteration_count < self.generation_limit:
             successful_tokens_weights.clear()
 
+            # # EVALUATING CHROMOSOMES
+            # with Pool(processes=os.cpu_count() - 1) as pool:
+            #     results = pool.map_async(self.fitness, population)
+            #
+            #     for genome, fitness_value, best_programs in results.get():
+            #         # SPECIAL TOKEN EXTRACTION
+            #         extract_special_tokens(best_programs, self.dsl)
+            #
+            #         genome_fitness_values[str(genome)] = fitness_value
+
+            results = []
+            for chromosome in population:
+                results.append(self.fitness(chromosome))
+
+            for genome, fitness_value, best_programs in results:
+
+                # SPECIAL TOKEN EXTRACTION
+                extract_special_tokens(best_programs, self.dsl)
+
+                genome_fitness_values[str(genome)] = fitness_value
+
+
             # STATS
             print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
             for genome in population:
                 # self.fitness(genome)
-                print(round(self.fitness(genome), 5), str(genome))
+                print(round(self.fitness(genome)[1], 5), str(genome))
 
             new_population = copy.deepcopy(population)
 
             generation_cum_fitness = 0
             for genome in population:
-                generation_cum_fitness += self.fitness(genome)
+                generation_cum_fitness += self.fitness(genome)[1]
             print("AVERAGE GENERATION FITNESS", generation_cum_fitness / self.generation_size)
 
             best_percentage = select_best_percentage(population=new_population, percentage=50,
@@ -208,6 +241,9 @@ class EvolvingLanguage(GeneticAlgorithm):
         print("EVOLVED DSL")
         self.final_evaluation(best_genome)
 
+        t1_stop = time.perf_counter()
+
+        print("Elapsed time during the whole program in seconds:", t1_stop - t1_start)
         return best_genome
 
     def final_evaluation(self, genome: Genome):
