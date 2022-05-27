@@ -3,6 +3,7 @@ from multiprocessing import Pool
 from statistics import mean
 from typing import Callable
 
+from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.environment.environment import Environment
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.evolving_function import distance_default_expr_tree
@@ -23,6 +24,7 @@ class Runner:
                  debug: bool = False,
                  store: bool = True,
                  suffix: str = "",
+                 dsl: DomainSpecificLanguage = None,
                  dist_fun: Callable[[Environment, Environment], float] = None):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
@@ -30,10 +32,17 @@ class Runner:
 
         self.algorithm = lib["algorithms"][algo][setting]
         self.settings = lib["settings"][setting]
+
+        if dsl is not None:
+            self.settings.dsl = dsl
+
         self.settings.dist_fun = dist_fun
+
         self.files = lib["test_cases"][test_cases][setting[0]]
 
         self.file_manager = FileManager(algo, setting, suffix)
+
+        self.search_results = dict()
 
     def run(self):
         Runner.algo = self.algorithm
@@ -49,7 +58,7 @@ class Runner:
 
         if len(all_cases) == 0:
             print("All test cases were already run")
-            return 0, 0
+            return 0
 
         total_examples = [0] * len(self.files[2])
         solved_examples = [0] * len(self.files[2])
@@ -79,6 +88,20 @@ class Runner:
                     total_examples[i] += stats["test_total"]
                     solved_examples[i] += stats["test_correct"]
 
+                    self.search_results[str(stats["complexity"]) + str(stats["task"]) +
+                                        str(stats["trial"]) + str(self.settings.dsl)] = \
+                        {"best_program": program,
+                         "train_correct": stats["train_correct"],
+                         "test_correct": stats["test_correct"],
+                         "test_total": stats["test_total"],
+                         "search_time": stats["execution_time"]}
+
+                    # print(str(stats["complexity"]) + str(stats["task"]) +
+                    #                     str(stats["trial"]) + str(self.settings.dsl),
+                    #       self.search_results[str(stats["complexity"]) + str(stats["task"]) +
+                    #                     str(stats["trial"]) + str(self.settings.dsl)])
+
+
                 if self.store:
                     self.file_manager.append_result(stats_list)
 
@@ -93,7 +116,7 @@ class Runner:
 if __name__ == "__main__":
     time_limit = 1
     debug = False
-    store = True  # sets wether to write date to file
+    store = True  # sets whether to write date to file
     setting = "RO"
     algo = "Brute"
     test_cases = "debug"

@@ -1,9 +1,15 @@
 import common.tokens.robot_tokens as robot_tokens
 import common.tokens.pixel_tokens as pixel_tokens
 import common.tokens.string_tokens as string_tokens
-from typing import List, Type
+from typing import List, Type, Callable
 
 from common.tokens.abstract_tokens import Token
+
+ConstraintFunc = Callable[[List[Token]], bool]
+
+
+def identity(x):
+    return x
 
 
 class DomainSpecificLanguage:
@@ -13,18 +19,22 @@ class DomainSpecificLanguage:
                  domain_name: str,
                  bool_tokens: List[Token],
                  trans_tokens: List[Token],
-                 constraints_enabled: bool = False):
+                 constraints_enabled: bool = False,
+                 constraint_func: ConstraintFunc = identity):
         self.domain_name = domain_name
         self._bool_tokens = bool_tokens
         self._trans_tokens = trans_tokens
+        self._invented_tokens = []
         self._constraints_enabled = constraints_enabled
+        self._constraint_func = constraint_func
 
-    def get_trans_tokens(self, partial_program=None) -> List[Token]:
+    def check_sequence_allowed(self, program):
+        if not self._constraints_enabled:
+            return True
+        return self._constraint_func(program)
+
+    def get_trans_tokens(self) -> List[Token]:
         """This method gets trans tokens"""
-
-        if partial_program is None:
-            partial_program = []
-
         return self._trans_tokens
 
     def get_bool_tokens(self) -> List[Token]:

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from common.environment import RobotEnvironment
+from common.environment.robot_environment import RobotEnvironment
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from common.tokens.robot_tokens import MoveUp, MoveDown, MoveLeft, MoveRight, Grab, Drop
 from metasynthesis.language_constraints.properties.BinaryProperties import Identity, Independent

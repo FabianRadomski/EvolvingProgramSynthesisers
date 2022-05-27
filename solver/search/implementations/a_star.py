@@ -46,6 +46,9 @@ class AStar(SearchAlgorithm):
             return False
 
         for token in self.tokens:
+            if not self.settings.dsl.check_sequence_allowed(self._reconstruct_program(state)):
+                continue
+
             try:
                 new_state = tuple(map(token.apply, copy.deepcopy(state)))
             except (InvalidTransition, LoopIterationLimitReached):

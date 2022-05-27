@@ -1,16 +1,17 @@
+
+from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from typing import Callable
 
 from common.environment.environment import Environment
 from common.settings.settings import Settings
 from common.environment.robot_environment import RobotEnvironment
-from common.tokens.robot_tokens import TransTokens, BoolTokens
 
 
 class RobotOptimizedSteps(Settings):
     """Optimized amount of steps for robot environment."""
 
     def __init__(self):
-        super().__init__("robot", TransTokens, BoolTokens)
+        super().__init__("robot", StandardDomainSpecificLanguage('robot'))
 
     def distance(self, inp: RobotEnvironment, out: RobotEnvironment) -> float:
         if self.dist_fun is None:

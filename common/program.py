@@ -1,3 +1,4 @@
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.tokens.abstract_tokens import *
 import copy
 
@@ -43,3 +44,17 @@ class Program:
 
     # def interp_cast(self, env: Environment):
     #   return cast(env, self.interp(env))
+
+class ConstrainedProgram(Program):
+
+    def __init__(self, dsl: DomainSpecificLanguage, recurse_limit: int = 300, loop_limit: int = 100):
+        super().__init__([], recurse_limit, loop_limit)
+        self.dsl = dsl
+        self.constraints = []
+
+    def add(self, token: EnvToken):
+        pass
+
+    def can_add(self, token: EnvToken):
+        # Needs to get more complex info from dsl
+        pass

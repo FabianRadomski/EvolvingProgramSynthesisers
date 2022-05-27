@@ -52,7 +52,6 @@ class GeneticAlgorithm:
 
     def genome_to_string(self, genome: Genome) -> str:
         """This method converts a given genome to a string"""
-
         raise NotImplementedError()
 
     def run_evolution(self):

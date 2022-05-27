@@ -40,6 +40,7 @@ class MCTS(SearchAlgorithm):
     def setup(self):
         #self._best_program: Program
         #self.smallest_loss: float = float("inf")
+
         self.max_expected_loss: float = float("inf")  # is used for normalizing exploitation factor
         self.search_tree: Union[SearchTreeNode, None] = None
         self.invented_tokens: list[InventedToken] = self.tokens
@@ -86,7 +87,9 @@ class MCTS(SearchAlgorithm):
         # initialize a dictionary that keeps track of outcomes of programs
         self.dict_with_obtained_output_environments[resulting_envs] = self.search_tree
 
-    def iteration(self) -> bool:
+    # TODO make sure that the type of trans_ and bool_token is set[Type[Token]] and not set[Token]
+    def iteration(self, training_example: List[Example], dsl: DomainSpecificLanguage) -> bool:
+
         # return False to indicate no other iterations are necessary
         if self.best_cost <= 0.0001:
             return False

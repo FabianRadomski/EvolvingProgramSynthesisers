@@ -1,12 +1,12 @@
 from common.environment.string_environment import StringEnvironment
+from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from common.settings.settings import Settings
-from common.tokens.string_tokens import TransTokens, BoolTokens
 
 
 class StringEntailment(Settings):
 
     def __init__(self):
-        super().__init__("string", TransTokens, BoolTokens)
+        super().__init__("string", StandardDomainSpecificLanguage('string'))
 
     def distance(self, inp: StringEnvironment, out: StringEnvironment) -> float:
         if self.dist_fun is None:

@@ -1,5 +1,6 @@
 import random
 
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.tokens.abstract_tokens import TransToken, BoolToken, EnvToken
 from common.tokens.control_tokens import If, LoopWhile
 
@@ -14,10 +15,10 @@ class Invent:
         self.ifs = []
         self.perms = []
 
-    # TODO instead of trans_tokens and bool_tokens pass DSL
-    def setup(self, trans_tokens: list[TransToken], bool_tokens: list[BoolToken]):
-        self._trans_tokens = trans_tokens
-        self._bool_tokens = bool_tokens
+    def setup(self, dsl: DomainSpecificLanguage):
+        self._dsl = dsl
+        self._trans_tokens = dsl.get_trans_tokens()
+        self._bool_tokens = dsl.get_bool_tokens()
 
     def increment_depth(self):
         pass

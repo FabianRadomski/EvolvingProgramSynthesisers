@@ -1,7 +1,7 @@
 import enum
 from typing import List, Tuple
 
-from common.environment import Environment
+from common.environment.environment import Environment
 from common.tokens.abstract_tokens import Token, BoolToken, TransToken, ControlToken, InvalidTransition
 from common.tokens.control_tokens import If, LoopWhile
 

@@ -8,6 +8,7 @@ class FileManager:
         self.folder = "{}/results/{}".format(os.getcwd(), algo)
         self.file_name = "{}-{}{}.txt".format(algo, settings, suffix)
         self.path = "{}/{}".format(self.folder, self.file_name)
+        self.written_data = []
 
         # Create folder if not existing
         if not os.path.exists(self.folder):
@@ -27,6 +28,7 @@ class FileManager:
         return test_cases
 
     def append_result(self, results: list[dict]):
+        self.written_data.append(results)
         with open(self.path, "a") as file:
             for result in results:
                 file.write(json.dumps(result))

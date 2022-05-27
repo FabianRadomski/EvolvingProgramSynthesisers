@@ -65,7 +65,7 @@ class SearchAlgorithm:
         self.debug = debug
 
         self.invent = StaticInvent()
-        self.invent.setup(settings.trans_tokens, settings.bool_tokens)
+        self.invent.setup(settings.dsl)
         self.tokens = self.invent.perms + self.invent.loops + self.invent.ifs
 
         self.training_examples = test_case.training_examples
