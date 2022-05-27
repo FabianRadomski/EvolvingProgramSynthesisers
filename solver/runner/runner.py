@@ -42,6 +42,8 @@ class Runner:
 
         self.file_manager = FileManager(algo, setting, suffix)
 
+        self.search_results = dict()
+
     def run(self):
         Runner.algo = self.algorithm
 
@@ -85,6 +87,19 @@ class Runner:
 
                     total_examples[i] += stats["test_total"]
                     solved_examples[i] += stats["test_correct"]
+
+                    self.search_results[str(stats["complexity"]) + str(stats["task"]) +
+                                        str(stats["trial"]) + str(self.settings.dsl)] = \
+                        {"train_correct": stats["train_correct"],
+                         "test_correct": stats["test_correct"],
+                         "test_total": stats["test_total"],
+                         "search_time": stats["execution_time"]}
+
+                    # print(str(stats["complexity"]) + str(stats["task"]) +
+                    #                     str(stats["trial"]) + str(self.settings.dsl),
+                    #       self.search_results[str(stats["complexity"]) + str(stats["task"]) +
+                    #                     str(stats["trial"]) + str(self.settings.dsl)])
+
 
                 if self.store:
                     self.file_manager.append_result(stats_list)
