@@ -44,6 +44,9 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.search_algo = search_algo
 
         self.full_dsl_correct_ratio = 0.0
+        self.fitness(sort_genome(StandardDomainSpecificLanguage(self.domain)))
+        self.full_dsl_correct_ratio = \
+            genome_fitness_values[str(sort_genome(StandardDomainSpecificLanguage(self.domain)))]["correct"]
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
@@ -72,14 +75,12 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         return population
 
-    def fitness(self, genome: Genome):
+    def fitness(self, genome: Genome) -> float:
         """This method calculates the fitness of the specified genome"""
 
         if str(genome) in genome_fitness_values.keys():
-            # print("ALREADY IN", str(genome))
-            return genome, genome_fitness_values[str(genome)], [], -1.0
+            return genome_fitness_values[str(genome)]["fitness"]
 
-        # genome = StandardDomainSpecificLanguage("robot")
         runner = Runner(lib=dicts(0),
                         algo=self.search_algo,
                         setting=self.search_setting,
@@ -91,7 +92,7 @@ class EvolvingLanguage(GeneticAlgorithm):
                         dsl=genome)
         runner.run()
 
-        mean_ratio_correct_original, mean_search_time_correct, best_programs = \
+        mean_ratio_correct_original, mean_search_time, best_programs = \
             process_search_results(runner.search_results, self.domain)
 
         mean_ratio_correct = mean_ratio_correct_original
@@ -101,17 +102,17 @@ class EvolvingLanguage(GeneticAlgorithm):
             mean_ratio_correct = 0.0
 
         # To prevent division by zero
-        if mean_search_time_correct == 0:
+        if mean_search_time == 0:
             fitness_value = 0
         else:
-            fitness_value = mean_ratio_correct * (1 / mean_search_time_correct)
+            fitness_value = mean_ratio_correct * (1 / mean_search_time)
 
-        print("correct:", round(mean_ratio_correct_original, 2),
-              "search:",  round(mean_search_time_correct, 2),
-              "fitness:",  round(fitness_value, 2),
-              str(genome))
+        extract_special_tokens(best_programs, self.dsl)
 
-        return genome, fitness_value, best_programs, mean_ratio_correct
+        genome_fitness_values[str(genome)] = {"genome": genome, "correct": mean_ratio_correct,
+                                              "search": mean_search_time, "fitness": fitness_value}
+
+        return fitness_value
 
     def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
         """This method applies the given crossover function with certain probability"""
@@ -147,7 +148,7 @@ class EvolvingLanguage(GeneticAlgorithm):
     def sort_population(self, population: Population) -> Population:
         """This method sorts the population based on the given fitness function"""
 
-        return sorted(population, key=lambda genome: self.fitness(genome)[1], reverse=True)
+        return sorted(population, key=lambda genome: self.fitness(genome), reverse=True)
 
     def genome_to_string(self, genome: Genome) -> str:
         """This method converts a given genome to a string"""
@@ -160,9 +161,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         t1_start = time.perf_counter()
 
         full_dsl = sort_genome(StandardDomainSpecificLanguage(self.domain))
-        full_dsl_fitness_results = self.fitness(full_dsl)
-        self.full_dsl_correct_ratio = full_dsl_fitness_results[3]
-        print("FULL DSL FITNESS", round(full_dsl_fitness_results[1], 4))
+        print("FULL DSL FITNESS", round(self.fitness(full_dsl), 4))
 
         iteration_count = 0
         population = self.generate_population()
@@ -176,37 +175,18 @@ class EvolvingLanguage(GeneticAlgorithm):
             new_population = copy.deepcopy(population)
 
             # EVALUATING CHROMOSOMES
-
-            # with Pool(processes=os.cpu_count() - 1) as pool:
-            #     results = pool.map_async(self.fitness, population)
-            #
-            #     for genome, fitness_value, best_programs in results.get():
-            #         # SPECIAL TOKEN EXTRACTION
-            #         extract_special_tokens(best_programs, self.dsl)
-            #
-            #         genome_fitness_values[str(genome)] = fitness_value
-
-            results = []
             for chromosome in population:
-                results.append(self.fitness(chromosome))
-
-            for genome, fitness_value, best_programs, mean_ratio_correct in results:
-
-                # SPECIAL TOKEN EXTRACTION
-                extract_special_tokens(best_programs, self.dsl)
-
-                genome_fitness_values[str(genome)] = fitness_value
-
-
-            # STATS
-            # print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
-            # for genome in population:
-            #     # self.fitness(genome)
-            #     print(round(self.fitness(genome)[1], 5), str(genome))
+                self.fitness(chromosome)
+                stats = genome_fitness_values[str(chromosome)]
+                print("correct:", round(stats["correct"], 3),
+                      "search:", round(stats["search"], 3),
+                      "fitness:", round(stats["fitness"], 3),
+                      str(stats["genome"]))
 
             generation_cum_fitness = 0
             for genome in population:
-                generation_cum_fitness += self.fitness(genome)[1]
+                generation_cum_fitness += self.fitness(genome)
+
             print("AVERAGE GENERATION FITNESS", generation_cum_fitness / self.generation_size)
 
             best_percentage = select_best_percentage(population=new_population, percentage=50,
@@ -216,8 +196,8 @@ class EvolvingLanguage(GeneticAlgorithm):
             for elite_index in range(0, self.elite_genomes):
                 new_population[elite_index] = best_percentage[elite_index]
 
-            random_crossover_probability = random.random()
             # CROSSOVER
+            random_crossover_probability = random.random()
             if random_crossover_probability < self.crossover_probability:
 
                 crossed_result = []
@@ -254,6 +234,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         t1_stop = time.perf_counter()
 
         print("Elapsed time during the whole program in seconds:", t1_stop - t1_start)
+
         return best_genome
 
     def final_evaluation(self, genome: Genome):
@@ -286,7 +267,7 @@ def sort_genome(genome: Genome) -> Genome:
 
 
 def get_fitness(genome: Genome):
-    return genome_fitness_values[str(genome)]
+    return genome_fitness_values[str(genome)]["fitness"]
 
 
 def select_best_percentage(population: Population, percentage: float, size: int) -> Population:
@@ -452,7 +433,7 @@ def pick_random_weighted():
 
 
 def normalize_token_weights():
-    # Since we want enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
+    # Since we want to enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
     for key in successful_tokens_counts:
         successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.1)
 
@@ -503,11 +484,6 @@ def process_search_results(search_results: dict, domain: str) -> Tuple[float, fl
 
         cumulative_search_time += search_time
         cumulative_ratios_correct += current_ratio_correct
-
-        # if current_ratio_correct > 0:
-        #     cumulative_search_time_correct += search_time
-        # else:
-        #     cumulative_search_time_correct += 1  # TODO, find better way to compensate for this
 
     mean_ratio_correct = cumulative_ratios_correct / total_cases
     mean_search_time_correct = cumulative_search_time / total_cases

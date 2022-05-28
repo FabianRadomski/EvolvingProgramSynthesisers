@@ -17,11 +17,11 @@ dsl = StandardDomainSpecificLanguage(domain)
 if __name__ == '__main__':
 
     genetic = EvolvingLanguage(fitness_limit=1,
-                               generation_limit=30,
+                               generation_limit=50,
                                crossover_probability=0.8,
                                mutation_probability=0.3,
                                elite_genomes=2,
-                               generation_size=18,  # 10, 34
+                               generation_size=34,  # 10, 34
                                dsl=dsl,
                                search_setting=search_setting,
                                max_search_time=3,
