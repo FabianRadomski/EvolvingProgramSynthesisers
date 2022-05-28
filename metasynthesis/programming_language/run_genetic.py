@@ -3,10 +3,10 @@ from metasynthesis.programming_language.evolving_language import EvolvingLanguag
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 
 domain = "string"
-search_setting = ""
 
+search_setting = ""
 if domain == "pixel":
-    search_setting = "PO"
+    search_setting = "PG"
 elif domain == "robot":
     search_setting = "RO"
 elif domain == "string":
@@ -24,6 +24,7 @@ if __name__ == '__main__':
                                generation_size=10,
                                dsl=dsl,
                                search_setting=search_setting,
-                               max_search_time=1)
+                               max_search_time=1,
+                               search_mode="debug")  # set to "eval" for final, "debug" for debugging
     genetic.run_evolution()
 

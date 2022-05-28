@@ -21,7 +21,8 @@ class EvolvingLanguage(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  elite_genomes: int, mutation_probability: float, generation_size: int,
-                 dsl: DomainSpecificLanguage, search_setting: str, max_search_time: float):
+                 dsl: DomainSpecificLanguage, search_setting: str, max_search_time: float,
+                 search_mode: str):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -30,6 +31,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.trans_tokens = dsl.get_trans_tokens()
         self.search_setting = search_setting
         self.max_search_time = max_search_time
+        self.search_mode = search_mode
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
@@ -72,16 +74,52 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         # genome = StandardDomainSpecificLanguage("robot")
         runner = Runner(lib=dicts(0),
-                        algo="Brute",
+                        algo="AS",
                         setting=self.search_setting,
-                        test_cases="debug",  # set to "eval" for final
+                        test_cases=self.search_mode,
                         time_limit_sec=self.max_search_time,
                         debug=False,
                         store=False,
                         suffix="",
                         dsl=genome)
-        results = runner.run()
-        print(results)
+        runner.run()
+
+        search_results = runner.search_results
+
+        total_cases = 0
+        cumulative_ratios_correct = 0
+        cumulative_search_time_correct = 0
+
+        for key, value in search_results.items():
+            total_cases += 1
+            current_search_result = value
+            search_time = current_search_result["search_time"]
+            test_total = current_search_result["test_total"]
+
+            current_ratio_correct = 0
+            # If we use string domain we should use tests, instead of training examples
+            if self.domain == "string":
+                test_correct = current_search_result["test_correct"]
+                current_ratio_correct += test_correct / test_total
+            else:
+                train_correct = current_search_result["train_correct"]
+                current_ratio_correct += train_correct / test_total
+
+            cumulative_ratios_correct += current_ratio_correct
+            if current_ratio_correct > 0:
+                cumulative_search_time_correct += search_time
+            else:
+                cumulative_search_time_correct += self.max_search_time
+
+        mean_ratio_correct = cumulative_ratios_correct / total_cases
+        mean_search_time_correct = cumulative_search_time_correct / total_cases
+
+        if mean_search_time_correct == 0:
+            fitness_value = 0
+        else:
+            fitness_value = mean_ratio_correct * (1 / mean_search_time_correct)
+
+        print("correct:", mean_ratio_correct, "search:", mean_search_time_correct, "fitness:", fitness_value)
 
         # avg_exec_time = results["average_execution"]
         # inverse_avg_exec_time = 1 / (avg_exec_time + 0.000000001)
@@ -94,7 +132,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         # fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
         #
 
-        fitness_value = results
+
         genome_fitness_values[str(genome)] = fitness_value
 
         return fitness_value
@@ -205,29 +243,31 @@ class EvolvingLanguage(GeneticAlgorithm):
         runner = Runner(dicts(0),
                         algo="Brute",
                         setting=self.search_setting,
-                        test_cases="debug",  # set to "eval" for final
+                        test_cases=self.search_mode,
                         time_limit_sec=self.max_search_time,
                         debug=False,
                         store=False,
                         suffix="",
                         dsl=genome)
-        results = runner.run()
+        perc_solved = runner.run()
 
-        success_percentage = results["completely_successful_percentage"]
-        average_execution_time = results["average_execution"]
+        print(perc_solved)
 
-        search_results = results["programs"]
-        cum_program_length = 0
-        total_search_time = 0
-        for result in search_results:
-            total_search_time += result.dictionary["execution_time"]
-            cum_program_length += result.dictionary["program_length"]
-
-        avg_program_length = cum_program_length / len(search_results)
-        print("Total search time", total_search_time)
-        print("Success percentage:", success_percentage)
-        print("Average program runtime:", average_execution_time)
-        print("Average program length", avg_program_length)
+        # success_percentage = results["completely_successful_percentage"]
+        # average_execution_time = results["average_execution"]
+        #
+        # search_results = results["programs"]
+        # cum_program_length = 0
+        # total_search_time = 0
+        # for result in search_results:
+        #     total_search_time += result.dictionary["execution_time"]
+        #     cum_program_length += result.dictionary["program_length"]
+        #
+        # avg_program_length = cum_program_length / len(search_results)
+        # print("Total search time", total_search_time)
+        # print("Success percentage:", success_percentage)
+        # print("Average program runtime:", average_execution_time)
+        # print("Average program length", avg_program_length)
 
 
 def sort_genome(genome: Genome) -> Genome:
