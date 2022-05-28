@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --job-name="genetic_language"
 #SBATCH --partition=compute
-#SBATCH --time=4:00:00
+#SBATCH --time=10:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
 #SBATCH --mem=4G
