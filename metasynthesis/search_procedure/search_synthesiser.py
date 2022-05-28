@@ -36,9 +36,10 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", setting: str =
-                 "RE", print_generations: bool = False):
+                 "RE", print_generations: bool = False, test_size = "small"):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
+        self.test_size = test_size
         self.max_seq_size: int = max_seq_size
 
         self.curr_iteration: int = 0
@@ -92,8 +93,11 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
-            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, "eval", 10, debug=False, store=False, multi_thread=False)
-            average_success, average_time = runner.run()
+            print(f"Running search of {str(genome)}\n")
+            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=True)
+            success_ratio, average_time = runner.run()
+            average_success = success_ratio * 100
+            print("Finished running search\n")
         #     if self.dist_type == "Time":
         #         search: SearchAlgorithm = CombinedSearchTime(genome)
         #     else:
@@ -106,7 +110,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             return 0
 
         # Only consider time if the programs are fully correct
-        if average_success == 100:
+        if average_success == 50.0:
             fitness = self.success_weight * average_success + self.time_weight * (1 / average_time)
         else:
             fitness = self.success_weight * average_success
@@ -235,7 +239,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         elif dist_type == "Uniform":
             return random.randrange(1, self.initial_distribution_uniform[search_type])
         elif dist_type == "Time":
-            return random.uniform(0, self.initial_distribution_time[search_type])
+            return random.uniform(0.05, self.initial_distribution_time[search_type])
         else:
             raise Exception("The chosen iteration distribution is not allowed. Choose either Gauss or Uniform!")
 
@@ -302,4 +306,4 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 if __name__ == "__main__":
     SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
-                      mutation_probability=0.02, generation_size=20, max_seq_size=6, dist_type="Time", print_generations=True).run_evolution()
+                      mutation_probability=0.02, generation_size=20 , max_seq_size=6, dist_type="Time", print_generations=True).run_evolution()

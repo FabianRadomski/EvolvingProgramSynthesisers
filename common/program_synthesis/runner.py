@@ -6,10 +6,6 @@ from multiprocessing import Pool
 from typing import List
 
 from common.experiment import TestCase
-from common.parser.parser import Parser
-from common.parser.pixel_parser import PixelParser
-from common.parser.robot_parser import RobotParser
-from common.parser.string_parser import StringParser
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.program_synthesis.objective import ObjectiveFun
@@ -21,13 +17,9 @@ from solver.search.implementations.brute import Brute
 @dataclass
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
-    algorithm_type: str = "Brute"
-    algorithm_settings: str = "RE"
-    test_cases: str = "eval"
-
     domain = "robot"
     dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
-    search_method: SearchAlgorithm = Brute()
+    search_method: SearchAlgorithm = Brute(5, ObjectiveFun(domain).fun)
     print_results: bool = False
     max_test_cases: int = 1000
     POOL_RUN_PROCESS_TIMEOUT = 10  # Must be higher than MAX_EXECUTION_TIME
@@ -110,7 +102,8 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        success_rate, avg_exec_time = self.search_method.run(self.algorithm_settings, self.)
+        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
+                                   self.dsl.get_bool_tokens())
 
         if self.print_results:
             self.print_info(self.get_result_info(test_case, search_result))

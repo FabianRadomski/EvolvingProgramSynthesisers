@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, Mapping
 
 from solver.search.implementations.a_star import AStar
 from solver.search.implementations.brute import Brute
@@ -7,73 +7,96 @@ from solver.search.implementations.large_neighborhood_search import LNS
 from solver.search.implementations.metropolis import MetropolisHasting
 from solver.search.implementations.my_mcts.mcts import MCTS
 
+class LazyDict(Mapping):
+    def __init__(self, *args, **kw):
+        self._raw_dict = dict(*args, **kw)
+
+    def __getitem__(self, key):
+        func, *args = self._raw_dict.__getitem__(key)
+        return func(*args)
+
+    def __iter__(self):
+        return iter(self._raw_dict)
+
+    def __len__(self):
+        return len(self._raw_dict)
 
 def alg_init_dict(c_param = 0.5):
-    return dict({"Brute": defaultdict(Brute),
-                         "AS": {
-        "SG": AStar(0.01),
-        "SO": AStar(0.06),
-        "SE": AStar(0.1),
-        "RG": AStar(0.8),
-        "RO": AStar(0),
-        "RE": AStar(0.1),
-        "PG": AStar(0),
-        "PO": AStar(0),
-        "PE": AStar(0.1),
-    },
-    "MCTS": {
-        "SG": MCTS(c_exploration=c_param, rollout_depth=0),
-        "SO": MCTS(c_exploration=c_param, rollout_depth=0),
-        "SE": MCTS(c_exploration=c_param, rollout_depth=0),
+    return dict({"Brute": LazyDict({
+        "SG": (Brute, ),
+        "SO": (Brute, ),
+        "SE": (Brute, ),
+        "RG": (Brute, ),
+        "RO": (Brute, ),
+        "RE": (Brute, ),
+        "PG": (Brute, ),
+        "PO": (Brute, ),
+        "PE": (Brute, ),
+    }),
+                         "AS": LazyDict({
+        "SG": (AStar, 0.01),
+        "SO": (AStar, 0.06),
+        "SE": (AStar, 0.1),
+        "RG": (AStar, 0.8),
+        "RO": (AStar, 0),
+        "RE": (AStar, 0.1),
+        "PG": (AStar, 0),
+        "PO": (AStar, 0),
+        "PE": (AStar, 0.1),
+    }),
+    "MCTS": LazyDict({
+        "SG": (MCTS, c_param, 0),
+        "SO": (MCTS, c_param, 0),
+        "SE": (MCTS, c_param, 0),
 
-        "RG": MCTS(c_exploration=c_param, rollout_depth=0),
-        "RO": MCTS(c_exploration=c_param, rollout_depth=0),
-        "RE": MCTS(c_exploration=c_param, rollout_depth=0),
+        "RG": (MCTS, c_param, 0),
+        "RO": (MCTS, c_param, 0),
+        "RE": (MCTS, c_param, 5),
 
-        "PG": MCTS(c_exploration=c_param, rollout_depth=0),
-        "PO": MCTS(c_exploration=c_param, rollout_depth=0),
-        "PE": MCTS(c_exploration=c_param, rollout_depth=0),
+        "PG": (MCTS, c_param, 0),
+        "PO": (MCTS, c_param, 0),
+        "PE": (MCTS, c_param, 0),
 
-        # "SG": MCTS(c_exploration=0, max_token_try=9),
-        # "SO": MCTS(c_exploration=0, max_token_try=5),
-        # "SE": MCTS(c_exploration=0, max_token_try=10),
-        # "RG": MCTS(c_exploration=0, max_token_try=30),
-        # "RO": MCTS(c_exploration=0, max_token_try=10),
-        # "RE": MCTS(c_exploration=0, max_token_try=10),
-        # "PH": MCTS(c_exploration=0, max_token_try=10),
-        # "PO": MCTS(c_exploration=0, max_token_try=10),
-        # "PE": MCTS(c_exploration=0, max_token_try=10),
-    },
-    "LNS": {
-        "SG": LNS(max_destroy_n=4, max_repair_n=4),
-        "SO": LNS(max_destroy_n=4, max_repair_n=4),
-        "SE": LNS(max_destroy_n=4, max_repair_n=4),
-        "RG": LNS(max_destroy_n=8, max_repair_n=8),
-        "RO": LNS(max_destroy_n=2, max_repair_n=2),
-        "RE": LNS(max_destroy_n=8, max_repair_n=8),
-        "PG": LNS(max_destroy_n=3, max_repair_n=3),
-        "PO": LNS(max_destroy_n=2, max_repair_n=2),
-        "PE": LNS(max_destroy_n=3, max_repair_n=3),
-    },
-    "MH": {
-        "SG": MetropolisHasting(alpha=4),
-        "SO": MetropolisHasting(alpha=4),
-        "SE": MetropolisHasting(alpha=4),
-        "RG": MetropolisHasting(alpha=2),
-        "RO": MetropolisHasting(alpha=10),
-        "RE": MetropolisHasting(alpha=4),
-        "PG": MetropolisHasting(alpha=4),
-        "PO": MetropolisHasting(alpha=4),
-        "PE": MetropolisHasting(alpha=4),
-    },
-    "GP": {
-        "SG": GeneticProgramming(population_size=60, p_mutation=0.1),
-        "SO": GeneticProgramming(population_size=45, p_mutation=0.2),
-        "SE": GeneticProgramming(population_size=60, p_mutation=0.1),
-        "RG": GeneticProgramming(population_size=30, p_mutation=0.8),
-        "RO": GeneticProgramming(population_size=45, p_mutation=0.4),
-        "RE": GeneticProgramming(population_size=45, p_mutation=0.4),
-        "PG": GeneticProgramming(population_size=30, p_mutation=0.8),
-        "PO": GeneticProgramming(population_size=60, p_mutation=0.8),
-        "PE": GeneticProgramming(population_size=60, p_mutation=0.8),
-    }})
+        # "SG": (MCTS, 0, max_token_try=9),
+        # "SO": (MCTS, 0, max_token_try=5),
+        # "SE": (MCTS, 0, max_token_try=10),
+        # "RG": (MCTS, 0, max_token_try=30),
+        # "RO": (MCTS, 0, max_token_try=10),
+        # "RE": (MCTS, 0, max_token_try=10),
+        # "PH": (MCTS, 0, max_token_try=10),
+        # "PO": (MCTS, 0, max_token_try=10),
+        # "PE": (MCTS, 0, max_token_try=10),
+    }),
+    "LNS": LazyDict({
+        "SG": (LNS, 4, 4),
+        "SO": (LNS, 4, 4),
+        "SE": (LNS, 4, 4),
+        "RG": (LNS, 8, 8),
+        "RO": (LNS, 2, 2),
+        "RE": (LNS, 8, 8),
+        "PG": (LNS, 3, 3),
+        "PO": (LNS, 2, 2),
+        "PE": (LNS, 3, 3),
+    }),
+    "MH": LazyDict({
+        "SG": (MetropolisHasting, 4),
+        "SO": (MetropolisHasting, 4),
+        "SE": (MetropolisHasting, 4),
+        "RG": (MetropolisHasting, 2),
+        "RO": (MetropolisHasting, 10),
+        "RE": (MetropolisHasting, 4),
+        "PG": (MetropolisHasting, 4),
+        "PO": (MetropolisHasting, 4),
+        "PE": (MetropolisHasting, 4),
+    }),
+    "GP": LazyDict({
+        "SG": (GeneticProgramming, 60, 0.1),
+        "SO": (GeneticProgramming, 45, 0.2),
+        "SE": (GeneticProgramming, 60, 0.1),
+        "RG": (GeneticProgramming, 30, 0.8),
+        "RO": (GeneticProgramming, 45, 0.4),
+        "RE": (GeneticProgramming, 45, 0.4),
+        "PG": (GeneticProgramming, 30, 0.8),
+        "PO": (GeneticProgramming, 60, 0.8),
+        "PE": (GeneticProgramming, 60, 0.8),
+    })})

@@ -1,3 +1,4 @@
+import copy
 import time
 from statistics import mean
 
@@ -29,9 +30,10 @@ class SearchAlgorithm:
     test_case: TestCase
 
     empty_program_cost: float
-    best_program: Program
+    best_program: Program = Program([])
     best_cost: float = float("inf")
     best_state: tuple[Environment]
+    initial_program: Program
 
     statistics: dict = {}
 

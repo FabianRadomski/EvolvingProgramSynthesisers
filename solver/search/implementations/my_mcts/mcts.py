@@ -11,12 +11,14 @@ from solver.search.search_algorithm import SearchAlgorithm
 
 class MCTSNode:
 
-    def __init__(self, parent: 'MCTSNode', token: Token, search_algorithm: SearchAlgorithm, state: tuple, visited: set, initial_program: Program =
-    Program([])):
+    def __init__(self, parent: 'MCTSNode', token: Token, search_algorithm: SearchAlgorithm, state: tuple, visited: set):
         self.parent = parent
         self.token = token
         self.search_algorithm = search_algorithm
-        self.state = state
+        if len(search_algorithm.initial_program.sequence) == 0:
+            self.state = state
+        else:
+            self.state = tuple([search_algorithm.initial_program.interp(env) for env in state])
         self.visited = visited
 
         self.children: list['MCTSNode'] = []
@@ -28,13 +30,12 @@ class MCTSNode:
         self.reward = self.search_algorithm.normalized_reward(self.state)
         self.terminal = None
 
-        self.initial_program= initial_program
         if self.reward == self.search_algorithm.best_cost:
             self.best_program = self.rebuild_program()
 
     @classmethod
     def root(cls, sa: SearchAlgorithm, best_program: Program = Program([])):
-        return MCTSNode(None, None, sa, sa.input_state, {sa.input_state}, initial_program=best_program)
+        return MCTSNode(None, None, sa, sa.input_state, {sa.input_state})
 
     @classmethod
     def node(cls, parent: 'MCTSNode', state: tuple, token: Token):
@@ -116,7 +117,7 @@ class MCTSNode:
 
     def rebuild_program(self) -> list[Token]:
         if self.parent is None:
-            return self.initial_program.sequence
+            return copy.deepcopy(self.search_algorithm.initial_program.sequence)
 
         res = self.parent.rebuild_program()
         res.append(self.token)
@@ -130,10 +131,12 @@ class MCTS(SearchAlgorithm):
         self.c_exploration = c_exploration
         self.rollout_depth = rollout_depth
         self.root = None
+        self.initial_program = Program([])
 
     def setup(self):
         # print(self.c_exploration)
-        self.root = MCTSNode.root(self, best_program=self.best_program)
+        self.root = MCTSNode.root(self)
+
 
     def iteration(self):
         selected_node = self.root.select()

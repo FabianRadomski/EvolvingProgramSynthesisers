@@ -19,6 +19,7 @@ class MCTS(SearchAlgorithm):
         self.c_exploration = c_exploration
         self.rollout_depth = rollout_depth
 
+        self.initial_program = Program([])
         self.initial_state = None
 
         # Setup MCTS dictionaries
@@ -31,7 +32,8 @@ class MCTS(SearchAlgorithm):
         self.absolute_cost = {}
 
     def setup(self):
-        self.initial_state = tuple([ex.input_environment for ex in self.training_examples])
+        self.initial_program = copy.deepcopy(self.best_program)
+        self.initial_state = tuple([self.initial_program.interp(ex.input_environment) for ex in self.training_examples])
         self.absolute_cost[self.initial_state] = self.evaluate_state(self.initial_state)
 
         for token in self.tokens:
@@ -140,7 +142,7 @@ class MCTS(SearchAlgorithm):
         return state
 
     def _reconstruct_program(self, state):
-        program = self.best_program.sequence
+        program = self.initial_program.sequence
 
         while state in self.came_from:
             program.append(self.token[state])

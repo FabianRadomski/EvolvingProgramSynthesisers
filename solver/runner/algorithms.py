@@ -117,6 +117,24 @@ def dicts(param = 0.5, alg_sequence=None):
         },
 
         "test_cases": {
+            "small": {
+                # Runs one task for each size
+                "S": (
+                    [1,2],
+                    [],
+                    [],
+                ),
+                "R": (
+                    [2],
+                    [],
+                    range(1, 10),
+                ),
+                "P": (
+                    [1,2],
+                    [],
+                    [],
+                )
+            },
             "param": {
                 "S": (
                     [1,3,5],
