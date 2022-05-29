@@ -4,8 +4,8 @@ from solver.search.implementations.a_star import AStar
 from solver.search.implementations.brute import Brute
 from solver.search.implementations.genetic_programming import GeneticProgramming
 from solver.search.implementations.large_neighborhood_search import LNS
+from solver.search.implementations.MCTS.mcts import MCTS
 from solver.search.implementations.metropolis import MetropolisHasting
-from solver.search.implementations.my_mcts.mcts import MCTS
 
 class LazyDict(Mapping):
     def __init__(self, *args, **kw):
@@ -57,15 +57,15 @@ def alg_init_dict(c_param = 0.5):
         "PO": (MCTS, c_param, 0),
         "PE": (MCTS, c_param, 0),
 
-        # "SG": (MCTS, 0, max_token_try=9),
-        # "SO": (MCTS, 0, max_token_try=5),
-        # "SE": (MCTS, 0, max_token_try=10),
-        # "RG": (MCTS, 0, max_token_try=30),
-        # "RO": (MCTS, 0, max_token_try=10),
-        # "RE": (MCTS, 0, max_token_try=10),
-        # "PH": (MCTS, 0, max_token_try=10),
-        # "PO": (MCTS, 0, max_token_try=10),
-        # "PE": (MCTS, 0, max_token_try=10),
+        # "SG": (MCTS, 0, 9),
+        # "SO": (MCTS, 0, 5),
+        # "SE": (MCTS, 0, 10),
+        # "RG": (MCTS, 0, 30),
+        # "RO": (MCTS, 0, 10),
+        # "RE": (MCTS, 0, 10),
+        # "PG": (MCTS, 0, 10),
+        # "PO": (MCTS, 0, 10),
+        # "PE": (MCTS, 0, 10),
     }),
     "LNS": LazyDict({
         "SG": (LNS, 4, 4),

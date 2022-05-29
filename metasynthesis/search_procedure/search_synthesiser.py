@@ -2,6 +2,8 @@
 import random
 from typing import Dict, List, Optional, Tuple, Type
 
+import numpy as np
+
 from metasynthesis.abstract_genetic import CrossoverFunc, GeneticAlgorithm, Genome, MutationFunc, Population
 from solver.runner.algorithms import dicts
 from solver.runner.runner import Runner
@@ -11,10 +13,11 @@ from solver.search.implementations.large_neighborhood_search import LNS
 from solver.search.implementations.MCTS.mcts import MCTS
 from solver.search.implementations.metropolis import MetropolisHasting
 
+
 class SearchSynthesiser(GeneticAlgorithm):
     # Search procedures considered while constructing a genome
     # TODO: add vanillaGP
-    allowed_searches: List[str] = ["Brute", "AS", "MCTS", "LNS", "MH", "GP"]
+    allowed_searches: List[str] = ["Brute", "AS", "LNS", "MH", "GP"]
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
@@ -26,8 +29,8 @@ class SearchSynthesiser(GeneticAlgorithm):
     }
 
     initial_distribution_time: Dict[str, float] = {
-        "Brute": 0.5, "AS": 0.5, "MH": 0.5,
-        "MCTS": 0.5, "LNS": 0.5, "GP": 0.5  # 10000
+        "Brute": 1, "AS": 1, "MH": 1,
+        "MCTS": 1, "LNS": 1, "GP": 1  # 10000
     }
 
     TIME_MAX = 1
@@ -36,7 +39,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", setting: str =
-                 "RE", print_generations: bool = False, test_size = "small"):
+                 "RE", print_generations: bool = False, test_size="small"):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
         self.test_size = test_size
@@ -49,8 +52,11 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.calculated_results: Dict[Tuple[Tuple[str, dict]], dict] = {}
 
         # List of mutations that are performed
-        self.allowed_mutations: List[Type[MutationFunc]] = [self.replace_iteration_mutation, self.replace_search_mutation]
-
+        self.allowed_mutations: List[Type[MutationFunc]] = [self.replace_iteration_mutation, self.replace_search_mutation,
+                                                            self.divide_time_mutation, self.multiply_time_mutation,
+                                                            self.add_time_mutation, self.subtract_time_mutation]
+        # Relative chance of specific mutations from allowed_mutations
+        self.mutation_chances = [1, 1, 2, 2, 2, 2]
         # Determine how the number of each search type are distributed
         self.dist_type = dist_type
 
@@ -60,6 +66,11 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Used to determine the importance of metrics in the fitness function
         self.success_weight = 0.5
         self.time_weight = 0.5
+
+        self.add_constant = 0.1
+        self.subtract_constant = 0.1
+        self.multiply_constant = 1.5
+        self.divide_constant = 1.5
 
     def generate_genome(self, length: int) -> Genome:
         new_genome: Genome = []
@@ -90,19 +101,21 @@ class SearchSynthesiser(GeneticAlgorithm):
         if tuple(genome) in self.calculated_results.keys():
             average_success: float = self.calculated_results[tuple(genome)]['average_success']
             average_time: float = self.calculated_results[tuple(genome)]['average_time']
-
+            summed_time: float = self.calculated_results[tuple(genome)]['average_time']
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             print(f"Running search of {str(genome)}\n")
             runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=True)
             success_ratio, average_time = runner.run()
-            average_success = success_ratio * 100
+            average_success = success_ratio
             print("Finished running search\n")
-        #     if self.dist_type == "Time":
-        #         search: SearchAlgorithm = CombinedSearchTime(genome)
-        #     else:
-        #         search: SearchAlgorithm = CombinedSearch(0, genome)
-            self.calculated_results[tuple(genome)] = {'average_success': average_success, 'average_time': average_time}
+            #     if self.dist_type == "Time":
+            #         search: SearchAlgorithm = CombinedSearchTime(genome)
+            #     else:
+            #         search: SearchAlgorithm = CombinedSearch(0, genome)
+            summed_time = np.sum([time for _, time in genome])
+            # TODO: determine whether to take actual execution time or the summed up time from the list
+            self.calculated_results[tuple(genome)] = {'average_success': average_success, 'average_time': summed_time}
 
         # Assign 0 as a fitness if the genome is empty
         else:
@@ -110,8 +123,8 @@ class SearchSynthesiser(GeneticAlgorithm):
             return 0
 
         # Only consider time if the programs are fully correct
-        if average_success == 50.0:
-            fitness = self.success_weight * average_success + self.time_weight * (1 / average_time)
+        if average_success == 1.0:
+            fitness = self.success_weight * average_success + self.time_weight * (1 / summed_time)
         else:
             fitness = self.success_weight * average_success
         return fitness
@@ -183,7 +196,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         for i, individual in enumerate(new_population):
             if random.random() < self.mutation_probability:
                 # TODO: check other mutation methods
-                new_population[i] = self.mutation_func(individual, random.choice(self.allowed_mutations))
+                new_population[i] = self.mutation_func(individual, random.choices(self.allowed_mutations, weights=self.mutation_chances)[0])
 
         return new_population
 
@@ -299,11 +312,56 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         new_genome: Genome = genome.copy()
         new_search: str = random.choice(searches)
-        new_genome[point] = (new_search, self.generate_iterations(new_search, dist_type=self.dist_type))
+        new_genome[point] = (new_search, genome[point][1])
+
+        return new_genome
+
+    def multiply_time_mutation(self, genome: Genome):
+        """
+        Decreases the execution time of a random search procedure by half.
+        """
+        point: int = random.randrange(0, len(genome))
+
+        new_genome: Genome = genome.copy()
+        new_genome[point] = (genome[point][0], genome[point][1] / self.divide_constant)
+
+        return new_genome
+
+    def divide_time_mutation(self, genome: Genome):
+        """
+        Doubles the execution time of a random search procedure.
+        """
+        point: int = random.randrange(0, len(genome))
+
+        new_genome: Genome = genome.copy()
+        new_genome[point] = (genome[point][0], genome[point][1] * self.multiply_constant)
+
+        return new_genome
+
+    def add_time_mutation(self, genome: Genome):
+        """
+        Doubles the execution time of a random search procedure.
+        """
+        point: int = random.randrange(0, len(genome))
+
+        new_genome: Genome = genome.copy()
+        new_genome[point] = (genome[point][0], genome[point][1] + self.add_constant)
+
+        return new_genome
+
+    def subtract_time_mutation(self, genome: Genome):
+        """
+        Doubles the execution time of a random search procedure.
+        """
+        point: int = random.randrange(0, len(genome))
+
+        new_genome: Genome = genome.copy()
+        new_genome[point] = (genome[point][0], genome[point][1] + self.subtract_constant)
 
         return new_genome
 
 
 if __name__ == "__main__":
     SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
-                      mutation_probability=0.02, generation_size=20 , max_seq_size=6, dist_type="Time", print_generations=True).run_evolution()
+                      mutation_probability=0.05, generation_size=20, max_seq_size=4, dist_type="Time", print_generations=True,
+                      setting= "PG").run_evolution()
