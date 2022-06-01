@@ -17,7 +17,7 @@ from solver.search.implementations.metropolis import MetropolisHasting
 class SearchSynthesiser(GeneticAlgorithm):
     # Search procedures considered while constructing a genome
     # TODO: add vanillaGP
-    allowed_searches: List[str] = ["Brute", "AS", "LNS", "MH", "GP"]
+    allowed_searches: List[str] = ["Brute", "AS", "LNS", "MH", "GP", "MCTS"]
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
@@ -105,7 +105,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             print(f"Running search of {str(genome)}\n")
-            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=True)
+            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=False)
             success_ratio, average_time = runner.run()
             average_success = success_ratio
             print("Finished running search\n")

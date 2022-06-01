@@ -125,14 +125,14 @@ def dicts(param = 0.5, alg_sequence=None):
                     range(1, 11)
                 ),
                 "R": (
-                    [2],
                     [],
-                    range(1, 10),
+                    [],
+                    range(1, 2),
                 ),
                 "P": (
                     [],
                     [],
-                    range(2, 3 )
+                    range(1, 3)
                 )
             },
             "param": {

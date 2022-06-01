@@ -5,7 +5,7 @@ from solver.runner.runner import Runner
 
 
 class CombinedSearchTests(unittest.TestCase):
-    setting = "RE"
+    setting = "PO"
     test_cases = "small"
 
     def run_combined(self, alg_seq, setting):

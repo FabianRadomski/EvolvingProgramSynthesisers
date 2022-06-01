@@ -4,7 +4,7 @@ from solver.search.implementations.a_star import AStar
 from solver.search.implementations.brute import Brute
 from solver.search.implementations.genetic_programming import GeneticProgramming
 from solver.search.implementations.large_neighborhood_search import LNS
-from solver.search.implementations.MCTS.mcts import MCTS
+from solver.search.implementations.my_mcts.mcts import MCTS
 from solver.search.implementations.metropolis import MetropolisHasting
 
 class LazyDict(Mapping):
