@@ -37,7 +37,7 @@ class CombinedSearchTests(unittest.TestCase):
         self.compare_algs("AS", 0.3, "Brute", 0.3, self.setting)
 
     def test_combination3(self):
-        self.compare_algs("Brute", 0.3, "AS", 0.3, self.setting)
+        self.compare_algs("Brute", 1, "AS", 1, self.setting)
 
     def test_combination4(self):
         self.compare_algs("MH", 0.3, "LNS", 0.3, self.setting)

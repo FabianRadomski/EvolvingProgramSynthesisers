@@ -2,6 +2,7 @@
 import random
 from typing import Dict, List, Optional, Tuple, Type
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from metasynthesis.abstract_genetic import CrossoverFunc, GeneticAlgorithm, Genome, MutationFunc, Population
@@ -39,7 +40,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", setting: str =
-                 "RE", print_generations: bool = False, test_size="small"):
+                 "RE", print_generations: bool = False, test_size="small", plot:bool = False):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
         self.test_size = test_size
@@ -64,13 +65,19 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.setting = setting
 
         # Used to determine the importance of metrics in the fitness function
-        self.success_weight = 0.5
-        self.time_weight = 0.5
+        self.success_weight: float = 0.5
+        self.time_weight: float = 0.5
 
-        self.add_constant = 0.1
-        self.subtract_constant = 0.1
-        self.multiply_constant = 1.5
-        self.divide_constant = 1.5
+        # dictionary mapping number of generation to list containing each gene along with its fitness value
+        self.evolution_history: Dict[int, List[Tuple[Genome, float]]] = {}
+
+        self.add_constant: float = 0.1
+        self.subtract_constant: float = 0.1
+        self.multiply_constant: float = 1.5
+        self.divide_constant: float = 1.5
+
+        # Choose whether to plot average fitness per generation or not
+        self.plot = plot
 
     def generate_genome(self, length: int) -> Genome:
         new_genome: Genome = []
@@ -198,7 +205,30 @@ class SearchSynthesiser(GeneticAlgorithm):
                 # TODO: check other mutation methods
                 new_population[i] = self.mutation_func(individual, random.choices(self.allowed_mutations, weights=self.mutation_chances)[0])
 
+        if self.plot:
+            self.plot_generations()
+
         return new_population
+
+    def save_generation(self, population: Population):
+        """
+        Evaluates and saves the members of the given population along with their fitness.
+        """
+        self.evolution_history[self.curr_iteration] = []
+        for ind in population:
+            self.evolution_history[self.curr_iteration].append((ind, self.fitness(ind)))
+
+    def plot_generations(self):
+        """
+        Plots the average fitness of each generation in evolution history.
+        """
+        avg_fitness: List = []
+        for generation in self.evolution_history.values():
+            fit_mean = np.mean([fitness for genotype, fitness in generation])
+            avg_fitness.append(fit_mean)
+        plt.figure()
+        x = np.arange(0, len(avg_fitness))
+        plt.plot(x, avg_fitness)
 
     def select_tournament(self, population: Population, compete_size: int) -> Tuple[Genome, Genome]:
         """
@@ -363,5 +393,5 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 if __name__ == "__main__":
     SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
-                      mutation_probability=0.05, generation_size=20, max_seq_size=4, dist_type="Time", print_generations=True,
-                      setting= "PG").run_evolution()
+                      mutation_probability=0.1, generation_size=10, max_seq_size=4, dist_type="Time", print_generations=True,
+                      setting="PO").run_evolution()
