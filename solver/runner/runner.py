@@ -96,7 +96,7 @@ class Runner:
         accuracies = [float(s) / t for s, t in zip(solved_examples, total_examples)]
         average_time = run_time / np.sum(total_examples)
 
-        return mean(accuracies), average_time
+        return mean(accuracies), average_time, stats_list
 
     def execute_test_case(self, test_case):
         return self.algorithm.run(self.settings, self.time_limit_sec, self.debug, test_case, best_program = Program([]))

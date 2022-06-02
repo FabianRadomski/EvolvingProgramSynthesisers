@@ -18,7 +18,7 @@ from solver.search.implementations.metropolis import MetropolisHasting
 class SearchSynthesiser(GeneticAlgorithm):
     # Search procedures considered while constructing a genome
     # TODO: add vanillaGP
-    allowed_searches: List[str] = ["Brute", "AS", "LNS", "MH", "GP", "MCTS"]
+    allowed_searches: Dict[str, List[str]] = {"R": ["Brute", "AS", "LNS", "MH", "GP"], "S": [], "P": []}
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
@@ -29,10 +29,8 @@ class SearchSynthesiser(GeneticAlgorithm):
         Brute: 6, MCTS: 4000, MetropolisHasting: 400, AStar: 15, LNS: 2800  # 10000
     }
 
-    initial_distribution_time: Dict[str, float] = {
-        "Brute": 1, "AS": 1, "MH": 1,
-        "MCTS": 1, "LNS": 1, "GP": 1  # 10000
-    }
+    # Upper boundary for the execution time for specific search procedures, different for each domain
+    initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.5, "AS": 0.1, "MH": 0.05, "LNS": 0.3}, "S": {}, "P": {}}
 
     TIME_MAX = 1
     TOURN_SIZE = 2
@@ -57,7 +55,7 @@ class SearchSynthesiser(GeneticAlgorithm):
                                                             self.divide_time_mutation, self.multiply_time_mutation,
                                                             self.add_time_mutation, self.subtract_time_mutation]
         # Relative chance of specific mutations from allowed_mutations
-        self.mutation_chances = [1, 1, 2, 2, 2, 2]
+        self.mutation_chances = [1, 1, 1, 1, 1, 1]
         # Determine how the number of each search type are distributed
         self.dist_type = dist_type
 
@@ -112,7 +110,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             print(f"Running search of {str(genome)}\n")
-            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=False)
+            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=True)
             success_ratio, average_time = runner.run()
             average_success = success_ratio
             print("Finished running search\n")
@@ -205,6 +203,7 @@ class SearchSynthesiser(GeneticAlgorithm):
                 # TODO: check other mutation methods
                 new_population[i] = self.mutation_func(individual, random.choices(self.allowed_mutations, weights=self.mutation_chances)[0])
 
+        self.save_generation(new_population)
         if self.plot:
             self.plot_generations()
 
@@ -227,8 +226,14 @@ class SearchSynthesiser(GeneticAlgorithm):
             fit_mean = np.mean([fitness for genotype, fitness in generation])
             avg_fitness.append(fit_mean)
         plt.figure()
+        plt.xlabel("Generation")
+        plt.ylabel("Average fitness")
+        plt.title("Fitness over generations")
         x = np.arange(0, len(avg_fitness))
         plt.plot(x, avg_fitness)
+        print(x)
+        print(avg_fitness)
+        plt.show()
 
     def select_tournament(self, population: Population, compete_size: int) -> Tuple[Genome, Genome]:
         """
@@ -282,7 +287,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         elif dist_type == "Uniform":
             return random.randrange(1, self.initial_distribution_uniform[search_type])
         elif dist_type == "Time":
-            return random.uniform(0.05, self.initial_distribution_time[search_type])
+            return random.uniform(0.05, self.initial_distribution_time[self.setting[0]][search_type])
         else:
             raise Exception("The chosen iteration distribution is not allowed. Choose either Gauss or Uniform!")
 
@@ -392,6 +397,8 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
-                      mutation_probability=0.1, generation_size=10, max_seq_size=4, dist_type="Time", print_generations=True,
-                      setting="PO").run_evolution()
+    ss = SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
+                      mutation_probability=0.2, generation_size=20, max_seq_size=4, dist_type="Time", print_generations=True,
+                      setting="RO", test_size="param")
+    ss.run_evolution()
+    ss.plot_generations()
