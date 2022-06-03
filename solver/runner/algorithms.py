@@ -137,7 +137,7 @@ def dicts(param = 0.5, alg_sequence=None):
             },
             "param": {
                 "S": (
-                    [1,3,5],
+                    [],
                     range(1, 327, 20),
                     [1, 2, 3]
                 ),

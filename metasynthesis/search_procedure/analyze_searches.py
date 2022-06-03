@@ -16,7 +16,7 @@ from solver.search.search_algorithm import SearchAlgorithm
 This file contain functions that can be used to analyze the behavior of single search procedures.
 """
 
-algs = ["MCTS", "GP", "Brute", "LNS", "MH", "AS"]
+algs = ["Brute", "LNS", "MH", "AS"]
 
 
 def analyze_search_times(search: str, setting: str, test_size: str):
@@ -30,6 +30,8 @@ def analyze_search_times(search: str, setting: str, test_size: str):
     name = search
     mean = np.mean(execution_times)
     std = np.std(execution_times)
+    max_val = max(execution_times)
+    min_val = min(execution_times)
     print("Algorithm: " + name)
     print("Iterations number list: " + str(execution_times))
     print("std: " + str(np.std(execution_times)))
@@ -37,7 +39,7 @@ def analyze_search_times(search: str, setting: str, test_size: str):
 
     plot_iteration_hist(execution_times, name)
 
-    return name, mean, std
+    return name, mean, std, max_val, min_val
 
 def plot_iteration_hist(iterations, name):
     fig, ax = plt.subplots()
@@ -49,7 +51,7 @@ def plot_iteration_hist(iterations, name):
 
     plt.show()
 
-def plot_iterations(names, avgs, stds):
+def plot_iterations(names, avgs, stds, max_vals, min_vals):
     """
     Plots the distributions of the number of iterations.
     """
@@ -60,9 +62,10 @@ def plot_iterations(names, avgs, stds):
     ax.set_ylabel('Average Execution Time [s]')
     ax.set_xticks(x_pos)
     ax.set_xticklabels(names)
-    ax.set_title('Execution Times of Different Search Methods in Pixel Domain')
+    ax.set_title('Execution Times of Different Search Methods in Robot Domain')
     ax.yaxis.grid(True)
-
+    ax.scatter(x_pos, max_vals, color="red")
+    ax.scatter(x_pos, min_vals, color="green")
     # Save the figure and show
     plt.tight_layout()
     plt.savefig('average_iter.png')
@@ -73,9 +76,13 @@ if __name__ == "__main__":
     names = []
     means = []
     stds = []
+    max_vals = []
+    min_vals = []
     for alg in algs:
-        name, mean, std = analyze_search_times(alg, "PO", "param")
+        name, mean, std, max_val, min_val = analyze_search_times(alg, "RO", "param")
         names.append(name)
         means.append(mean)
         stds.append(std)
-    plot_iterations(names, means, stds)
+        max_vals.append(max_val)
+        min_vals.append(min_val)
+    plot_iterations(names, means, stds, max_vals, min_vals)
