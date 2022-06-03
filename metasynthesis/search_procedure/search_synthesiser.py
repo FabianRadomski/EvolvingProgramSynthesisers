@@ -31,7 +31,7 @@ class SearchSynthesiser(GeneticAlgorithm):
     }
 
     # Upper boundary for the execution time for specific search procedures, different for each domain
-    initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.1, "AS": 0.1, "MH": 0.1, "LNS": 0.1},
+    initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.5, "AS": 0.1, "MH": 0.05, "LNS": 0.3},
                                                               "S": {"Brute": 10,
                                                                     "AS": 6, "MH": 9,
                                                                     "LNS": 9, "GP": 10},
@@ -248,11 +248,10 @@ class SearchSynthesiser(GeneticAlgorithm):
         plt.figure()
         plt.xlabel("Generation")
         plt.ylabel("Average fitness")
-        plt.title("Fitness over generations")
+        plt.title(f"Fitness over generations\n{self.setting}, {self.mutation_probability} p_m, {self.crossover_probability} p_c")
         x = np.arange(0, len(avg_fitness))
         plt.plot(x, avg_fitness)
-        print(x)
-        print(avg_fitness)
+        plt.savefig(f"fit-{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c.png")
         plt.show()
 
     def plot_generations_speed(self):
@@ -262,8 +261,9 @@ class SearchSynthesiser(GeneticAlgorithm):
         plt.figure()
         plt.xlabel("Generation")
         plt.ylabel("Time")
-        plt.title("Average Execution Time of Successful Programs")
+        plt.title(f"Average Execution Time of Successful Programs\n{self.setting}, {self.mutation_probability} p_m, {self.crossover_probability} p_c")
         plt.plot(self.avg_speed_per_gen)
+        plt.savefig(f"exec-{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c.png")
         plt.show()
 
     def select_tournament(self, population: Population, compete_size: int) -> Tuple[Genome, Genome]:
@@ -445,7 +445,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    ss = SearchSynthesiser(fitness_limit=0, generation_limit=20, crossover_probability=0.8,
-                           mutation_probability=0.05, generation_size=20, max_seq_size=4, dist_type="Time", print_generations=True,
+    ss = SearchSynthesiser(fitness_limit=0, generation_limit=5, crossover_probability=0.8,
+                           mutation_probability=0.2, generation_size=3, max_seq_size=6, dist_type="Time", print_generations=True,
                            setting="RO", test_size="param", plot=True)
     ss.run_evolution()
