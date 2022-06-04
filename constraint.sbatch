@@ -2,7 +2,7 @@
 #SBATCH --job-name="constraint_programming"
 #SBATCH --partition=compute
 #SBATCH --time=1:00:00
-#SBATCH --ntasks = 12
+#SBATCH --ntasks=12
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=3G
 
