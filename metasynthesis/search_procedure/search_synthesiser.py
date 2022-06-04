@@ -1,5 +1,6 @@
 # TESTING SERACH SEQUENCES
 import random
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Type
 
 import matplotlib.pyplot as plt
@@ -45,13 +46,13 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int, max_seq_size: int = 4, dist_type: str = "Time", setting: str =
-                 "RE", print_generations: bool = False, test_size="small", plot: bool = False):
+                 "RE", print_generations: bool = False, test_size="small", plot: bool = False, write_generations: bool = False):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
 
         self.test_size = test_size
         self.max_seq_size: int = max_seq_size
 
-        self.curr_iteration: int = 0
+        self.curr_iteration: int = 1
         self.print_generations = print_generations
 
         # Dictionary containing genomes mapped to their average success percentage and execution time, so that they only need to be calculated once
@@ -71,8 +72,8 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.setting = setting
 
         # Used to determine the importance of metrics in the fitness function
-        self.success_weight: float = 0.5
-        self.time_weight: float = 0.5
+        self.success_weight: float = 1
+        self.time_weight: float = 0.2
 
         # dictionary mapping number of generation to list containing each gene along with its fitness value
         self.evolution_history: Dict[int, List[Tuple[Genome, float]]] = {}
@@ -88,6 +89,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Choose whether to plot average fitness per generation or not
         self.plot = plot
+        self.write_generations = write_generations
 
     def generate_genome(self, length: int) -> Genome:
         new_genome: Genome = []
@@ -138,6 +140,9 @@ class SearchSynthesiser(GeneticAlgorithm):
             # TODO: determine whether to take actual execution time or the summed up time from the list
             self.calculated_results[tuple(genome)] = {'average_success': average_success, 'average_time': summed_time}
 
+            if average_success == 1.0:
+                self.gen_times.append(average_time)
+
         # Assign 0 as a fitness if the genome is empty
         else:
             self.calculated_results[tuple(genome)] = {'average_success': 0, 'average_time': 0}
@@ -145,7 +150,6 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Only consider time if the programs are fully correct
         if average_success == 1.0:
-            self.gen_times.append(average_time)
             fitness = self.success_weight * average_success + self.time_weight * (1 / summed_time)
         else:
             fitness = self.success_weight * average_success
@@ -182,15 +186,29 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def run_evolution(self):
         curr_population: Population = self.generate_population()
+        self.save_generation(curr_population)
 
         if self.print_generations:
             print(self.population_to_string(curr_population))
 
-        for gen in range(self.generation_limit):
+        if self.write_generations:
+            curr_time = datetime.now().strftime("%d-%m-%Y--%H-%M-%S")
+            filename = f"{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c-{curr_time}"
+            f = open(filename, "a")
+            f.write(self.population_to_string(curr_population))
+            f.close()
+
+        for gen in range(self.generation_limit-1):
             self.curr_iteration += 1
             curr_population = self.generate_new_generation(curr_population)
             if self.print_generations:
                 print(self.population_to_string(curr_population))
+            if self.write_generations:
+                f = open(filename, "a")
+                f.write(self.population_to_string(curr_population))
+                f.close()
+            self.calculate_population_fitness(curr_population)
+
 
         if self.plot:
             self.plot_generations_fitness()
@@ -198,6 +216,9 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         return self.get_fittest(curr_population)
 
+    def calculate_population_fitness(self, population: Population):
+        for ind in population:
+            self.fitness(ind)
     def generate_new_generation(self, old_population: Population):
         """
         Generate new population using crossover and mutation operators.
@@ -224,8 +245,9 @@ class SearchSynthesiser(GeneticAlgorithm):
                 # TODO: check other mutation methods
                 new_population[i] = self.mutation_func(individual, random.choices(self.allowed_mutations, weights=self.mutation_chances)[0])
 
+        if self.curr_iteration == self.generation_limit - 1:
+            new_population = self.coalesce_population(new_population)
         self.save_generation(new_population)
-        self.avg_speed_per_gen.append(np.mean(self.gen_times))
 
         return new_population
 
@@ -236,6 +258,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.evolution_history[self.curr_iteration] = []
         for ind in population:
             self.evolution_history[self.curr_iteration].append((ind, self.fitness(ind)))
+        self.avg_speed_per_gen.append(np.mean(self.gen_times))
 
     def plot_generations_fitness(self):
         """
@@ -248,10 +271,11 @@ class SearchSynthesiser(GeneticAlgorithm):
         plt.figure()
         plt.xlabel("Generation")
         plt.ylabel("Average fitness")
-        plt.title(f"Fitness over generations\n{self.setting}, {self.mutation_probability} p_m, {self.crossover_probability} p_c")
-        x = np.arange(0, len(avg_fitness))
+        plt.title(f"Fitness over generations\n{self.setting}, {self.mutation_probability} $p_m$, {self.crossover_probability} $p_c$")
+        x = np.arange(1, len(self.avg_speed_per_gen) + 1)
         plt.plot(x, avg_fitness)
-        plt.savefig(f"fit-{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c.png")
+        plt.xticks(x)
+        plt.savefig(f"fit-{self.setting}-{self.mutation_probability}-$p_m$-{self.crossover_probability}-$p_c$.png")
         plt.show()
 
     def plot_generations_speed(self):
@@ -261,8 +285,11 @@ class SearchSynthesiser(GeneticAlgorithm):
         plt.figure()
         plt.xlabel("Generation")
         plt.ylabel("Time")
-        plt.title(f"Average Execution Time of Successful Programs\n{self.setting}, {self.mutation_probability} p_m, {self.crossover_probability} p_c")
-        plt.plot(self.avg_speed_per_gen)
+        plt.title(f"Average Execution Time of Successful Programs\n{self.setting}, {self.mutation_probability} $p_m$, {self.crossover_probability} "
+                  f"$p_c$")
+        x = np.arange(1, len(self.avg_speed_per_gen)+1)
+        plt.plot(x, self.avg_speed_per_gen)
+        plt.xticks(x)
         plt.savefig(f"exec-{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c.png")
         plt.show()
 
@@ -274,6 +301,13 @@ class SearchSynthesiser(GeneticAlgorithm):
         second_pool: Population = random.sample(population, k=compete_size)
 
         return self.get_fittest(first_pool), self.get_fittest(second_pool)
+
+    def rank_based_roulette_wheel(self, population: Population) -> Tuple[Genome, Genome]:
+        """
+        Runs rank-based roulette wheel as a selection procedure. Selects two individuals to reproduce.
+        """
+        # TODO: finish this one
+        pass
 
     def get_fittest(self, pool: Population) -> Optional[Genome]:
         """
@@ -289,6 +323,12 @@ class SearchSynthesiser(GeneticAlgorithm):
                 best_individual = individual
                 best_fitness = fitness
         return best_individual
+
+    def coalesce_population(self, population: Population) -> Population:
+        new_pop: Population = []
+        for genome in population:
+            new_pop.append(self.coalesce_searches(genome))
+        return new_pop
 
     @staticmethod
     def coalesce_searches(sequence: Genome) -> Genome:
@@ -445,7 +485,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    ss = SearchSynthesiser(fitness_limit=0, generation_limit=5, crossover_probability=0.8,
-                           mutation_probability=0.2, generation_size=3, max_seq_size=6, dist_type="Time", print_generations=True,
-                           setting="RO", test_size="param", plot=True)
+    ss = SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
+                           mutation_probability=0.2, generation_size=20, max_seq_size=6, dist_type="Time", print_generations=True,
+                           setting="RO", test_size="param", plot=True, write_generations=True)
     ss.run_evolution()
