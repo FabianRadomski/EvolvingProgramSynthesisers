@@ -38,15 +38,14 @@ class AStar(SearchAlgorithm):
 
     def iteration(self):
         _, state = heapq.heappop(self.open_states)
-
+        self.best_program = self._reconstruct_program(state)
         if self.f_score[state] == 0:
-            self.best_program = self._reconstruct_program(state)
             self.best_cost = 0
 
             return False
 
         for token in self.tokens:
-            if not self.settings.dsl.check_sequence_allowed(self._reconstruct_program(state)):
+            if not self.settings.dsl.check_sequence_allowed(self._reconstruct_program(state).sequence):
                 continue
 
             try:

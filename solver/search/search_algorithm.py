@@ -101,6 +101,7 @@ class SearchAlgorithm:
         self.statistics["test_cost"], _, self.statistics["test_correct"] = self.evaluate(self.best_program, train=False)
         self.statistics["train_cost"], _, self.statistics["train_correct"] = self.evaluate(self.best_program, train=True)
         self.statistics["test_total"] = len(self.test_examples)
+        self.statistics["prune_count"] = self.settings.dsl.prune_counter
 
         if self.debug:
             print(self.statistics)

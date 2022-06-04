@@ -41,9 +41,7 @@ class StaticInvent(Invent):
         for cond in self._bool_tokens:
             for lb in self._trans_tokens:
                 for t1 in self._trans_tokens:
-                    if t1 not in self._dsl.get_trans_tokens():
-                    # if t1 not in self._dsl.get_trans_tokens([lb]):
-                        i += 1
+                    if not self._dsl.check_sequence_allowed([LoopWhileThen(cond, [lb], [t1])]):
                         continue
                     res.append(LoopWhileThen(cond, [lb], [t1]))
                     #res.append(LoopWhileThen(cond, [lb, t1], []))
@@ -56,8 +54,6 @@ class StaticInvent(Invent):
                             continue
 
                         ##res.append(LoopWhileThen(cond, [If(cond1, [lb], [t1])], []))
-
-        # print(f'loops removed: {i}')
         return res
 
     def _all_permutations(self):
@@ -69,10 +65,7 @@ class StaticInvent(Invent):
 
         for t1 in self._trans_tokens:
             for t2 in self._trans_tokens:
-                if t2 not in self._dsl.get_trans_tokens():
-                # if t2 not in self._dsl.get_trans_tokens(t1):
-                    i+=1
+                if not self._dsl.check_sequence_allowed([InventedToken([t1, t2])]):
                     continue
                 res.append(InventedToken([t1, t2]))
-        # print(f'permutations removed: {i}')
         return res

@@ -15,6 +15,9 @@ class Token:
     def to_formatted_string(self):
         return str(self)
 
+    def value(self):
+        raise NotImplementedError()
+
     def __str__(self):
         return str(type(self).__name__)
 
@@ -23,6 +26,9 @@ class Token:
 
     def __eq__(self, other):
         return self.__class__ is other.__class__
+
+    def __lt__(self, other):
+        return self.value() < other.value()
 
     def __hash__(self):
         return hash((self.__class__))
@@ -35,6 +41,9 @@ class BoolToken(Token):
         """Applies this BoolToken on a given Environment. Returns a boolean value."""
         raise NotImplementedError()
 
+    def value(self):
+        raise NotImplementedError()
+
 
 class EnvToken(Token):
     """Abstract Token that returns an Environment."""
@@ -43,13 +52,18 @@ class EnvToken(Token):
         """Applies this BoolToken on a given Environment. Returns a boolean value."""
         raise NotImplementedError()
 
+    def value(self):
+        raise NotImplementedError()
+
 
 class TransToken(EnvToken):
     """Abstract Token that can transform an Environment."""
 
     def apply(self, env: Environment) -> Environment:
         """Applies this TransToken on a given Environment. Alters the Environment and returns the newly obtained one."""
+        raise NotImplementedError()
 
+    def value(self):
         raise NotImplementedError()
 
 
@@ -60,6 +74,9 @@ class ControlToken(EnvToken):
         """Applies this ControlToken on a given Environment. Alters the Environment and returns the newly obtained one."""
 
         raise NotImplementedError()
+
+    def value(self):
+        return 0
 
 
 class InventedToken(EnvToken):
@@ -86,6 +103,9 @@ class InventedToken(EnvToken):
 
     def __hash__(self):
         return hash((self.__class__, tuple(self.tokens)))
+
+    def value(self):
+        return 0
 
 class InvalidTransition(Exception):
     """This exception will be raised whenever an invalid state transition is performed on an Environment."""

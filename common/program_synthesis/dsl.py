@@ -27,11 +27,16 @@ class DomainSpecificLanguage:
         self._invented_tokens = []
         self._constraints_enabled = constraints_enabled
         self._constraint_func = constraint_func
+        self.prune_counter = 0
 
     def check_sequence_allowed(self, program):
         if not self._constraints_enabled:
             return True
-        return self._constraint_func(program)
+        if self._constraint_func(program):
+            return True
+        else:
+            self.prune_counter += 1
+        return False
 
     def get_trans_tokens(self) -> List[Token]:
         """This method gets trans tokens"""

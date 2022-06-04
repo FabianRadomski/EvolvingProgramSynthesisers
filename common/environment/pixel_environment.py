@@ -21,8 +21,16 @@ class PixelEnvironment(Environment):
     def loop_limit(self) -> int:
         return max(self.width, self.height)
 
+    def __eq__(self, other):
+        return isinstance(other, PixelEnvironment) and \
+               self.x == other.x and \
+               self.y == other.y and \
+               self.width == other.width and \
+               self.height == other.height and \
+               self.pixels == other.pixels
+
     def __hash__(self):
-        return hash(("".join([str(p) for p in self.pixels]), self.x, self.y))
+        return hash((tuple([str(p) for p in self.pixels]), self.x, self.y))
 
     def __deepcopy__(self, memdict={}):
         return PixelEnvironment(self.width, self.height, self.x, self.y, self.pixels)

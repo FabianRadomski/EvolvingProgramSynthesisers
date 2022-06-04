@@ -2,8 +2,8 @@
 #SBATCH --job-name="constraint_programming"
 #SBATCH --partition=compute
 #SBATCH --time=1:00:00
-#SBATCH --ntasks=1
-#SBATCH --mem=3G
+#SBATCH --ntasks = 12
+#SBATCH --mem=5G
 #SBATCH --mail-type=END
 
 module load 2022r1
@@ -14,4 +14,16 @@ unset CONDA_SHLVL
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate mypython
 
-srun python CMain.py
+srun python CMain.py "AS" "P" "G" &
+srun python CMain.py "AS" "P" "E" &
+srun python CMain.py "AS" "P" "O" &
+srun python CMain.py "AS" "S" "G" &
+srun python CMain.py "AS" "S" "E" &
+srun python CMain.py "AS" "S" "O" &
+srun python CMain.py "Brute" "P" "G" &
+srun python CMain.py "Brute" "P" "E" &
+srun python CMain.py "Brute" "P" "O" &
+srun python CMain.py "Brute" "S" "G" &
+srun python CMain.py "Brute" "S" "E" &
+srun python CMain.py "Brute" "S" "O"
+

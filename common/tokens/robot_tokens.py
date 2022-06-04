@@ -29,40 +29,64 @@ class AtTop(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.ry == 0
 
+    def value(self):
+        return 0
+
 
 class AtBottom(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.ry == env.size - 1
+
+    def value(self):
+        return 1
 
 
 class AtLeft(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.rx == 0
 
+    def value(self):
+        return 2
+
 
 class AtRight(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.rx == env.size - 1
+
+    def value(self):
+        return 3
 
 
 class NotAtTop(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.ry != 0
 
+    def value(self):
+        return 4
+
 
 class NotAtBottom(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.ry != env.size - 1
+
+    def value(self):
+        return 5
 
 
 class NotAtLeft(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.rx != 0
 
+    def value(self):
+        return 6
+
 
 class NotAtRight(BoolToken):
     def apply(self, env: RobotEnvironment) -> bool:
         return env.rx != env.size - 1
+
+    def value(self):
+        return 7
 
 
 class MoveRight(TransToken):
@@ -74,6 +98,9 @@ class MoveRight(TransToken):
             env.bx += 1
         return env
 
+    def value(self):
+        return 8
+
 
 class MoveLeft(TransToken):
     def apply(self, env: RobotEnvironment) -> RobotEnvironment:
@@ -83,6 +110,9 @@ class MoveLeft(TransToken):
         if env.holding:
             env.bx -= 1
         return env
+
+    def value(self):
+        return 9
 
 
 class MoveUp(TransToken):
@@ -94,6 +124,9 @@ class MoveUp(TransToken):
             env.by -= 1
         return env
 
+    def value(self):
+        return 10
+
 
 class MoveDown(TransToken):
     def apply(self, env: RobotEnvironment) -> RobotEnvironment:
@@ -103,6 +136,9 @@ class MoveDown(TransToken):
         if env.holding:
             env.by += 1
         return env
+
+    def value(self):
+        return 11
 
 
 class Drop(TransToken):
@@ -114,6 +150,9 @@ class Drop(TransToken):
         env.by = env.ry
         return env
 
+    def value(self):
+        return 12
+
 
 class Grab(TransToken):
     def apply(self, env: RobotEnvironment) -> RobotEnvironment:
@@ -121,6 +160,9 @@ class Grab(TransToken):
             raise InvalidTransition()
         env.holding = True
         return env
+
+    def value(self):
+        return 13
 
 
 BoolTokens = [AtTop(), AtBottom(), AtLeft(), AtRight(), NotAtTop(), NotAtBottom(), NotAtLeft(), NotAtRight()]

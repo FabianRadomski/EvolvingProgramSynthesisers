@@ -15,6 +15,9 @@ class AtEnd(BoolToken):
             raise InvalidTransition
         return env.pos == len(env.string_array) - 1
 
+    def value(self):
+        return 0
+
 
 class NotAtEnd(BoolToken):
     """Token that returns whether the pointer is not at the end of the string."""
@@ -23,6 +26,9 @@ class NotAtEnd(BoolToken):
         if len(env.string_array) == 0:
             raise InvalidTransition
         return env.pos != len(env.string_array) - 1
+
+    def value(self):
+        return 1
 
 
 class AtStart(BoolToken):
@@ -33,6 +39,8 @@ class AtStart(BoolToken):
             raise InvalidTransition
         return env.pos == 0
 
+    def value(self):
+        return 2
 
 class NotAtStart(BoolToken):
     """Token that returns whether the pointer is not at the start of the string."""
@@ -42,6 +50,8 @@ class NotAtStart(BoolToken):
             raise InvalidTransition
         return env.pos != 0
 
+    def value(self):
+        return 3
 
 class IsLetter(BoolToken):
     """Token that returns whether the character at the pointers position is an alphabetical letter."""
@@ -51,6 +61,8 @@ class IsLetter(BoolToken):
             raise InvalidTransition
         return env.string_array[env.pos].isalpha()
 
+    def value(self):
+        return 4
 
 class IsNotLetter(BoolToken):
     """Token that returns whether the character at the pointers position is not an alphabetical letter."""
@@ -60,6 +72,8 @@ class IsNotLetter(BoolToken):
             raise InvalidTransition
         return not env.string_array[env.pos].isalpha()
 
+    def value(self):
+        return 5
 
 class IsUppercase(BoolToken):
     """Token that returns whether the character at the pointers position is in uppercase."""
@@ -69,6 +83,8 @@ class IsUppercase(BoolToken):
             raise InvalidTransition
         return env.string_array[env.pos].isupper()
 
+    def value(self):
+        return 6
 
 class IsNotUppercase(BoolToken):
     """Token that returns whether the character at the pointers position is not in uppercase."""
@@ -78,6 +94,8 @@ class IsNotUppercase(BoolToken):
             raise InvalidTransition
         return not env.string_array[env.pos].isupper()
 
+    def value(self):
+        return 7
 
 class IsLowercase(BoolToken):
     """Token that returns whether the character at the pointers position is in lowercase."""
@@ -87,6 +105,8 @@ class IsLowercase(BoolToken):
             raise InvalidTransition
         return env.string_array[env.pos].islower()
 
+    def value(self):
+        return 8
 
 class IsNotLowercase(BoolToken):
     """Token that returns whether the character at the pointers position is not in lowercase."""
@@ -96,6 +116,8 @@ class IsNotLowercase(BoolToken):
             raise InvalidTransition
         return not env.string_array[env.pos].islower()
 
+    def value(self):
+        return 9
 
 class IsNumber(BoolToken):
     """Token that returns whether the character at the pointers position is a number."""
@@ -105,6 +127,8 @@ class IsNumber(BoolToken):
             raise InvalidTransition
         return env.string_array[env.pos].isnumeric()
 
+    def value(self):
+        return 10
 
 class IsNotNumber(BoolToken):
     """Token that returns whether the character at the pointers position is not a number."""
@@ -114,6 +138,8 @@ class IsNotNumber(BoolToken):
             raise InvalidTransition
         return not env.string_array[env.pos].isnumeric()
 
+    def value(self):
+        return 11
 
 class IsSpace(BoolToken):
     """Token that returns whether the character at the pointers position is a space character."""
@@ -123,6 +149,8 @@ class IsSpace(BoolToken):
             raise InvalidTransition
         return env.string_array[env.pos] == " "
 
+    def value(self):
+        return 12
 
 class IsNotSpace(BoolToken):
     """Token that returns whether the character at the pointers position is not a space character."""
@@ -132,6 +160,8 @@ class IsNotSpace(BoolToken):
             raise InvalidTransition
         return not env.string_array[env.pos] == " "
 
+    def value(self):
+        return 13
 
 #                           #
 #       TransTokens         #
@@ -148,6 +178,8 @@ class MoveRight(TransToken):
 
         return env
 
+    def value(self):
+        return 14
 
 class MoveLeft(TransToken):
     """Token that moves the pointer one unit to the left. Raises InvalidTransition when the pointer moves out of the
@@ -160,6 +192,8 @@ class MoveLeft(TransToken):
 
         return env
 
+    def value(self):
+        return 15
 
 class MakeUppercase(TransToken):
     """Token that transforms the character at the pointers position into an uppercase character."""
@@ -172,6 +206,8 @@ class MakeUppercase(TransToken):
 
         return env
 
+    def value(self):
+        return 16
 
 class MakeLowercase(TransToken):
     """Token that transforms the character at the pointers position into a lowercase character."""
@@ -184,6 +220,8 @@ class MakeLowercase(TransToken):
 
         return env
 
+    def value(self):
+        return 17
 
 class Drop(TransToken):
     """Removes the character at the pointers position. If the last character is removed the pointer will be moved one
@@ -200,6 +238,8 @@ class Drop(TransToken):
 
         return env
 
+    def value(self):
+        return 18
 
 BoolTokens = [AtEnd(), NotAtEnd(), AtStart(), NotAtStart(), IsLetter(), IsNotLetter(), IsUppercase(), IsNotUppercase(), IsLowercase(),
               IsNotLowercase(), IsNumber(), IsNotNumber(), IsSpace(), IsNotSpace()]

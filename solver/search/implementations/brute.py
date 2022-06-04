@@ -25,6 +25,7 @@ class Brute(SearchAlgorithm):
 
     def iteration(self) -> bool:
         cost, program = heapq.heappop(self.program_heap)
+        self.best_program = program
 
         # If solution
         if cost == 0:

@@ -51,7 +51,7 @@ class Runner:
             print("Parsing test cases")
 
         exclude = self.file_manager.finished_test_cases() if self.store else []
-        all_cases = get_test_cases(self.settings.domain, self.files, exclude)
+        all_cases = get_test_cases(self.settings.domain, self.files, [])
 
         if self.debug:
             print("Parsed {} test cases".format(len(all_cases)))
@@ -103,7 +103,6 @@ class Runner:
 
                 if self.store:
                     self.file_manager.append_result(stats_list)
-
         accuracies = [float(s) / t for s, t in zip(solved_examples, total_examples)]
 
         return mean(accuracies)
