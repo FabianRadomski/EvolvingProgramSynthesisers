@@ -1,10 +1,10 @@
 import copy
 import random
-from math import sqrt, log
+from math import log, sqrt
 from typing import Union
 
 from common.program import Program
-from common.tokens.abstract_tokens import Token, InvalidTransition
+from common.tokens.abstract_tokens import InvalidTransition, Token
 from common.tokens.control_tokens import LoopIterationLimitReached
 from solver.search.search_algorithm import SearchAlgorithm
 
@@ -15,7 +15,10 @@ class MCTSNode:
         self.parent = parent
         self.token = token
         self.search_algorithm = search_algorithm
-        self.state = state
+        if len(search_algorithm.initial_program.sequence) == 0:
+            self.state = state
+        else:
+            self.state = tuple([search_algorithm.initial_program.interp(env) for env in state])
         self.visited = visited
 
         self.children: list['MCTSNode'] = []
@@ -31,7 +34,7 @@ class MCTSNode:
             self.best_program = self.rebuild_program()
 
     @classmethod
-    def root(cls, sa: SearchAlgorithm):
+    def root(cls, sa: SearchAlgorithm, best_program: Program = Program([])):
         return MCTSNode(None, None, sa, sa.input_state, {sa.input_state})
 
     @classmethod
@@ -114,7 +117,7 @@ class MCTSNode:
 
     def rebuild_program(self) -> list[Token]:
         if self.parent is None:
-            return []
+            return copy.deepcopy(self.search_algorithm.initial_program.sequence)
 
         res = self.parent.rebuild_program()
         res.append(self.token)
@@ -128,14 +131,16 @@ class MCTS(SearchAlgorithm):
         self.c_exploration = c_exploration
         self.rollout_depth = rollout_depth
         self.root = None
+        self.initial_program = Program([])
 
     def setup(self):
-        #print(self.c_exploration)
+        # print(self.c_exploration)
         self.root = MCTSNode.root(self)
+
 
     def iteration(self):
         selected_node = self.root.select()
-        #print("Selected {}".format(selected_node.state))
+        # print("Selected {}".format(selected_node.state))
         program = selected_node.rebuild_program()
 
         if selected_node.reward == 1:
@@ -143,7 +148,7 @@ class MCTS(SearchAlgorithm):
             return False
 
         new_node = selected_node.expand()
-        #print("Expanded {}".format(new_node.state)) if new_node is not None else print("Expanded {}".format(new_node))
+        # print("Expanded {}".format(new_node.state)) if new_node is not None else print("Expanded {}".format(new_node))
 
         if new_node is None:
             return True
@@ -153,13 +158,12 @@ class MCTS(SearchAlgorithm):
             return False
 
         reward = new_node.rollout(self.rollout_depth) if new_node is not None else 0
-        #print("Rollout {}".format(reward))
+        # print("Rollout {}".format(reward))
 
         if reward == 1:
             return False
 
         new_node.back_propagate(reward) if new_node is not None else selected_node.back_propagate(reward)
-        #print("Back propagated")
+        # print("Back propagated")
 
         return True
-

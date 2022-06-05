@@ -19,7 +19,12 @@ class GeneticProgramming(SearchAlgorithm):
 
 	def setup(self):
 		# Setup with initial random generation consisting of programs with size 1.
-		self.generation = [Program(random.sample(self.tokens, k=1)) for _ in range(self.population_size)]
+		if len(self.best_program.sequence) == 0:
+			self.generation = [Program(random.sample(self.tokens, k=1)) for _ in range(self.population_size)]
+		else:
+			self.generation = [self.best_program] * round(self.population_size/2)
+			self.generation.extend(Program(random.sample(self.tokens, k=1)) for _ in range(self.population_size - round(self.population_size/2)))
+
 		self.fitness = [self._fitness(program) for program in self.generation]
 
 	def iteration(self) -> bool:
