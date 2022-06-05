@@ -1,9 +1,5 @@
 import copy
-import os
 import random
-import sys
-from multiprocessing import Pool
-from multiprocessing import get_context
 
 import time
 from random import randrange
@@ -461,7 +457,6 @@ def remove_specific_tokens(genome: Genome, tokens: List[Token]):
 def process_search_results(search_results: dict, domain: str) -> Tuple[float, float, List]:
     total_cases = 0
     cumulative_ratios_correct = 0
-    cumulative_search_time_correct = 0
     cumulative_search_time = 0
 
     best_programs = []
