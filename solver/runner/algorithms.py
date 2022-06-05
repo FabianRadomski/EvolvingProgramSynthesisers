@@ -9,16 +9,16 @@ from common.settings.robot_optimized_steps import RobotOptimizedSteps
 from common.settings.string_entailment import StringEntailment
 from common.settings.string_levenshtein import StringLevenshtein
 from common.settings.string_optimized_alignment import StringOptimizedAlignment
-from solver.search.implementations.combined_search.combined_search_time import CombinedSearchTime
 from solver.search.implementations.a_star import AStar
 from solver.search.implementations.brute import Brute
+from solver.search.implementations.combined_search.combined_search_time import CombinedSearchTime
 from solver.search.implementations.genetic_programming import GeneticProgramming
 from solver.search.implementations.large_neighborhood_search import LNS
 from solver.search.implementations.metropolis import MetropolisHasting
 from solver.search.implementations.my_mcts.mcts import MCTS
 
 
-def dicts(param = 0.5, alg_sequence=None):
+def dicts(param=0.5, alg_sequence=None):
     if alg_sequence is None:
         alg_sequence = [("Brute", 1)]
     return {
@@ -48,15 +48,15 @@ def dicts(param = 0.5, alg_sequence=None):
                 "PO": MCTS(c_exploration=param, rollout_depth=0),
                 "PE": MCTS(c_exploration=param, rollout_depth=0),
 
-                #"SG": MCTS(c_exploration=0, max_token_try=9),
-                #"SO": MCTS(c_exploration=0, max_token_try=5),
-                #"SE": MCTS(c_exploration=0, max_token_try=10),
-                #"RG": MCTS(c_exploration=0, max_token_try=30),
-                #"RO": MCTS(c_exploration=0, max_token_try=10),
-                #"RE": MCTS(c_exploration=0, max_token_try=10),
-                #"PH": MCTS(c_exploration=0, max_token_try=10),
-                #"PO": MCTS(c_exploration=0, max_token_try=10),
-                #"PE": MCTS(c_exploration=0, max_token_try=10),
+                # "SG": MCTS(c_exploration=0, max_token_try=9),
+                # "SO": MCTS(c_exploration=0, max_token_try=5),
+                # "SE": MCTS(c_exploration=0, max_token_try=10),
+                # "RG": MCTS(c_exploration=0, max_token_try=30),
+                # "RO": MCTS(c_exploration=0, max_token_try=10),
+                # "RE": MCTS(c_exploration=0, max_token_try=10),
+                # "PH": MCTS(c_exploration=0, max_token_try=10),
+                # "PO": MCTS(c_exploration=0, max_token_try=10),
+                # "PE": MCTS(c_exploration=0, max_token_try=10),
             },
             "LNS": {
                 "SG": LNS(max_destroy_n=4, max_repair_n=4),
@@ -137,7 +137,7 @@ def dicts(param = 0.5, alg_sequence=None):
             },
             "param": {
                 "S": (
-                    [],
+                    [1, 3, 5],
                     range(1, 327, 20),
                     [1, 2, 3]
                 ),
