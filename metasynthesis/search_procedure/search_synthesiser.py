@@ -193,7 +193,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         if self.write_generations:
 
-            f = open(self.filename, "a")
+            f = open(f"{self.filename}.txt", "a")
             f.write(self.population_to_string(curr_population))
             f.close()
 
@@ -203,7 +203,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             if self.print_generations:
                 print(self.population_to_string(curr_population))
             if self.write_generations:
-                f = open(self.filename, "a")
+                f = open(f"{self.filename}.txt", "a")
                 f.write(self.population_to_string(curr_population))
                 f.close()
             self.calculate_population_fitness(curr_population)
