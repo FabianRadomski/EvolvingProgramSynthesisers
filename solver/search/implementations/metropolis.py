@@ -30,7 +30,7 @@ class MetropolisHasting(SearchAlgorithm):
         self.mutations = [m for _, m in self.weights_and_mutations]
 
     def setup(self):
-        self.current_program = Program([])
+        self.current_program = self.best_program
         self.current_cost, _, _ = self.evaluate(self.current_program)
 
     def iteration(self) -> bool:

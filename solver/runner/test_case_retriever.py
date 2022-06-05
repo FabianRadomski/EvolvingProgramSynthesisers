@@ -17,8 +17,8 @@ def get_test_cases(domain: str, files: (Iterable[int], Iterable[int], Iterable[i
     for co in files[0]:
         for ta in files[1]:
             for tr in files[2]:
-                if not (co, ta, tr) in exclude:
-                    res.append((co, ta, tr))
+                #if not (co, ta, tr) in exclude:
+                res.append((co, ta, tr))
 
     return parser.parse_test_cases(res)
 
