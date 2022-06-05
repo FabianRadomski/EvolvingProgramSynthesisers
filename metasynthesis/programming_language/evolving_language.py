@@ -1,12 +1,14 @@
 import copy
 import random
+
+import time
 from random import randrange
-from typing import List, Callable, Tuple, Iterable
+from typing import List, Tuple
 
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.tokens.abstract_tokens import Token
 from solver.runner.runner import Runner
 from solver.runner.algorithms import dicts
-
 
 from metasynthesis.abstract_genetic import GeneticAlgorithm
 
@@ -14,6 +16,9 @@ Genome = DomainSpecificLanguage
 Population = List[Genome]
 
 genome_fitness_values = {}
+successful_tokens_counts = {}
+successful_tokens_weights = {}
+successful_tokens_objects = {}
 
 
 class EvolvingLanguage(GeneticAlgorithm):
@@ -22,7 +27,7 @@ class EvolvingLanguage(GeneticAlgorithm):
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  elite_genomes: int, mutation_probability: float, generation_size: int,
                  dsl: DomainSpecificLanguage, search_setting: str, max_search_time: float,
-                 search_mode: str):
+                 search_mode: str, search_algo: str):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -32,6 +37,12 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.search_setting = search_setting
         self.max_search_time = max_search_time
         self.search_mode = search_mode
+        self.search_algo = search_algo
+
+        self.full_dsl_correct_ratio = 0.0
+        self.fitness(sort_genome(StandardDomainSpecificLanguage(self.domain)))
+        self.full_dsl_correct_ratio = \
+            genome_fitness_values[str(sort_genome(StandardDomainSpecificLanguage(self.domain)))]["correct"]
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
@@ -63,18 +74,11 @@ class EvolvingLanguage(GeneticAlgorithm):
     def fitness(self, genome: Genome) -> float:
         """This method calculates the fitness of the specified genome"""
 
-        # need a combination of
-        # 1) length of genome
-        # 2) whether program that solves tasks was created
-        # 3) number of iterations of searching
-
         if str(genome) in genome_fitness_values.keys():
-            # print("ALREADY IN", str(genome))
-            return genome_fitness_values[str(genome)]
+            return genome_fitness_values[str(genome)]["fitness"]
 
-        # genome = StandardDomainSpecificLanguage("robot")
         runner = Runner(lib=dicts(0),
-                        algo="AS",
+                        algo=self.search_algo,
                         setting=self.search_setting,
                         test_cases=self.search_mode,
                         time_limit_sec=self.max_search_time,
@@ -84,56 +88,25 @@ class EvolvingLanguage(GeneticAlgorithm):
                         dsl=genome)
         runner.run()
 
-        search_results = runner.search_results
+        mean_ratio_correct_original, mean_search_time, best_programs = \
+            process_search_results(runner.search_results, self.domain)
 
-        total_cases = 0
-        cumulative_ratios_correct = 0
-        cumulative_search_time_correct = 0
+        mean_ratio_correct = mean_ratio_correct_original
 
-        for key, value in search_results.items():
-            total_cases += 1
-            current_search_result = value
-            search_time = current_search_result["search_time"]
-            test_total = current_search_result["test_total"]
+        # To prevent high fitness for DSL's that solve only a few tasks with extremely low search times
+        if mean_ratio_correct < self.full_dsl_correct_ratio / 2:
+            mean_ratio_correct = 0.0
 
-            current_ratio_correct = 0
-            # If we use string domain we should use tests, instead of training examples
-            if self.domain == "string":
-                test_correct = current_search_result["test_correct"]
-                current_ratio_correct += test_correct / test_total
-            else:
-                train_correct = current_search_result["train_correct"]
-                current_ratio_correct += train_correct / test_total
-
-            cumulative_ratios_correct += current_ratio_correct
-            if current_ratio_correct > 0:
-                cumulative_search_time_correct += search_time
-            else:
-                cumulative_search_time_correct += self.max_search_time
-
-        mean_ratio_correct = cumulative_ratios_correct / total_cases
-        mean_search_time_correct = cumulative_search_time_correct / total_cases
-
-        if mean_search_time_correct == 0:
+        # To prevent division by zero
+        if mean_search_time == 0:
             fitness_value = 0
         else:
-            fitness_value = mean_ratio_correct * (1 / mean_search_time_correct)
+            fitness_value = mean_ratio_correct * (1 / mean_search_time)
 
-        print("correct:", mean_ratio_correct, "search:", mean_search_time_correct, "fitness:", fitness_value)
+        extract_special_tokens(best_programs, self.dsl)
 
-        # avg_exec_time = results["average_execution"]
-        # inverse_avg_exec_time = 1 / (avg_exec_time + 0.000000001)
-        #
-        # success_percentage = results["average_success"]
-        # success_percentage_scaled = success_percentage / 100
-        #
-        # # print(inverse_dsl_length, inverse_avg_exec_time, success_percentage_scaled)
-        #
-        # fitness_value = inverse_dsl_length * inverse_avg_exec_time * success_percentage_scaled
-        #
-
-
-        genome_fitness_values[str(genome)] = fitness_value
+        genome_fitness_values[str(genome)] = {"genome": genome, "correct": mean_ratio_correct,
+                                              "search": mean_search_time, "fitness": fitness_value}
 
         return fitness_value
 
@@ -144,8 +117,12 @@ class EvolvingLanguage(GeneticAlgorithm):
         crossed_a = None
         crossed_b = None
 
-        if 0 <= rand_float <= 1:
+        if 0 <= rand_float <= 0:
             crossed_a, crossed_b = crossover_exchange_trans_bool(a, b)
+        elif 0 < rand_float <= 0:
+            crossed_a, crossed_b = crossover_exchange_halve_category(a, b)
+        elif 0 < rand_float <= 1:
+            crossed_a, crossed_b = crossover_exchange_halve_random(a, b)
 
         return crossed_a, crossed_b
 
@@ -153,9 +130,11 @@ class EvolvingLanguage(GeneticAlgorithm):
         """This method applies mutation to a genome with certain probability"""
 
         rand_float = random.random()
-        mutated_genome = None
+        mutated_genome = genome
 
-        if 0 <= rand_float <= 0.5:
+        if 0 <= rand_float <= 0.45:
+            mutated_genome = mutate_add_special_token(genome)
+        elif 0.45 < rand_float <= 0.5:
             mutated_genome = mutate_add_token(genome, self.dsl)
         elif 0.5 < rand_float <= 1:
             mutated_genome = mutate_remove_token(genome)
@@ -175,27 +154,28 @@ class EvolvingLanguage(GeneticAlgorithm):
     def run_evolution(self):
         """This method runs the evolution process"""
 
+        t1_start_all = time.perf_counter()
+
         full_dsl = sort_genome(StandardDomainSpecificLanguage(self.domain))
-        print("FULL DSL FITNESS", self.fitness(full_dsl))
+        self.fitness(full_dsl)
+        print("FULL DSL:")
+        print_chromosome_stats(full_dsl)
 
         iteration_count = 0
         population = self.generate_population()
 
         while iteration_count < self.generation_limit:
-
-            # STATS
+            t2_start_generation = time.perf_counter()
             print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
-            for genome in population:
-                # self.fitness(genome)
-                print(round(self.fitness(genome), 5), str(genome))
 
+            # GENERATION SETUP
+            successful_tokens_weights.clear()
             new_population = copy.deepcopy(population)
 
-            generation_cum_fitness = 0
-            for genome in population:
-                generation_cum_fitness += self.fitness(genome)
-            print("AVERAGE GENERATION FITNESS", generation_cum_fitness / self.generation_size)
-            # print("POP LENGTH", len(population))
+            # EVALUATING CHROMOSOMES
+            for chromosome in population:
+                self.fitness(chromosome)
+                print_chromosome_stats(chromosome)
 
             best_percentage = select_best_percentage(population=new_population, percentage=50,
                                                      size=self.generation_size)
@@ -204,10 +184,9 @@ class EvolvingLanguage(GeneticAlgorithm):
             for elite_index in range(0, self.elite_genomes):
                 new_population[elite_index] = best_percentage[elite_index]
 
-            random_crossover_probability = random.random()
             # CROSSOVER
+            random_crossover_probability = random.random()
             if random_crossover_probability < self.crossover_probability:
-                # TODO: now we take crossover probability as if we apply it on the whole generation, want to apply per genome (pair)
 
                 crossed_result = []
                 genome_count = 0
@@ -220,6 +199,9 @@ class EvolvingLanguage(GeneticAlgorithm):
                 new_population[self.elite_genomes:self.generation_size] = crossed_result[
                                                                           0:self.generation_size - self.elite_genomes]
 
+            # SPECIAL TOKEN WEIGHTS
+            normalize_token_weights()
+
             # MUTATION
             for genome_index in range(self.elite_genomes, self.generation_size):
                 random_mutation_probability = random.random()
@@ -227,6 +209,16 @@ class EvolvingLanguage(GeneticAlgorithm):
                     mutated_genome = self.mutation(copy.deepcopy(new_population[genome_index]))
                     new_population[genome_index] = mutated_genome
             iteration_count += 1
+
+            # GENERATION STATISTICS
+            generation_cum_fitness = 0
+            for genome in population:
+                generation_cum_fitness += self.fitness(genome)
+
+            t2_stop_generation = time.perf_counter()
+
+            print("AVG FITNESS:", round((generation_cum_fitness / self.generation_size), 4),
+                  "TIME TAKEN:", t2_stop_generation - t2_start_generation)
 
             population = new_population
 
@@ -236,12 +228,16 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.final_evaluation(full_dsl)
         print("EVOLVED DSL")
         self.final_evaluation(best_genome)
+        t1_stop_all = time.perf_counter()
+
+        print("Elapsed time during the whole program in seconds:", t1_stop_all - t1_start_all)
+        print("Explored languages:", len(genome_fitness_values.keys()))
 
         return best_genome
 
     def final_evaluation(self, genome: Genome):
         runner = Runner(dicts(0),
-                        algo="Brute",
+                        algo=self.search_algo,
                         setting=self.search_setting,
                         test_cases=self.search_mode,
                         time_limit_sec=self.max_search_time,
@@ -249,25 +245,16 @@ class EvolvingLanguage(GeneticAlgorithm):
                         store=False,
                         suffix="",
                         dsl=genome)
-        perc_solved = runner.run()
+        runner.run()
 
-        print(perc_solved)
+        mean_ratio_correct, mean_search_time_correct, best_programs = \
+            process_search_results(runner.search_results, self.domain)
 
-        # success_percentage = results["completely_successful_percentage"]
-        # average_execution_time = results["average_execution"]
-        #
-        # search_results = results["programs"]
-        # cum_program_length = 0
-        # total_search_time = 0
-        # for result in search_results:
-        #     total_search_time += result.dictionary["execution_time"]
-        #     cum_program_length += result.dictionary["program_length"]
-        #
-        # avg_program_length = cum_program_length / len(search_results)
-        # print("Total search time", total_search_time)
-        # print("Success percentage:", success_percentage)
-        # print("Average program runtime:", average_execution_time)
-        # print("Average program length", avg_program_length)
+        avg_program_length = sum(map(lambda program: program.number_of_tokens(), best_programs)) / len(best_programs)
+
+        print("Mean search time", mean_search_time_correct)
+        print("Mean ratio correct:", mean_ratio_correct)
+        print("Average program length", avg_program_length)
 
 
 def sort_genome(genome: Genome) -> Genome:
@@ -277,12 +264,8 @@ def sort_genome(genome: Genome) -> Genome:
     return DomainSpecificLanguage(genome.domain_name, sorted_bool, sorted_trans)
 
 
-def genome_length(genome: Genome) -> int:
-    return len(genome.get_bool_tokens() + genome.get_trans_tokens())
-
-
 def get_fitness(genome: Genome):
-    return genome_fitness_values[str(genome)]
+    return genome_fitness_values[str(genome)]["fitness"]
 
 
 def select_best_percentage(population: Population, percentage: float, size: int) -> Population:
@@ -304,6 +287,72 @@ def crossover_exchange_trans_bool(a: Genome, b: Genome) -> Tuple[Genome, Genome]
     crossed_b = DomainSpecificLanguage(a.domain_name, b.get_bool_tokens(), a.get_trans_tokens())
 
     return crossed_a, crossed_b
+
+
+def crossover_exchange_halve_category(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+    # Select half of a bool and trans, keep track of remainders
+    # Select half of b bool and trans, keep track of remainders
+
+    # Merge halves, and remainders
+
+    a_bool_selected, a_bool_remainder = get_random_half_and_remainder(a.get_bool_tokens())
+    a_trans_selected, a_trans_remainder = get_random_half_and_remainder(a.get_trans_tokens())
+
+    b_bool_selected, b_bool_remainder = get_random_half_and_remainder(b.get_bool_tokens())
+    b_trans_selected, b_trans_remainder = get_random_half_and_remainder(b.get_trans_tokens())
+
+    crossed_a = sort_genome(DomainSpecificLanguage(a.domain_name, list(set(a_bool_selected + b_bool_selected)),
+                                                   list(set(a_trans_selected + b_trans_selected))))
+    crossed_b = sort_genome(DomainSpecificLanguage(a.domain_name, list(set(a_bool_remainder + b_bool_remainder)),
+                                                   list(set(a_trans_remainder + b_trans_remainder))))
+
+    return crossed_a, crossed_b
+
+
+def crossover_exchange_halve_random(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+    # Select half of a, keep track of remainder
+    # Select half of b, keep track of remainder
+
+    a_tokens = a.get_bool_tokens() + a.get_trans_tokens()
+    b_tokens = b.get_bool_tokens() + b.get_trans_tokens()
+
+    a_tokens_selected, a_tokens_remainder = get_random_half_and_remainder(a_tokens)
+    b_tokens_selected, b_tokens_remainder = get_random_half_and_remainder(b_tokens)
+
+    selected_no_duplicates = remove_duplicates(a_tokens_selected + b_tokens_selected)
+    remainder_no_duplicates = remove_duplicates(a_tokens_remainder + b_tokens_remainder)
+
+    return create_dsl_from_tokens(a.domain_name, selected_no_duplicates), \
+           create_dsl_from_tokens(a.domain_name, remainder_no_duplicates)
+
+
+# Created because we can't do set conversion for some tokens
+def remove_duplicates(tokens: List[Token]) -> List[Token]:
+    final_tokens = []
+    for token in tokens:
+        if token not in final_tokens:
+            final_tokens.append(token)
+    return final_tokens
+
+
+def get_random_half_and_remainder(tokens: List[Token]) -> Tuple[List[Token], List[Token]]:
+    tokens_selected = random.sample(tokens, round(len(tokens) / 2))
+    tokens_remainder = [v for v in tokens if v not in tokens_selected]
+    return tokens_selected, tokens_remainder
+
+
+def create_dsl_from_tokens(domain: str, tokens: List[Token]) -> Genome:
+    bool_tokens = []
+    trans_tokens = []
+
+    dsl = StandardDomainSpecificLanguage(domain)
+    for token in tokens:
+        if token in dsl.get_bool_tokens():
+            bool_tokens.append(token)
+        else:
+            trans_tokens.append(token)
+
+    return sort_genome(DomainSpecificLanguage(dsl.domain_name, bool_tokens, trans_tokens))
 
 
 # MUTATION FUNCTIONS
@@ -357,3 +406,107 @@ def mutate_remove_token(genome: Genome) -> Genome:
     result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
     return result
 
+
+def mutate_add_special_token(genome: Genome) -> Genome:
+    bool_tokens_genome = genome.get_bool_tokens()
+    trans_tokens_genome = genome.get_trans_tokens()
+
+    randomly_selected_token = pick_random_weighted()
+
+    if randomly_selected_token not in trans_tokens_genome:
+        trans_tokens_genome.append(randomly_selected_token)
+
+    result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
+    return result
+
+
+def pick_random_weighted():
+    rand_val = random.random()
+    total = 0
+    for k, v in successful_tokens_weights.items():
+        total += v
+        if rand_val <= total:
+            return successful_tokens_objects[k]
+    return None
+
+
+def normalize_token_weights():
+    # Since we want to enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
+    for key in successful_tokens_counts:
+        successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.2)
+
+    total_token_count = sum(successful_tokens_counts.values())
+
+    for key in successful_tokens_counts:
+        successful_tokens_weights[key] = successful_tokens_counts[key] / total_token_count
+        # print(str(key), successful_tokens_weights[key])
+
+
+def remove_specific_tokens(genome: Genome, tokens: List[Token]):
+    bool_tokens_genome = genome.get_bool_tokens()
+    trans_tokens_genome = genome.get_trans_tokens()
+
+    for token in tokens:
+        if token in bool_tokens_genome:
+            bool_tokens_genome.remove(token)
+        elif token in trans_tokens_genome:
+            trans_tokens_genome.remove(token)
+
+    result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))
+    return result
+
+
+def process_search_results(search_results: dict, domain: str) -> Tuple[float, float, List]:
+    total_cases = 0
+    cumulative_ratios_correct = 0
+    cumulative_search_time = 0
+
+    best_programs = []
+
+    for key, value in search_results.items():
+        total_cases += 1
+        current_search_result = value
+        search_time = current_search_result["search_time"]
+        test_total = current_search_result["test_total"]
+        best_programs.append(current_search_result["best_program"])
+
+        current_ratio_correct = 0
+        # If we use string domain we should use tests, instead of training examples
+        if domain == "string":
+            test_correct = current_search_result["test_correct"]
+            current_ratio_correct += test_correct / test_total
+        else:
+            train_correct = current_search_result["train_correct"]
+            current_ratio_correct += train_correct / test_total
+
+        cumulative_search_time += search_time
+        cumulative_ratios_correct += current_ratio_correct
+
+    mean_ratio_correct = cumulative_ratios_correct / total_cases
+    mean_search_time_correct = cumulative_search_time / total_cases
+
+    return mean_ratio_correct, mean_search_time_correct, best_programs
+
+
+def extract_special_tokens(best_programs: List, dsl: DomainSpecificLanguage):
+    for program in best_programs:
+        tokens = program.sequence
+
+        for token in tokens:
+            if token not in dsl.get_trans_tokens():
+
+                if str(token) not in successful_tokens_counts.keys():
+                    successful_tokens_counts[str(token)] = 1
+                    successful_tokens_objects[str(token)] = token
+                else:
+                    successful_tokens_counts[str(token)] = successful_tokens_counts[str(token)] + 1
+
+                # print(str(token), successful_tokens_counts[str(token)])
+
+
+def print_chromosome_stats(chromosome: DomainSpecificLanguage):
+    stats = genome_fitness_values[str(chromosome)]
+    print("correct:", round(stats["correct"], 3),
+          "search:", round(stats["search"], 3),
+          "fitness:", round(stats["fitness"], 3),
+          str(stats["genome"]))

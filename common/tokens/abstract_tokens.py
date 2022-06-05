@@ -1,4 +1,4 @@
-from ast import arg
+import sys
 from common.environment import *
 from common.environment.environment import Environment
 
@@ -119,7 +119,7 @@ class PatternToken(EnvToken):
         for token in self.function_definition.body_tokens:
             if isinstance(token, FunctionVariableToken):
                 self.arg_token.apply(env)
-            else: 
+            else:
                 token.apply(env)
 
 

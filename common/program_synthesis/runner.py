@@ -3,28 +3,26 @@ import time
 from dataclasses import dataclass, field
 # takes as input a DSL,
 from multiprocessing import Pool
-from typing import Type, List
+from typing import List
 
-from common.experiment import TestCase, Experiment
+from common.experiment import TestCase
 from common.program import Program
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
-from example_parser.parser import Parser
-from example_parser.pixel_parser import PixelParser
-from example_parser.robot_parser import RobotParser
-from example_parser.string_parser import StringParser
-from search.MCTS.mcts import MCTS
-from search.a_star.a_star import AStar
-from search.abstract_search import SearchAlgorithm
-from search.metropolis_hastings.metropolis import MetropolisHasting
-from search.search_result import SearchResult
-from search.brute.brute import Brute
+from common.program_synthesis.objective import ObjectiveFun
+# TODO fix these imports
+
+from solver.search.implementations.brute import Brute
 
 
 @dataclass
 class Runner:
     """Runner for running a program synthesizer for a given domain specific language NOT FOR a meta-synthesizer"""
-    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot")
-    search_method: SearchAlgorithm = Brute(10)
+    domain = "robot"
+    dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage(domain)
+    search_method: SearchAlgorithm = Brute(5, ObjectiveFun(domain).fun)
+    print_results: bool = False
+    max_test_cases: int = 1000
+    POOL_RUN_PROCESS_TIMEOUT = 10  # Must be higher than MAX_EXECUTION_TIME
     MULTI_PROCESS = True
     NO_PROCESSES = os.cpu_count() - 1
 
@@ -44,10 +42,14 @@ class Runner:
                 for tc in test_cases:
                     result = pool.apply_async(self.run_single_test_case, args=(tc,))
                     results.append(result)
-
-                results = [r.get() for r in results]
-
-
+                new_results = []
+                for r in results:
+                    try:
+                        result = r.get(timeout=self.POOL_RUN_PROCESS_TIMEOUT)
+                        new_results.append(result)
+                    except:  # TimeoutError
+                        continue
+                results = new_results
         else:
             for tc in test_cases:
                 result = self.run_single_test_case(tc)
@@ -65,12 +67,11 @@ class Runner:
         average_success_percentage = sum_of_success_percentages / len(test_cases)
         average_execution_time = sum_of_execution_times_in_seconds / len(test_cases)
         percentage_of_completely_successful_programs = number_of_completely_successful_programs / len(test_cases) * 100
-        print(average_success_percentage)
-        print(average_execution_time)
+
         return {
             "average_success": average_success_percentage,
             "average_execution": average_execution_time,
-            "completely_succesful_percentage": percentage_of_completely_successful_programs,
+            "completely_successful_percentage": percentage_of_completely_successful_programs,
             "programs": search_results
         }
 
@@ -88,8 +89,12 @@ class Runner:
         test_cases = []
         directory = parser.path
 
+        num_test_cases = 0
         for file in os.listdir(directory):
+            if num_test_cases > self.max_test_cases:
+                break
             test_cases.append(parser.parse_file(file))
+            num_test_cases += 1
 
         return test_cases
 
@@ -97,7 +102,11 @@ class Runner:
         start_time = time.time()
 
         # # find program that satisfies training_examples
-        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl)
+        search_result: SearchResult = self.search_method.run(test_case.training_examples, self.dsl.get_trans_tokens(),
+                                   self.dsl.get_bool_tokens())
+
+        if self.print_results:
+            self.print_info(self.get_result_info(test_case, search_result))
 
         program: Program = search_result.dictionary["program"]
 
@@ -121,10 +130,31 @@ class Runner:
         success_percentage = 100.0 * successes / len(test_case.test_examples)
         return success_percentage, execution_time_in_seconds, search_result
 
+    @staticmethod
+    def get_result_info(test_case: TestCase, result: SearchResult) -> dict:
+        result_dict = result.dictionary
+        file_path = test_case.path_to_result_file.split("-")
+        program = result_dict["program"]
+
+        info = {
+            "file": "{}-{}-{}".format(file_path[1], file_path[2], file_path[3]),
+            "test_cost": SearchAlgorithm.cost(test_case.test_examples, program),
+            "train_cost": SearchAlgorithm.cost(test_case.training_examples, program),
+            "execution_time": result_dict["execution_time"],
+            "program_length": result_dict["program_length"],
+            "iterations": result_dict["number_of_iterations"]
+        }
+
+        return info
+
+    @staticmethod
+    def print_info(result_info: dict):
+        print(result_info)
 
 """
 Example for running a test with the runner:
 """
 if __name__ == '__main__':
-    data = Runner().run()
+    domain = "robot"
+    data = Runner(StandardDomainSpecificLanguage(domain), Brute(10, ObjectiveFun(domain).fun)).run()
     print(data)

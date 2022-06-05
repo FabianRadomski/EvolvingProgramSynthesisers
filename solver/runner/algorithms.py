@@ -9,14 +9,18 @@ from common.settings.robot_optimized_steps import RobotOptimizedSteps
 from common.settings.string_entailment import StringEntailment
 from common.settings.string_levenshtein import StringLevenshtein
 from common.settings.string_optimized_alignment import StringOptimizedAlignment
-from solver.search.implementations.my_mcts.mcts import MCTS
 from solver.search.implementations.a_star import AStar
 from solver.search.implementations.brute import Brute
+from solver.search.implementations.combined_search.combined_search_time import CombinedSearchTime
 from solver.search.implementations.genetic_programming import GeneticProgramming
 from solver.search.implementations.large_neighborhood_search import LNS
 from solver.search.implementations.metropolis import MetropolisHasting
+from solver.search.implementations.my_mcts.mcts import MCTS
 
-def dicts(param=0):
+
+def dicts(param=0.5, alg_sequence=None):
+    if alg_sequence is None:
+        alg_sequence = [("Brute", 1)]
     return {
         "algorithms": {
             "Brute": defaultdict(Brute),
@@ -44,15 +48,15 @@ def dicts(param=0):
                 "PO": MCTS(c_exploration=param, rollout_depth=0),
                 "PE": MCTS(c_exploration=param, rollout_depth=0),
 
-                #"SG": MCTS(c_exploration=0, max_token_try=9),
-                #"SO": MCTS(c_exploration=0, max_token_try=5),
-                #"SE": MCTS(c_exploration=0, max_token_try=10),
-                #"RG": MCTS(c_exploration=0, max_token_try=30),
-                #"RO": MCTS(c_exploration=0, max_token_try=10),
-                #"RE": MCTS(c_exploration=0, max_token_try=10),
-                #"PH": MCTS(c_exploration=0, max_token_try=10),
-                #"PO": MCTS(c_exploration=0, max_token_try=10),
-                #"PE": MCTS(c_exploration=0, max_token_try=10),
+                # "SG": MCTS(c_exploration=0, max_token_try=9),
+                # "SO": MCTS(c_exploration=0, max_token_try=5),
+                # "SE": MCTS(c_exploration=0, max_token_try=10),
+                # "RG": MCTS(c_exploration=0, max_token_try=30),
+                # "RO": MCTS(c_exploration=0, max_token_try=10),
+                # "RE": MCTS(c_exploration=0, max_token_try=10),
+                # "PH": MCTS(c_exploration=0, max_token_try=10),
+                # "PO": MCTS(c_exploration=0, max_token_try=10),
+                # "PE": MCTS(c_exploration=0, max_token_try=10),
             },
             "LNS": {
                 "SG": LNS(max_destroy_n=4, max_repair_n=4),
@@ -87,6 +91,17 @@ def dicts(param=0):
                 "PO": GeneticProgramming(population_size=60, p_mutation=0.8),
                 "PE": GeneticProgramming(population_size=60, p_mutation=0.8),
             },
+            "CS": {
+                "SG": CombinedSearchTime(alg_sequence, "SG"),
+                "SO": CombinedSearchTime(alg_sequence, "SO"),
+                "SE": CombinedSearchTime(alg_sequence, "SE"),
+                "RG": CombinedSearchTime(alg_sequence, "RG"),
+                "RO": CombinedSearchTime(alg_sequence, "RO"),
+                "RE": CombinedSearchTime(alg_sequence, "RE"),
+                "PG": CombinedSearchTime(alg_sequence, "PG"),
+                "PO": CombinedSearchTime(alg_sequence, "PO"),
+                "PE": CombinedSearchTime(alg_sequence, "PE"),
+            },
         },
 
         "settings": {
@@ -102,9 +117,27 @@ def dicts(param=0):
         },
 
         "test_cases": {
+            "small": {
+                # Runs one task for each size
+                "S": (
+                    [1],
+                    [],
+                    range(1, 11)
+                ),
+                "R": (
+                    [],
+                    [],
+                    range(1, 2),
+                ),
+                "P": (
+                    [],
+                    [],
+                    range(1, 3)
+                )
+            },
             "param": {
                 "S": (
-                    [1,3,5],
+                    [1, 3, 5],
                     range(1, 327, 20),
                     [1, 2, 3]
                 ),
