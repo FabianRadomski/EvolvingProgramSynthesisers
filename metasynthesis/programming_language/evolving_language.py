@@ -154,16 +154,18 @@ class EvolvingLanguage(GeneticAlgorithm):
     def run_evolution(self):
         """This method runs the evolution process"""
 
-        t1_start = time.perf_counter()
+        t1_start_all = time.perf_counter()
 
         full_dsl = sort_genome(StandardDomainSpecificLanguage(self.domain))
-        print("FULL DSL FITNESS", round(self.fitness(full_dsl), 4))
+        self.fitness(full_dsl)
+        print("FULL DSL:")
+        print_chromosome_stats(full_dsl)
 
         iteration_count = 0
         population = self.generate_population()
 
         while iteration_count < self.generation_limit:
-
+            t2_start_generation = time.perf_counter()
             print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
 
             # GENERATION SETUP
@@ -173,17 +175,7 @@ class EvolvingLanguage(GeneticAlgorithm):
             # EVALUATING CHROMOSOMES
             for chromosome in population:
                 self.fitness(chromosome)
-                stats = genome_fitness_values[str(chromosome)]
-                print("correct:", round(stats["correct"], 3),
-                      "search:", round(stats["search"], 3),
-                      "fitness:", round(stats["fitness"], 3),
-                      str(stats["genome"]))
-
-            generation_cum_fitness = 0
-            for genome in population:
-                generation_cum_fitness += self.fitness(genome)
-
-            print("AVERAGE GENERATION FITNESS", generation_cum_fitness / self.generation_size)
+                print_chromosome_stats(chromosome)
 
             best_percentage = select_best_percentage(population=new_population, percentage=50,
                                                      size=self.generation_size)
@@ -218,6 +210,16 @@ class EvolvingLanguage(GeneticAlgorithm):
                     new_population[genome_index] = mutated_genome
             iteration_count += 1
 
+            # GENERATION STATISTICS
+            generation_cum_fitness = 0
+            for genome in population:
+                generation_cum_fitness += self.fitness(genome)
+
+            t2_stop_generation = time.perf_counter()
+
+            print("AVG FITNESS:", round((generation_cum_fitness / self.generation_size), 4),
+                  "TIME TAKEN:", t2_stop_generation - t2_start_generation)
+
             population = new_population
 
         best_genome = population[0]
@@ -226,10 +228,10 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.final_evaluation(full_dsl)
         print("EVOLVED DSL")
         self.final_evaluation(best_genome)
+        t1_stop_all = time.perf_counter()
 
-        t1_stop = time.perf_counter()
-
-        print("Elapsed time during the whole program in seconds:", t1_stop - t1_start)
+        print("Elapsed time during the whole program in seconds:", t1_stop_all - t1_start_all)
+        print("Explored languages:", len(genome_fitness_values.keys()))
 
         return best_genome
 
@@ -431,7 +433,7 @@ def pick_random_weighted():
 def normalize_token_weights():
     # Since we want to enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
     for key in successful_tokens_counts:
-        successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.1)
+        successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.2)
 
     total_token_count = sum(successful_tokens_counts.values())
 
@@ -500,3 +502,11 @@ def extract_special_tokens(best_programs: List, dsl: DomainSpecificLanguage):
                     successful_tokens_counts[str(token)] = successful_tokens_counts[str(token)] + 1
 
                 # print(str(token), successful_tokens_counts[str(token)])
+
+
+def print_chromosome_stats(chromosome: DomainSpecificLanguage):
+    stats = genome_fitness_values[str(chromosome)]
+    print("correct:", round(stats["correct"], 3),
+          "search:", round(stats["search"], 3),
+          "fitness:", round(stats["fitness"], 3),
+          str(stats["genome"]))
