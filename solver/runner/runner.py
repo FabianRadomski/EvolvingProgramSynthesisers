@@ -92,7 +92,8 @@ class Runner:
 
                     self.search_results[str(stats["complexity"]) + str(stats["task"]) +
                                         str(stats["trial"]) + str(self.settings.dsl)] = \
-                        {"train_correct": stats["train_correct"],
+                        {"best_program": program,
+                         "train_correct": stats["train_correct"],
                          "test_correct": stats["test_correct"],
                          "test_total": stats["test_total"],
                          "search_time": stats["execution_time"]}
@@ -112,7 +113,8 @@ class Runner:
 
                         self.search_results[str(stats["complexity"]) + str(stats["task"]) +
                                             str(stats["trial"]) + str(self.settings.dsl)] = \
-                            {"train_correct": stats["train_correct"],
+                            {"best_program": program,
+                             "train_correct": stats["train_correct"],
                              "test_correct": stats["test_correct"],
                              "test_total": stats["test_total"],
                              "search_time": stats["execution_time"]}
@@ -129,7 +131,7 @@ class Runner:
 
 
 if __name__ == "__main__":
-    time_limit = 5
+    time_limit = 1
     debug = False
     store = False
     setting = "RG"
