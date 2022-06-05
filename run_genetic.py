@@ -21,10 +21,11 @@ if __name__ == '__main__':
                                crossover_probability=0.8,
                                mutation_probability=0.3,
                                elite_genomes=2,
-                               generation_size=10,
+                               generation_size=34,  # 10, 34
                                dsl=dsl,
                                search_setting=search_setting,
-                               max_search_time=1,
-                               search_mode="debug")  # set to "eval" for final, "debug" for debugging
+                               max_search_time=0.1,
+                               search_mode="debug",  # set to "eval" for final, "debug" for debugging
+                               search_algo="Brute")
     genetic.run_evolution()
 
