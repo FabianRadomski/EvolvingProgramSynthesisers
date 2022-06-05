@@ -34,9 +34,9 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     # Upper boundary for the execution time for specific search procedures, different for each domain
     initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.5, "AS": 0.1, "MH": 0.05, "LNS": 0.3},
-                                                              "S": {"Brute": 10,
-                                                                    "AS": 6, "MH": 9,
-                                                                    "LNS": 9, "GP": 10},
+                                                              "S": {"Brute": 20,
+                                                                    "AS": 12, "MH": 18,
+                                                                    "LNS": 18, "GP": 20},
                                                               "P": {"Brute": 15,
                                                                     "AS": 6, "MH": 13,
                                                                     "LNS": 14, "GP": 20}}
@@ -90,6 +90,10 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Choose whether to plot average fitness per generation or not
         self.plot = plot
         self.write_generations = write_generations
+
+        if write_generations:
+            self.start_time = datetime.now().strftime("%d-%m-%Y--%H-%M-%S")
+            self.filename = f"{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c-{self.start_time}"
 
     def generate_genome(self, length: int) -> Genome:
         new_genome: Genome = []
@@ -188,9 +192,8 @@ class SearchSynthesiser(GeneticAlgorithm):
             print(self.population_to_string(curr_population))
 
         if self.write_generations:
-            curr_time = datetime.now().strftime("%d-%m-%Y--%H-%M-%S")
-            filename = f"{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c-{curr_time}"
-            f = open(filename, "a")
+
+            f = open(self.filename, "a")
             f.write(self.population_to_string(curr_population))
             f.close()
 
@@ -200,7 +203,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             if self.print_generations:
                 print(self.population_to_string(curr_population))
             if self.write_generations:
-                f = open(filename, "a")
+                f = open(self.filename, "a")
                 f.write(self.population_to_string(curr_population))
                 f.close()
             self.calculate_population_fitness(curr_population)
@@ -277,7 +280,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         x = np.arange(1, len(self.avg_speed_per_gen) + 1)
         plt.plot(x, avg_fitness)
-        plt.savefig(f"fit-{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c.png")
+        plt.savefig(f"fit-{self.filename}.png")
         plt.show()
 
     def plot_generations_speed(self):
@@ -295,7 +298,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         x = np.arange(1, len(self.avg_speed_per_gen) + 1)
         plt.plot(x, self.avg_speed_per_gen)
-        plt.savefig(f"exec-{self.setting}-{self.mutation_probability}-p_m-{self.crossover_probability}-p_c.png")
+        plt.savefig(f"exec-{self.filename}.png")
         plt.show()
 
     def select_tournament(self, population: Population, compete_size: int) -> Tuple[Genome, Genome]:
