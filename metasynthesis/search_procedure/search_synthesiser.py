@@ -258,9 +258,11 @@ class SearchSynthesiser(GeneticAlgorithm):
         self.evolution_history[self.curr_iteration] = []
         exec_times = []
         for ind in population:
-            self.evolution_history[self.curr_iteration].append((ind, self.fitness(ind)))
-            exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
-        self.avg_speed_per_gen.append(np.mean(exec_times))
+            fit = self.fitness(ind)
+            self.evolution_history[self.curr_iteration].append((ind, fit))
+            if fit >= 1:
+                exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
+                self.avg_speed_per_gen.append(np.mean(exec_times))
 
     def plot_generations_fitness(self):
         """
@@ -493,7 +495,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    ss = SearchSynthesiser(fitness_limit=0, generation_limit=20, crossover_probability=0.8,
-                           mutation_probability=0.2, generation_size=10, max_seq_size=6, dist_type="Time", print_generations=True,
-                           setting="SO", test_size="param", plot=True, write_generations=True)
+    ss = SearchSynthesiser(fitness_limit=0, generation_limit=3, crossover_probability=0.8,
+                           mutation_probability=0.2, generation_size=2, max_seq_size=6, dist_type="Time", print_generations=True,
+                           setting="RO", test_size="param", plot=True, write_generations=True)
     ss.run_evolution()
