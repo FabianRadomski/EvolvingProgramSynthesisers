@@ -27,8 +27,7 @@ class LanguageStatistics:
     def plot_search_algorithm_performance(self):
         plt.style.use('ggplot')  # ggplot
 
-        # search_algorithms = ["Brute", "AS", "LNS", "MH"]
-        search_algorithms = ["Brute"]
+        search_algorithms = ["Brute", "AS", "LNS", "MH"]
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])
@@ -55,11 +54,6 @@ class LanguageStatistics:
             cumulative_generation_times = [sum(generation_times[0:i[0]]) for i in enumerate(generation_times)]
 
             plt.plot(cumulative_generation_times, average_fitness_values, label=algorithm)
-
-            # time_taken = all_results["Total time taken"]
-            # num_explored_languages = all_results["Explored languages"]
-            #
-            # plt.scatter(time_taken, num_explored_languages, label=algorithm)
 
         plt.xlabel("Total time passed")
         plt.ylabel("Average generation fitness")

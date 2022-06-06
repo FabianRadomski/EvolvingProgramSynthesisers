@@ -3,32 +3,41 @@ from metasynthesis.programming_language.evolve_language import EvolvingLanguage
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from metasynthesis.programming_language.plot_statistics import LanguageStatistics
 
-domain = "string"
 
-search_setting = ""
-if domain == "pixel":
-    search_setting = "PG"
-elif domain == "robot":
-    search_setting = "RO"
-elif domain == "string":
-    search_setting = "SO"
+def get_search_setting(domain_for_func):
+    search_setting = ""
+    if domain_for_func == "pixel":
+        search_setting = "PG"
+    elif domain_for_func == "robot":
+        search_setting = "RO"
+    elif domain_for_func == "string":
+        search_setting = "SO"
 
-dsl = StandardDomainSpecificLanguage(domain)
+    return search_setting
+
+
+def run_genetic_algorithm_once(domain_for_func):
+    dsl = StandardDomainSpecificLanguage(domain)
+
+    genetic = EvolvingLanguage(fitness_limit=1,
+                               generation_limit=5,
+                               crossover_probability=0.8,
+                               mutation_probability=0.3,
+                               elite_genomes=2,
+                               generation_size=6,  # 10, 34
+                               dsl=dsl,
+                               search_setting=get_search_setting(domain_for_func),
+                               max_search_time=0.1,
+                               search_mode="debug",  # set to "eval" for final, "debug" for debugging
+                               search_algo="Brute",
+                               print_stats=True)
+    genetic.run_evolution()
+
 
 if __name__ == '__main__':
+    domain = "string"
 
-    # genetic = EvolvingLanguage(fitness_limit=1,
-    #                            generation_limit=5,
-    #                            crossover_probability=0.8,
-    #                            mutation_probability=0.3,
-    #                            elite_genomes=2,
-    #                            generation_size=6,  # 10, 34
-    #                            dsl=dsl,
-    #                            search_setting=search_setting,
-    #                            max_search_time=0.1,
-    #                            search_mode="debug",  # set to "eval" for final, "debug" for debugging
-    #                            search_algo="Brute")
-    # genetic.run_evolution()
+    # run_genetic_algorithm_once(domain)
 
     stats = LanguageStatistics(domain=domain, print_stats=True)
 
