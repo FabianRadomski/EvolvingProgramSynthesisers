@@ -13,12 +13,12 @@ class LanguageStatistics:
         self.dsl = StandardDomainSpecificLanguage(domain)
 
         # These parameters are manually updated based on analysis of the plots
-        self.best_parameters = {"generation_limit": 20,
-                                "generation_size": 20,
+        self.best_parameters = {"generation_limit": 3,
+                                "generation_size": 4,
                                 "search_mode": "debug",
                                 "search_algorithm": "AS",
                                 "search_setting": "SG",
-                                "max_search_time": 2,
+                                "max_search_time": 0.01,
                                 "crossover_probability": 0.8,
                                 "mutation_probability": 0.3,
                                 }
@@ -48,16 +48,18 @@ class LanguageStatistics:
             _, generation_times, average_fitness_values = \
                 extract_generation_time_and_fitness(all_results, "Average fitness")
 
-            plt.plot(generation_times, average_fitness_values, label=algorithm)
+            cumulative_generation_times = [sum(generation_times[0:i[0]]) for i in enumerate(generation_times)]
+
+            plt.plot(cumulative_generation_times, average_fitness_values, label=algorithm)
 
             # time_taken = all_results["Total time taken"]
             # num_explored_languages = all_results["Explored languages"]
             #
             # plt.scatter(time_taken, num_explored_languages, label=algorithm)
 
-        plt.xlabel("Time taken per generation")
+        plt.xlabel("Total time passed")
         plt.ylabel("Average generation fitness")
-        plt.title("Effect of search setting on generation time and fitness")
+        plt.title("Effect of search algorithm on time and fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/search_algorithm_comparison.jpg")
         plt.close()
@@ -91,11 +93,13 @@ class LanguageStatistics:
             _, generation_times, average_fitness_values = \
                 extract_generation_time_and_fitness(all_results, "Average fitness")
 
-            plt.plot(generation_times, average_fitness_values, label=setting)
+            cumulative_generation_times = [sum(generation_times[0:i[0]]) for i in enumerate(generation_times)]
 
-        plt.xlabel("Time taken per generation")
+            plt.plot(cumulative_generation_times, average_fitness_values, label=setting)
+
+        plt.xlabel("Total time passed")
         plt.ylabel("Average generation fitness")
-        plt.title("Effect of search setting on generation time and fitness")
+        plt.title("Effect of search setting on time and fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/search_setting_comparison.jpg")
         plt.close()
@@ -224,9 +228,62 @@ class LanguageStatistics:
         plt.savefig("metasynthesis/programming_language/results/crossover_method_comparison.jpg")
         plt.close()
 
-    def plot_search_time_performance(self):
-        pass
+    def plot_population_size_performance(self):
+        generation_sizes = [10, 20, 30, 40, 50, 60]
 
+        # Other important parameters
+        generation_limit = 30
+
+        for size in generation_sizes:
+            genetic = EvolvingLanguage(generation_limit=generation_limit,
+                                       generation_size=size,
+                                       search_mode=self.best_parameters["search_mode"],
+                                       max_search_time=self.best_parameters["max_search_time"],
+                                       crossover_probability=self.best_parameters["crossover_probability"],
+                                       mutation_probability=self.best_parameters["mutation_probability"],
+                                       dsl=self.dsl)
+            all_results = genetic.run_evolution()
+
+            num_explored_languages = all_results["Explored languages"]
+            generations, generation_times, best_fitness_values = extract_generation_time_and_fitness(all_results, "Best fitness")
+
+            cumulative_generation_times = [sum(generation_times[0:i[0]]) for i in enumerate(generation_times)]
+
+            plt.plot(cumulative_generation_times, best_fitness_values, label=str(size))
+
+        plt.xlabel("Total time passed")
+        plt.ylabel("Best fitness value")
+        plt.title("Effect of population size on fitness vs time passed")
+        plt.legend(loc="upper left")
+        plt.savefig("metasynthesis/programming_language/results/population_size_comparison.jpg")
+        plt.close()
+
+    def plot_generation_limit_performance(self):
+        generations = [5, 10]  # 20, 30, 40, 60
+
+        for gen in generations:
+            genetic = EvolvingLanguage(generation_limit=gen,
+                                       generation_size=self.best_parameters["generation_size"],
+                                       search_mode=self.best_parameters["search_mode"],
+                                       max_search_time=self.best_parameters["max_search_time"],
+                                       crossover_probability=self.best_parameters["crossover_probability"],
+                                       mutation_probability=self.best_parameters["mutation_probability"],
+                                       dsl=self.dsl)
+            all_results = genetic.run_evolution()
+
+            num_explored_languages = all_results["Explored languages"]
+            generations, generation_times, best_fitness_values = extract_generation_time_and_fitness(all_results, "Best fitness")
+
+            cumulative_generation_times = [sum(generation_times[0:i[0]]) for i in enumerate(generation_times)]
+
+            plt.plot(cumulative_generation_times, best_fitness_values, label=str(gen))
+
+        plt.xlabel("Total time passed")
+        plt.ylabel("Best fitness value")
+        plt.title("Effect of generation limit on fitness vs time passed")
+        plt.legend(loc="upper left")
+        plt.savefig("metasynthesis/programming_language/results/generation_limit_comparison.jpg")
+        plt.close()
 
 def extract_generation_time_and_fitness(all_results: Dict, fitness_to_get: str):
     generation_statistics = all_results["Generation statistics"]
