@@ -14,4 +14,4 @@ module load miniconda3
 unset CONDA_SHLVL
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate mypython
-python run_genetic.py
+python language_run_genetic.py

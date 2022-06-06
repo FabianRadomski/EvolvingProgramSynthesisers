@@ -24,10 +24,10 @@ successful_tokens_objects = {}
 class EvolvingLanguage(GeneticAlgorithm):
     """A genetic algorithm to synthesise a programing language for program synthesis"""
 
-    def __init__(self, fitness_limit: int = 1, generation_limit: int = 5, crossover_probability: float = 0.8,
-                 elite_genomes: int = 2, mutation_probability: float = 0.2, generation_size: int = 6,
+    def __init__(self, fitness_limit: int = 1, generation_limit: int = 20, crossover_probability: float = 0.8,
+                 elite_genomes: int = 2, mutation_probability: float = 0.2, generation_size: int = 20,
                  dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("string"), search_setting: str = "SO",
-                 max_search_time: float = 0.1, search_mode: str = "debug", search_algo: str = "Brute",
+                 max_search_time: float = 1, search_mode: str = "debug", search_algo: str = "Brute",
                  mutation_weights: List = (0.45, 0.05, 0.5), crossover_weights: List = (0, 0, 1),
                  start_population: Population = None):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
@@ -45,9 +45,6 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.start_population = start_population
 
         self.full_dsl_correct_ratio = 0.0
-        self.fitness(sort_genome(StandardDomainSpecificLanguage(self.domain)))
-        self.full_dsl_correct_ratio = \
-            genome_fitness_values[str(sort_genome(StandardDomainSpecificLanguage(self.domain)))]["correct"]
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
@@ -159,6 +156,11 @@ class EvolvingLanguage(GeneticAlgorithm):
     def run_evolution(self):
         """This method runs the evolution process"""
 
+        genome_fitness_values.clear()
+        self.fitness(sort_genome(StandardDomainSpecificLanguage(self.domain)))
+        self.full_dsl_correct_ratio = \
+            genome_fitness_values[str(sort_genome(StandardDomainSpecificLanguage(self.domain)))]["correct"]
+
         t1_start_all = time.perf_counter()
 
         full_dsl = sort_genome(StandardDomainSpecificLanguage(self.domain))
@@ -227,8 +229,9 @@ class EvolvingLanguage(GeneticAlgorithm):
             t2_stop_generation = time.perf_counter()
             generation_time_taken = t2_stop_generation - t2_start_generation
             generation_average_fitness = generation_cum_fitness / self.generation_size
-
+            generation_best_fitness = self.fitness(population[0])
             generation_statistics[str(iteration_count)] = {"Time taken": generation_time_taken,
+                                                           "Best fitness": generation_best_fitness,
                                                            "Average fitness": generation_average_fitness}
 
             print("AVG FITNESS:", round(generation_average_fitness, 4),
