@@ -26,6 +26,8 @@ class LanguageStatistics:
         plt.style.use('seaborn-paper')  # ggplot
 
         search_algorithms = ["Brute", "AS", "LNS", "MH"]
+        # search_algorithms = ["LNS"]
+
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])

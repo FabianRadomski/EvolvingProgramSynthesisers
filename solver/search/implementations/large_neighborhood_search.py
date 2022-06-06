@@ -43,7 +43,8 @@ class LNS(SearchAlgorithm):
 
         # Append N random tokens
         for _ in range(n):
-            seq.append(random.choice(self.tokens))
+            if len(self.tokens) > 0:
+                seq.append(random.choice(self.tokens))
 
         # Extend sequence and return program
         seq.extend(seqs[1])
