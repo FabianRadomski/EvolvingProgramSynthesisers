@@ -32,9 +32,9 @@ if __name__ == '__main__':
 
     stats = LanguageStatistics(domain)
 
-    # stats.plot_search_algorithm_performance()
-    # stats.plot_search_setting_performance()
+    stats.plot_search_algorithm_performance()
+    stats.plot_search_setting_performance()
     stats.plot_search_timeout_performance()
-    # stats.plot_mutation_method_performance()
-    # stats.plot_crossover_method_performance()
+    stats.plot_mutation_method_performance()
+    stats.plot_crossover_method_performance()
 

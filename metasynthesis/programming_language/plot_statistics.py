@@ -13,21 +13,21 @@ class LanguageStatistics:
         self.dsl = StandardDomainSpecificLanguage(domain)
 
         # These parameters are manually updated based on analysis of the plots
-        self.best_parameters = {"generation_limit": 3,
-                                "generation_size": 6,
+        self.best_parameters = {"generation_limit": 20,
+                                "generation_size": 20,
                                 "search_mode": "debug",
                                 "search_algorithm": "AS",
                                 "search_setting": "SG",
-                                "max_search_time": 0.3,
+                                "max_search_time": 2,
                                 "crossover_probability": 0.8,
                                 "mutation_probability": 0.3,
                                 }
 
     def plot_search_algorithm_performance(self):
-        plt.style.use('seaborn-paper')  # ggplot
+        plt.style.use('ggplot')  # ggplot
 
-        search_algorithms = ["Brute", "AS", "LNS", "MH"]
-        # search_algorithms = ["LNS"]
+        # search_algorithms = ["Brute", "AS", "LNS", "MH"]
+        search_algorithms = ["Brute"]
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])
@@ -60,7 +60,7 @@ class LanguageStatistics:
         plt.title("Effect of search setting on generation time and fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/search_algorithm_comparison.jpg")
-        plt.show()
+        plt.close()
 
     def plot_search_setting_performance(self):
         search_settings = []
@@ -98,7 +98,7 @@ class LanguageStatistics:
         plt.title("Effect of search setting on generation time and fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/search_setting_comparison.jpg")
-        plt.show()
+        plt.close()
 
     def plot_search_timeout_performance(self):
         timeouts = [0.1, 0.5, 1, 2, 6, 10]
@@ -149,7 +149,7 @@ class LanguageStatistics:
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/search_timeout_comparison_time.jpg")
 
-        plt.show()
+        plt.close('all')
 
     def plot_mutation_method_performance(self):
         # Add_construct, Add_random, Remove_random,
@@ -186,7 +186,7 @@ class LanguageStatistics:
         plt.title("Effect of mutation methods on fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/mutation_method_comparison.jpg")
-        plt.show()
+        plt.close()
 
     def plot_crossover_method_performance(self):
         # Trans_bool, Half_each, Half_random,
@@ -222,7 +222,7 @@ class LanguageStatistics:
         plt.title("Effect of crossover methods on fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/crossover_method_comparison.jpg")
-        plt.show()
+        plt.close()
 
     def plot_search_time_performance(self):
         pass
@@ -247,4 +247,4 @@ def simple_plot_with_params(xs: List, ys: List, xlabel: str, ylabel: str, title:
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
-    plt.show()
+    plt.close()
