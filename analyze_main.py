@@ -14,4 +14,4 @@ for alg in algs:
     stds.append(std)
     max_vals.append(max_val)
     min_vals.append(min_val)
-plot_times(names, means, stds, max_vals, min_vals)
+plot_times(names, means, stds, max_vals, min_vals, "Robot Path-Planning")

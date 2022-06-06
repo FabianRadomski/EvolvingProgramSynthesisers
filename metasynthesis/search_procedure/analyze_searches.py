@@ -68,7 +68,7 @@ def plot_times(names, avgs, stds, max_vals, min_vals, domain):
     ax.scatter(x_pos, min_vals, color="green")
     # Save the figure and show
     plt.tight_layout()
-    plt.savefig(f'average_iter_{domain}.png')
+    plt.savefig(f'average_times_{domain}.png')
     plt.show()
 
 
