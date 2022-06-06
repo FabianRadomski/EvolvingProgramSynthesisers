@@ -51,7 +51,7 @@ def plot_iteration_hist(iterations, name):
 
     plt.show()
 
-def plot_iterations(names, avgs, stds, max_vals, min_vals):
+def plot_times(names, avgs, stds, max_vals, min_vals, domain):
     """
     Plots the distributions of the number of iterations.
     """
@@ -62,13 +62,13 @@ def plot_iterations(names, avgs, stds, max_vals, min_vals):
     ax.set_ylabel('Average Execution Time [s]')
     ax.set_xticks(x_pos)
     ax.set_xticklabels(names)
-    ax.set_title('Execution Times of Different Search Methods in Robot Domain')
+    ax.set_title(f'Execution Times of Different Search Methods in {domain} Domain')
     ax.yaxis.grid(True)
     ax.scatter(x_pos, max_vals, color="red")
     ax.scatter(x_pos, min_vals, color="green")
     # Save the figure and show
     plt.tight_layout()
-    plt.savefig('average_iter.png')
+    plt.savefig(f'average_iter_{domain}.png')
     plt.show()
 
 
@@ -85,4 +85,4 @@ if __name__ == "__main__":
         stds.append(std)
         max_vals.append(max_val)
         min_vals.append(min_val)
-    plot_iterations(names, means, stds, max_vals, min_vals)
+    plot_times(names, means, stds, max_vals, min_vals, "Robot Path-Planning")
