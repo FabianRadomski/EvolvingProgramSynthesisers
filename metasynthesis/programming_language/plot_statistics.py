@@ -13,11 +13,12 @@ class LanguageStatistics:
         self.dsl = StandardDomainSpecificLanguage(domain)
 
         # These parameters are manually updated based on analysis of the plots
-        self.best_parameters = {"generation_limit": 2,
+        self.best_parameters = {"generation_limit": 3,
                                 "generation_size": 6,
                                 "search_mode": "debug",
                                 "search_algorithm": "AS",
-                                "max_search_time": 1,
+                                "search_setting": "SO",
+                                "max_search_time": 0.3,
                                 "crossover_probability": 0.8,
                                 "mutation_probability": 0.3,
                                 }
@@ -27,7 +28,6 @@ class LanguageStatistics:
 
         search_algorithms = ["Brute", "AS", "LNS", "MH"]
         # search_algorithms = ["LNS"]
-
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])
@@ -98,6 +98,44 @@ class LanguageStatistics:
         plt.title("Effect of search setting on generation time and fitness")
         plt.legend(loc="upper left")
         plt.savefig("metasynthesis/programming_language/results/search_setting_comparison.jpg")
+        plt.show()
+
+    def plot_search_timeout_performance(self):
+        timeouts = [1, 2, 4, 7, 10]
+
+        general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
+                                           generation_size=self.best_parameters["generation_size"])
+        start_population = general_genetic.generate_population()
+
+        for timeout in timeouts:
+            genetic = EvolvingLanguage(generation_limit=self.best_parameters["generation_limit"],
+                                       generation_size=self.best_parameters["generation_size"],
+                                       search_mode=self.best_parameters["search_mode"],
+                                       max_search_time=timeout,
+                                       crossover_probability=self.best_parameters["crossover_probability"],
+                                       mutation_probability=self.best_parameters["mutation_probability"],
+                                       dsl=self.dsl,
+                                       start_population=start_population,
+                                       search_algo=self.best_parameters["search_algorithm"],
+                                       search_setting=self.best_parameters["search_setting"])
+            all_results = genetic.run_evolution()
+
+            generations, generation_times, average_fitness_values = \
+                extract_generation_time_and_fitness(all_results, "Average fitness")
+
+            generations_stats = all_results["Generation statistics"]
+            generations_best_correct = []
+
+            for gen in generations_stats:
+                generations_best_correct.append(generations_stats[gen]["Generation best stats"]["correct"])
+
+            plt.plot(generation_times, generations_best_correct, label=timeout)
+
+        plt.xlabel("Generation time")
+        plt.ylabel("Ratio correct of best chromosome")
+        plt.title("Effect of timeout on ratio correct and generation time")
+        plt.legend(loc="upper left")
+        plt.savefig("metasynthesis/programming_language/results/search_timeout_comparison.jpg")
         plt.show()
 
     def plot_mutation_method_performance(self):

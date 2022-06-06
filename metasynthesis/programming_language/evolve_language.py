@@ -230,9 +230,12 @@ class EvolvingLanguage(GeneticAlgorithm):
             generation_time_taken = t2_stop_generation - t2_start_generation
             generation_average_fitness = generation_cum_fitness / self.generation_size
             generation_best_fitness = self.fitness(population[0])
+
+            generation_best_stats = get_chromosome_stats(population[0])
             generation_statistics[str(iteration_count)] = {"Time taken": generation_time_taken,
                                                            "Best fitness": generation_best_fitness,
-                                                           "Average fitness": generation_average_fitness}
+                                                           "Average fitness": generation_average_fitness,
+                                                           "Generation best stats": generation_best_stats}
 
             print("AVG FITNESS:", round(generation_average_fitness, 4),
                   "TIME TAKEN:", generation_time_taken)
@@ -530,6 +533,13 @@ def extract_special_tokens(best_programs: List, dsl: DomainSpecificLanguage):
                     successful_tokens_counts[str(token)] = successful_tokens_counts[str(token)] + 1
 
                 # print(str(token), successful_tokens_counts[str(token)])
+
+
+def get_chromosome_stats(chromosome: DomainSpecificLanguage):
+    stats = genome_fitness_values[str(chromosome)]
+    return {"correct": stats["correct"],
+            "search": stats["search"],
+            "fitness": stats["fitness"]}
 
 
 def print_chromosome_stats(chromosome: DomainSpecificLanguage):
