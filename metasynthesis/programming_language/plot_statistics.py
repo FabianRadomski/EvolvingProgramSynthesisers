@@ -17,7 +17,7 @@ class LanguageStatistics:
                                 "generation_size": 6,
                                 "search_mode": "debug",
                                 "search_algorithm": "AS",
-                                "search_setting": "SO",
+                                "search_setting": "SG",
                                 "max_search_time": 0.3,
                                 "crossover_probability": 0.8,
                                 "mutation_probability": 0.3,
@@ -101,7 +101,7 @@ class LanguageStatistics:
         plt.show()
 
     def plot_search_timeout_performance(self):
-        timeouts = [1, 2, 4, 7, 10]
+        timeouts = [0.1, 0.5, 1, 2, 6, 10]
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])
@@ -129,13 +129,26 @@ class LanguageStatistics:
             for gen in generations_stats:
                 generations_best_correct.append(generations_stats[gen]["Generation best stats"]["correct"])
 
-            plt.plot(generation_times, generations_best_correct, label=timeout)
+            plt.figure(1)
+            plt.plot(generations, generations_best_correct, label=timeout)
 
-        plt.xlabel("Generation time")
-        plt.ylabel("Ratio correct of best chromosome")
-        plt.title("Effect of timeout on ratio correct and generation time")
+            plt.figure(2)
+            plt.plot(generations, generation_times, label=timeout)
+
+        plt.figure(1)
+        plt.xlabel("Generation")
+        plt.ylabel("Ratio correct best chromosome")
+        plt.title("Effect of timeout on ratio correct")
         plt.legend(loc="upper left")
-        plt.savefig("metasynthesis/programming_language/results/search_timeout_comparison.jpg")
+        plt.savefig("metasynthesis/programming_language/results/search_timeout_comparison_correct.jpg")
+
+        plt.figure(2)
+        plt.xlabel("Generation")
+        plt.ylabel("Generation time taken")
+        plt.title("Effect of timeout on generation time")
+        plt.legend(loc="upper left")
+        plt.savefig("metasynthesis/programming_language/results/search_timeout_comparison_time.jpg")
+
         plt.show()
 
     def plot_mutation_method_performance(self):
