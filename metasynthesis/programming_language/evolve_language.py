@@ -24,10 +24,12 @@ successful_tokens_objects = {}
 class EvolvingLanguage(GeneticAlgorithm):
     """A genetic algorithm to synthesise a programing language for program synthesis"""
 
-    def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
-                 elite_genomes: int, mutation_probability: float, generation_size: int,
-                 dsl: DomainSpecificLanguage, search_setting: str, max_search_time: float,
-                 search_mode: str, search_algo: str):
+    def __init__(self, fitness_limit: int = 1, generation_limit: int = 5, crossover_probability: float = 0.8,
+                 elite_genomes: int = 2, mutation_probability: float = 0.2, generation_size: int = 6,
+                 dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("string"), search_setting: str = "SO",
+                 max_search_time: float = 0.1, search_mode: str = "debug", search_algo: str = "Brute",
+                 mutation_weights: List = (0.45, 0.05, 0.5), crossover_weights: List = (0, 0, 1),
+                 start_population: Population = None):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -38,6 +40,9 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.max_search_time = max_search_time
         self.search_mode = search_mode
         self.search_algo = search_algo
+        self.mutation_weights = mutation_weights
+        self.crossover_weights = crossover_weights
+        self.start_population = start_population
 
         self.full_dsl_correct_ratio = 0.0
         self.fitness(sort_genome(StandardDomainSpecificLanguage(self.domain)))
@@ -117,11 +122,11 @@ class EvolvingLanguage(GeneticAlgorithm):
         crossed_a = None
         crossed_b = None
 
-        if 0 <= rand_float <= 0:
+        if rand_float <= self.crossover_weights[0]:
             crossed_a, crossed_b = crossover_exchange_trans_bool(a, b)
-        elif 0 < rand_float <= 0:
+        elif rand_float <= self.crossover_weights[0] + self.crossover_weights[1]:
             crossed_a, crossed_b = crossover_exchange_halve_category(a, b)
-        elif 0 < rand_float <= 1:
+        elif rand_float <= self.crossover_weights[0] + self.crossover_weights[1] + self.crossover_weights[2]:
             crossed_a, crossed_b = crossover_exchange_halve_random(a, b)
 
         return crossed_a, crossed_b
@@ -132,11 +137,11 @@ class EvolvingLanguage(GeneticAlgorithm):
         rand_float = random.random()
         mutated_genome = genome
 
-        if 0 <= rand_float <= 0.45:
+        if rand_float <= self.mutation_weights[0]:
             mutated_genome = mutate_add_special_token(genome)
-        elif 0.45 < rand_float <= 0.5:
+        elif rand_float <= self.mutation_weights[0] + self.mutation_weights[1]:
             mutated_genome = mutate_add_token(genome, self.dsl)
-        elif 0.5 < rand_float <= 1:
+        elif rand_float <= self.mutation_weights[0] + self.mutation_weights[1] + self.mutation_weights[2]:
             mutated_genome = mutate_remove_token(genome)
 
         return mutated_genome
@@ -162,7 +167,11 @@ class EvolvingLanguage(GeneticAlgorithm):
         print_chromosome_stats(full_dsl)
 
         iteration_count = 0
-        population = self.generate_population()
+        if self.start_population is None:
+            population = self.generate_population()
+        else:
+            population = self.start_population
+        generation_statistics = {}
 
         while iteration_count < self.generation_limit:
             t2_start_generation = time.perf_counter()
@@ -216,24 +225,35 @@ class EvolvingLanguage(GeneticAlgorithm):
                 generation_cum_fitness += self.fitness(genome)
 
             t2_stop_generation = time.perf_counter()
+            generation_time_taken = t2_stop_generation - t2_start_generation
+            generation_average_fitness = generation_cum_fitness / self.generation_size
 
-            print("AVG FITNESS:", round((generation_cum_fitness / self.generation_size), 4),
-                  "TIME TAKEN:", t2_stop_generation - t2_start_generation)
+            generation_statistics[str(iteration_count)] = {"Time taken": generation_time_taken,
+                                                           "Average fitness": generation_average_fitness}
+
+            print("AVG FITNESS:", round(generation_average_fitness, 4),
+                  "TIME TAKEN:", generation_time_taken)
 
             population = new_population
 
         best_genome = population[0]
 
         print("ORIGINAL DSL")
-        self.final_evaluation(full_dsl)
+        final_original_results = self.final_evaluation(full_dsl)
         print("EVOLVED DSL")
-        self.final_evaluation(best_genome)
+        final_evolved_results = self.final_evaluation(best_genome)
         t1_stop_all = time.perf_counter()
 
-        print("Elapsed time during the whole program in seconds:", t1_stop_all - t1_start_all)
-        print("Explored languages:", len(genome_fitness_values.keys()))
+        total_time_taken = t1_stop_all - t1_start_all
+        print("Elapsed time during the whole program in seconds:", total_time_taken)
+        num_explored_languages = len(genome_fitness_values.keys())
+        print("Explored languages:", num_explored_languages)
 
-        return best_genome
+        return {"Total time taken": total_time_taken,
+                "Explored languages": num_explored_languages,
+                "Final original results": final_original_results,
+                "Final evolved results": final_evolved_results,
+                "Generation statistics": generation_statistics}
 
     def final_evaluation(self, genome: Genome):
         runner = Runner(dicts(0),
@@ -255,6 +275,11 @@ class EvolvingLanguage(GeneticAlgorithm):
         print("Mean search time", mean_search_time_correct)
         print("Mean ratio correct:", mean_ratio_correct)
         print("Average program length", avg_program_length)
+
+        return {"Mean search time": mean_search_time_correct,
+                "Mean ratio correct:": mean_ratio_correct,
+                "Average program length": avg_program_length,
+                "Domain-specific language": genome}
 
 
 def sort_genome(genome: Genome) -> Genome:
