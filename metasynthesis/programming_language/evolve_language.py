@@ -29,7 +29,7 @@ class EvolvingLanguage(GeneticAlgorithm):
                  dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("string"), search_setting: str = "SO",
                  max_search_time: float = 1, search_mode: str = "debug", search_algo: str = "Brute",
                  mutation_weights: List = (0.45, 0.05, 0.5), crossover_weights: List = (0, 0, 1),
-                 start_population: Population = None):
+                 start_population: Population = None, print_stats: bool = False):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -43,6 +43,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.mutation_weights = mutation_weights
         self.crossover_weights = crossover_weights
         self.start_population = start_population
+        self.print_stats = print_stats
 
         self.full_dsl_correct_ratio = 0.0
 
@@ -165,8 +166,9 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         full_dsl = sort_genome(StandardDomainSpecificLanguage(self.domain))
         self.fitness(full_dsl)
-        print("FULL DSL:")
-        print_chromosome_stats(full_dsl)
+        if self.print_stats:
+            print("FULL DSL:")
+            print_chromosome_stats(full_dsl)
 
         iteration_count = 0
         if self.start_population is None:
@@ -177,7 +179,8 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         while iteration_count < self.generation_limit:
             t2_start_generation = time.perf_counter()
-            print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
+            if self.print_stats:
+                print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
 
             # GENERATION SETUP
             successful_tokens_weights.clear()
@@ -186,7 +189,8 @@ class EvolvingLanguage(GeneticAlgorithm):
             # EVALUATING CHROMOSOMES
             for chromosome in population:
                 self.fitness(chromosome)
-                print_chromosome_stats(chromosome)
+                if self.print_stats:
+                    print_chromosome_stats(chromosome)
 
             best_percentage = select_best_percentage(population=new_population, percentage=50,
                                                      size=self.generation_size)
@@ -236,24 +240,28 @@ class EvolvingLanguage(GeneticAlgorithm):
                                                            "Best fitness": generation_best_fitness,
                                                            "Average fitness": generation_average_fitness,
                                                            "Generation best stats": generation_best_stats}
-
-            print("AVG FITNESS:", round(generation_average_fitness, 4),
-                  "TIME TAKEN:", generation_time_taken)
+            if self.print_stats:
+                print("AVG FITNESS:", round(generation_average_fitness, 4),
+                      "TIME TAKEN:", generation_time_taken)
 
             population = new_population
 
         best_genome = population[0]
 
-        print("ORIGINAL DSL")
+        if self.print_stats:
+            print("ORIGINAL DSL")
         final_original_results = self.final_evaluation(full_dsl)
-        print("EVOLVED DSL")
+        if self.print_stats:
+            print("EVOLVED DSL")
         final_evolved_results = self.final_evaluation(best_genome)
         t1_stop_all = time.perf_counter()
 
         total_time_taken = t1_stop_all - t1_start_all
-        print("Elapsed time during the whole program in seconds:", total_time_taken)
         num_explored_languages = len(genome_fitness_values.keys())
-        print("Explored languages:", num_explored_languages)
+
+        if self.print_stats:
+            print("Elapsed time during the whole program in seconds:", total_time_taken)
+            print("Explored languages:", num_explored_languages)
 
         return {"Total time taken": total_time_taken,
                 "Explored languages": num_explored_languages,
@@ -278,9 +286,10 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         avg_program_length = sum(map(lambda program: program.number_of_tokens(), best_programs)) / len(best_programs)
 
-        print("Mean search time", mean_search_time_correct)
-        print("Mean ratio correct:", mean_ratio_correct)
-        print("Average program length", avg_program_length)
+        if self.print_stats:
+            print("Mean search time", mean_search_time_correct)
+            print("Mean ratio correct:", mean_ratio_correct)
+            print("Average program length", avg_program_length)
 
         return {"Mean search time": mean_search_time_correct,
                 "Mean ratio correct:": mean_ratio_correct,

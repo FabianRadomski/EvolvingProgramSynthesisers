@@ -8,9 +8,10 @@ from metasynthesis.programming_language.evolve_language import EvolvingLanguage
 
 class LanguageStatistics:
 
-    def __init__(self, domain: str):
+    def __init__(self, domain: str, print_stats: bool = True):
         self.domain = domain
         self.dsl = StandardDomainSpecificLanguage(domain)
+        self.print_stats = print_stats
 
         # These parameters are manually updated based on analysis of the plots
         self.best_parameters = {"generation_limit": 3,
@@ -34,6 +35,9 @@ class LanguageStatistics:
         start_population = general_genetic.generate_population()
 
         for algorithm in search_algorithms:
+            if self.print_stats:
+                print("SEARCH ALGORITHM:", algorithm)
+
             genetic = EvolvingLanguage(generation_limit=self.best_parameters["generation_limit"],
                                        generation_size=self.best_parameters["generation_size"],
                                        search_mode=self.best_parameters["search_mode"],
@@ -78,6 +82,9 @@ class LanguageStatistics:
         start_population = general_genetic.generate_population()
 
         for setting in search_settings:
+            if self.print_stats:
+                print("SEARCH SETTING:", setting)
+
             genetic = EvolvingLanguage(generation_limit=self.best_parameters["generation_limit"],
                                        generation_size=self.best_parameters["generation_size"],
                                        search_mode=self.best_parameters["search_mode"],
@@ -112,6 +119,9 @@ class LanguageStatistics:
         start_population = general_genetic.generate_population()
 
         for timeout in timeouts:
+            if self.print_stats:
+                print("TIMEOUT:", timeout)
+
             genetic = EvolvingLanguage(generation_limit=self.best_parameters["generation_limit"],
                                        generation_size=self.best_parameters["generation_size"],
                                        search_mode=self.best_parameters["search_mode"],
@@ -169,6 +179,9 @@ class LanguageStatistics:
         start_population = general_genetic.generate_population()
 
         for weights in mutation_params:
+            if self.print_stats:
+                print("MUTATION WEIGHTS:", weights)
+
             genetic = EvolvingLanguage(generation_limit=self.best_parameters["generation_limit"],
                                        generation_size=self.best_parameters["generation_size"],
                                        search_mode=self.best_parameters["search_mode"],
@@ -205,6 +218,9 @@ class LanguageStatistics:
         start_population = general_genetic.generate_population()
 
         for weights in crossover_params:
+            if self.print_stats:
+                print("CROSSOVER WEIGHTS:", weights)
+
             genetic = EvolvingLanguage(generation_limit=self.best_parameters["generation_limit"],
                                        generation_size=self.best_parameters["generation_size"],
                                        search_mode=self.best_parameters["search_mode"],
@@ -235,6 +251,9 @@ class LanguageStatistics:
         generation_limit = 30
 
         for size in generation_sizes:
+            if self.print_stats:
+                print("POPULATION SIZE:", size)
+
             genetic = EvolvingLanguage(generation_limit=generation_limit,
                                        generation_size=size,
                                        search_mode=self.best_parameters["search_mode"],
@@ -259,9 +278,12 @@ class LanguageStatistics:
         plt.close()
 
     def plot_generation_limit_performance(self):
-        generations = [5, 10]  # 20, 30, 40, 60
+        generations = [5, 10, 20, 30, 40, 60]
 
         for gen in generations:
+            if self.print_stats:
+                print("GENERATION LIMIT:", gen)
+
             genetic = EvolvingLanguage(generation_limit=gen,
                                        generation_size=self.best_parameters["generation_size"],
                                        search_mode=self.best_parameters["search_mode"],
