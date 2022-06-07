@@ -17,13 +17,13 @@ conda activate mypython
 srun python CMain.py "AS" "P" "G" &
 srun python CMain.py "AS" "P" "E" &
 srun python CMain.py "AS" "P" "O" &
-srun python CMain.py "AS" "S" "G" &
-srun python CMain.py "AS" "S" "E" &
-srun python CMain.py "AS" "S" "O" &
+srun python CMain.py "AS" "R" "G" &
+srun python CMain.py "AS" "R" "E" &
+srun python CMain.py "AS" "R" "O" &
 srun python CMain.py "Brute" "P" "G" &
 srun python CMain.py "Brute" "P" "E" &
 srun python CMain.py "Brute" "P" "O" &
-srun python CMain.py "Brute" "S" "G" &
-srun python CMain.py "Brute" "S" "E" &
-srun python CMain.py "Brute" "S" "O"
+srun python CMain.py "Brute" "R" "G" &
+srun python CMain.py "Brute" "R" "E" &
+srun python CMain.py "Brute" "R" "O"
 
