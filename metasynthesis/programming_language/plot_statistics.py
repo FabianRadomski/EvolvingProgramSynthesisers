@@ -14,12 +14,12 @@ class LanguageStatistics:
         self.print_stats = print_stats
 
         # These parameters are manually updated based on analysis of the plots
-        self.best_parameters = {"generation_limit": 3,
-                                "generation_size": 4,
-                                "search_mode": "debug",
+        self.best_parameters = {"generation_limit": 20,
+                                "generation_size": 10,
+                                "search_mode": "param",
                                 "search_algorithm": "AS",
                                 "search_setting": "SG",
-                                "max_search_time": 0.01,
+                                "max_search_time": 1,
                                 "crossover_probability": 0.8,
                                 "mutation_probability": 0.3,
                                 }
@@ -106,7 +106,8 @@ class LanguageStatistics:
         plt.close()
 
     def plot_search_timeout_performance(self):
-        timeouts = [0.1, 0.5, 1, 2, 6, 10]
+        # timeouts = [0.1, 0.5, 1, 2, 6, 10]
+        timeouts = [0.1, 2]
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])

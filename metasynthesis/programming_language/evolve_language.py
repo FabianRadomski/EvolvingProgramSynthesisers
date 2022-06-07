@@ -403,13 +403,13 @@ def mutate_add_token(genome: Genome, dsl: DomainSpecificLanguage) -> Genome:
     all_tokens_dsl = dsl.get_bool_tokens() + dsl.get_trans_tokens()
     all_tokens_genome = bool_tokens_genome + trans_tokens_genome
 
-    if len(all_tokens_dsl) == len(all_tokens_genome):
-        return DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome)
-
     optional_tokens = []
     for token in all_tokens_dsl:
         if token not in all_tokens_genome:
             optional_tokens.append(token)
+
+    if len(optional_tokens) == 0:
+        return DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome)
 
     random_index = randrange(0, len(optional_tokens))
     randomly_selected_token = optional_tokens[random_index]
