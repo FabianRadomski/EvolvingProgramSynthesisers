@@ -39,12 +39,12 @@ if __name__ == '__main__':
 
     # run_genetic_algorithm_once(domain)
 
-    stats = LanguageStatistics(domain=domain, print_stats=True)
+    stats = LanguageStatistics(domain=domain, print_stats=True, search_mode="param")
 
-    stats.plot_search_algorithm_performance()
-    stats.plot_search_setting_performance()
-    stats.plot_search_timeout_performance()
-    stats.plot_mutation_method_performance()
-    stats.plot_crossover_method_performance()
+    # stats.plot_search_algorithm_performance()
+    # stats.plot_search_setting_performance()
+    # stats.plot_search_timeout_performance()
+    # stats.plot_mutation_method_performance()
+    # stats.plot_crossover_method_performance()
     stats.plot_population_size_performance()
     stats.plot_generation_limit_performance()
