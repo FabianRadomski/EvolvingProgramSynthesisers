@@ -211,6 +211,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         if self.plot:
             self.plot_generations_fitness()
             self.plot_generations_speed()
+            self.plot_success_rate()
 
         return self.get_fittest(curr_population)
 
@@ -262,7 +263,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             self.evolution_history[self.curr_iteration].append((ind, fit))
             if fit >= 1:
                 exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
-                self.avg_speed_per_gen.append(np.mean(exec_times))
+        self.avg_speed_per_gen.append(np.mean(exec_times))
 
     def plot_generations_fitness(self):
         """
@@ -302,6 +303,29 @@ class SearchSynthesiser(GeneticAlgorithm):
         plt.plot(x, self.avg_speed_per_gen)
         plt.savefig(f"exec-{self.filename}.png")
         plt.show()
+
+    def plot_success_rate(self):
+        """
+        Plots the success rate of the synthesized programs in each generation.
+        """
+        success_rates_gens = []
+        for gen in self.evolution_history.values():
+            success_rates = []
+            for ind, fit in gen:
+                success_rates.append(self.calculated_results[tuple(ind)]['average_success'])
+            success_rates_gens.append(np.mean(success_rates))
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        plt.xlabel("Generation")
+        plt.ylabel("Average success rate")
+        plt.title(f"Average success rate over generations\n{self.setting}, {self.mutation_probability} $p_m$, {self.crossover_probability} $p_c$")
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        x = np.arange(1, len(success_rates_gens) + 1)
+        ax.bar(x, success_rates_gens,  align='center', alpha=0.5, ecolor='black', capsize=10)
+        plt.savefig(f"succ-{self.filename}.png")
+        plt.show()
+
 
     def select_tournament(self, population: Population, compete_size: int) -> Tuple[Genome, Genome]:
         """
