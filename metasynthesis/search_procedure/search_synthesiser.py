@@ -149,8 +149,23 @@ class SearchSynthesiser(GeneticAlgorithm):
             return 0
 
         # Only consider time if the programs are fully correct
+
+        return self.fitness_formula_weak(average_success, summed_time)
+
+    def fitness_formula_strong(self, average_success: float, summed_time: float) -> float:
+        """
+        Only awards time bonus to the programs that are fully correct.
+        """
         if average_success == 1.0:
             fitness = self.success_weight * average_success + self.time_weight * (1 / summed_time)
+        else:
+            fitness = self.success_weight * average_success
+        return fitness
+
+    def fitness_formula_weak(self, average_success: float, summed_time: float) -> float:
+        "If more than half of the tasks are solved successfully, the time bonus gets awarded"
+        if average_success >= 0.5:
+            fitness = self.success_weight * average_success / summed_time
         else:
             fitness = self.success_weight * average_success
         return fitness
