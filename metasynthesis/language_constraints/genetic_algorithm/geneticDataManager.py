@@ -6,7 +6,7 @@ class DataManager:
 
     def __init__(self, domain, algorithm, objective_function):
         dirname = f"{domain}{algorithm}{objective_function}"
-        self.dir_path = os.path.join(os.path.dirname(__file__), "..\\results", f"{dirname}")
+        self.dir_path = os.path.join(os.path.dirname(__file__), "../results", f"{dirname}")
         print(self.dir_path)
         if not os.path.exists(self.dir_path):
             os.mkdir(self.dir_path)
