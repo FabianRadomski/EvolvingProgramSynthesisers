@@ -37,9 +37,9 @@ class SearchSynthesiser(GeneticAlgorithm):
                                                               "S": {"Brute": 0.1,
                                                                     "AS": 10, "MH": 10,
                                                                     "LNS": 10, "GP": 10},
-                                                              "P": {"Brute": 60,
-                                                                    "AS": 60, "MH": 20,
-                                                                    "LNS": 60, "GP": 60}}
+                                                              "P": {"Brute": 10,
+                                                                    "AS": 10, "MH": 10,
+                                                                    "LNS": 10, "GP": 10}}
 
     TIME_MAX = 1
     TOURN_SIZE = 2
