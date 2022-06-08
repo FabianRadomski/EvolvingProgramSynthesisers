@@ -33,8 +33,8 @@ class SearchSynthesiser(GeneticAlgorithm):
     }
 
     # Upper boundary for the execution time for specific search procedures, different for each domain
-    initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.5, "AS": 0.1, "MH": 0.05, "LNS": 0.3},
-                                                              "S": {"Brute": 10,
+    initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.1, "AS": 0.1, "MH": 0.1, "LNS": 0.1},
+                                                              "S": {"Brute": 0.1,
                                                                     "AS": 10, "MH": 10,
                                                                     "LNS": 10, "GP": 10},
                                                               "P": {"Brute": 60,
