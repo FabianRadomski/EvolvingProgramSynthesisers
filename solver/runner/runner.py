@@ -103,16 +103,15 @@ class Runner:
 
 
 if __name__ == "__main__":
-    time_limit = 10
+    time_limit = 0.2
     debug = False
     store = False
-    setting = "SO"
-    algo = "AS"
-    test_cases = "param"
+    setting = "RO"
+    algo = "MH"
+    test_cases = "eval"
 
     store = False if test_cases == "param" else store
 
     mean1 = Runner(dicts(0), algo, setting, test_cases, time_limit, debug, store).run()
 
     print(f"Solved {str(mean1)}")
-    print(f"")
