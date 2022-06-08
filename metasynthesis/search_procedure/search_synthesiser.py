@@ -276,8 +276,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         for ind in population:
             fit = self.fitness(ind)
             self.evolution_history[self.curr_iteration].append((ind, fit))
-            if fit >= 1:
-                exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
+            exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
         self.avg_speed_per_gen.append(np.mean(exec_times))
 
     def plot_generations_fitness(self):
