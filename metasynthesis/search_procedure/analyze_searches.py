@@ -16,7 +16,7 @@ from solver.search.search_algorithm import SearchAlgorithm
 This file contain functions that can be used to analyze the behavior of single search procedures.
 """
 
-algs = ["Brute", "LNS", "MH", "AS"]
+algs = ["Brute", "LNS", "MH", "AS", "GP"]
 
 
 def analyze_search_times(search: str, setting: str, test_size: str):
