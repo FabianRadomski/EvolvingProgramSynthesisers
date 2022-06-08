@@ -17,11 +17,11 @@ def plot_fitness(evolutions_history):
         plt.plot(x, avg_fitness, marker=markers[i], label=f"$p_m = {mutation_probabilities[i]}$")
     plt.xlabel("Generation")
     plt.ylabel("Average Fitness")
-    plt.title(f"Fitness over Generations in the String Domain")
+    plt.title(f"Fitness over Generations in the Robot Domain")
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.savefig(f"fit-strings.png")
+    plt.savefig(f"fit-robots-strong.png")
     plt.show()
 
 def plot_successes(evolutions_history, mutations_results):
@@ -40,11 +40,11 @@ def plot_successes(evolutions_history, mutations_results):
         ax.plot(x, success_rates_gens, marker=markers[i], label=f"$p_m = {mutation_probabilities[i]}$")
     plt.xlabel("Generation")
     plt.ylabel("Average Success Rate")
-    plt.title(f"Average Success Rate over Generations in the String Domain\n")
+    plt.title(f"Average Success Rate over Generations in the Robot Domain\n")
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.savefig(f"succ-strings.png")
+    plt.savefig(f"succ--robots-strong.png")
     plt.show()
 
 def plot_speeds(speeds):
@@ -56,11 +56,11 @@ def plot_speeds(speeds):
         plt.plot(x, speed, marker=markers[i], label=f"$p_m = {mutation_probabilities[i]}$")
     plt.xlabel("Generation")
     plt.ylabel("Time")
-    plt.title(f"Average Execution Time of Search Procedures in the String Domain")
+    plt.title(f"Average Execution Time of Search Procedures in the Robot Domain")
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.savefig(f"exec-strings.png")
+    plt.savefig(f"exec-robots-strong.png")
     plt.show()
 
 
@@ -71,9 +71,9 @@ if __name__ == "__main__":
     evolutions_history = []
     avg_speeds = []
     for mut in mutation_probabilities:
-        ss = SearchSynthesiser(fitness_limit=0, generation_limit=30, crossover_probability=0.8,
-                               mutation_probability=mut, generation_size=30, max_seq_size=6, dist_type="Time", print_generations=True,
-                               setting="SO", test_size="param", plot=True, write_generations=True)
+        ss = SearchSynthesiser(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
+                               mutation_probability=mut, generation_size=100, max_seq_size=6, dist_type="Time", print_generations=True,
+                               setting="RO", test_size="param", plot=True, write_generations=True)
         hist, results, speed = ss.run_evolution()
         mutations_results.append(results)
         evolutions_history.append(hist)

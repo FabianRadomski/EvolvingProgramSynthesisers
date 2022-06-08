@@ -150,7 +150,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
         # Only consider time if the programs are fully correct
 
-        return self.fitness_formula_weak(average_success, summed_time)
+        return self.fitness_formula_strong(average_success, summed_time)
 
     def fitness_formula_strong(self, average_success: float, summed_time: float) -> float:
         """
@@ -276,7 +276,8 @@ class SearchSynthesiser(GeneticAlgorithm):
         for ind in population:
             fit = self.fitness(ind)
             self.evolution_history[self.curr_iteration].append((ind, fit))
-            exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
+            if fit >= 1.0:
+                exec_times.append(self.calculated_results[tuple(ind)]['average_time'])
         self.avg_speed_per_gen.append(np.mean(exec_times))
 
     def plot_generations_fitness(self):
