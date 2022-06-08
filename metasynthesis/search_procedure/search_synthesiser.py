@@ -34,9 +34,9 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     # Upper boundary for the execution time for specific search procedures, different for each domain
     initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.5, "AS": 0.1, "MH": 0.05, "LNS": 0.3},
-                                                              "S": {"Brute": 60,
-                                                                    "AS": 60, "MH": 60,
-                                                                    "LNS": 60, "GP": 60},
+                                                              "S": {"Brute": 10,
+                                                                    "AS": 10, "MH": 10,
+                                                                    "LNS": 10, "GP": 10},
                                                               "P": {"Brute": 15,
                                                                     "AS": 6, "MH": 13,
                                                                     "LNS": 14, "GP": 20}}
@@ -167,7 +167,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         if average_success >= 0.5:
             fitness = self.success_weight * average_success / summed_time
         else:
-            fitness = self.success_weight * average_success
+            fitness = 0
         return fitness
 
     def crossover_func(self, a: Genome, b: Genome, func: CrossoverFunc) -> Tuple[Genome, Genome]:
@@ -228,7 +228,7 @@ class SearchSynthesiser(GeneticAlgorithm):
             self.plot_generations_speed()
             self.plot_success_rate()
 
-        return self.get_fittest(curr_population)
+        return self.evolution_history, self.calculated_results, self.avg_speed_per_gen
 
     def calculate_population_fitness(self, population: Population):
         for ind in population:
