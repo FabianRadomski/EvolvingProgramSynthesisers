@@ -74,7 +74,7 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         func = ConstraintFunc(genome, main_dsl, self.constraints)
         return DomainSpecificLanguage(domain, main_dsl.get_bool_tokens(), main_dsl.get_trans_tokens(), True, func)
 
-    def fitness(self, genome: Genome) -> float:
+    def fitness(self, genome: Genome, bias=True) -> float:
         if tuple(genome) in self.fitness_memory:
             return self.fitness_memory[tuple(genome)]
         dsl = self._create_dsl(genome, self.settings['domain'])
@@ -87,12 +87,12 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
                         self.settings['store'],
                         dsl=dsl)
         runner.run()
-        fitness = self._fitness_metric(runner.file_manager.written_data)
+        fitness = self._fitness_metric(runner.file_manager.written_data, bias)
         self.logger.write_chromosome_data(genome, runner.file_manager.written_data)
         self.fitness_memory[tuple(genome)] = fitness
         return fitness
 
-    def _fitness_metric(self, data):
+    def _fitness_metric(self, data, bias=True):
         programs_considered = 0
         cost = 0
         execution_time = 0
@@ -104,7 +104,10 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
             execution_time += d['execution_time']
         cost /= len(data[0])
         execution_time /= len(data[0])
-        fit = (1/(cost*max_cost*execution_time)**(1/2)) * 100 - self.fitness_bias
+        if bias:
+            fit = (1/(cost*max_cost*execution_time)**(1/2)) * 100 - self.fitness_bias
+        else:
+            fit = (1 / (cost * max_cost * execution_time) ** (1 / 2)) * 100
         return max(fit, 0)
 
     def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
@@ -151,16 +154,31 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         max_fitness = -1
         population = self.generate_population()
         logger_data = {}
+        bias = True
         for i in range(self.generation_limit):
             logger_data[i] = []
             for pop in population:
-                fitness = self.fitness(pop)
+                fitness = self.fitness(pop, bias)
                 print(self.genome_to_string(pop), self.fitness(pop))
                 total_fitness += fitness
                 if fitness > max_fitness:
                     max_fitness = fitness
                     self.best_chromosome = (pop, max_fitness)
                 logger_data[i].append(("pop_report", pop, fitness))
+
+            if total_fitness == 0 and bias:
+                bias = False
+
+                logger_data[i] = []
+                logger_data[i].append(("bias_disabled",))
+                for pop in population:
+                    fitness = self.fitness(pop, bias)
+                    print(self.genome_to_string(pop), self.fitness(pop))
+                    total_fitness += fitness
+                    if fitness > max_fitness:
+                        max_fitness = fitness
+                        self.best_chromosome = (pop, max_fitness)
+
             logger_data[i].append(("general", self.best_chromosome))
             self.logger.write_genetic_stats(logger_data)
 

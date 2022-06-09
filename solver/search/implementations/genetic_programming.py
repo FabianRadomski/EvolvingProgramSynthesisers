@@ -1,6 +1,5 @@
 import random
 from common.program import Program
-from common.settings.settings import Settings
 from solver.search.search_algorithm import SearchAlgorithm
 
 

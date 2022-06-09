@@ -71,7 +71,7 @@ def run_constraint_verification(domain,
                                 search_algorithm,
                                 objective_function,
                                 generations=40,
-                                mutation_chance=0.05,
+                                mutation_chance=0.1,
                                 pop_size=20
                                 ):
     if domain == 'P':
