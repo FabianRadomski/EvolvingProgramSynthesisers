@@ -168,7 +168,7 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
 
             if total_fitness == 0 and bias:
                 bias = False
-
+                self.fitness_bias = {}
                 logger_data[i] = []
                 logger_data[i].append(("bias_disabled",))
                 for pop in population:
