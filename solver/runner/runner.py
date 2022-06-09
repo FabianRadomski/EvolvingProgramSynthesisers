@@ -78,6 +78,7 @@ class Runner:
             # with Pool(processes=1) as pool:
             with Pool(processes=os.cpu_count() - 1) as pool:
                 results = pool.map_async(self.execute_test_case, cases)
+                pool.close()
                 # if True:
                 # results = [self.execute_test_case(c) for c in cases]
 
@@ -100,9 +101,11 @@ class Runner:
                     #       self.search_results[str(stats["complexity"]) + str(stats["task"]) +
                     #                     str(stats["trial"]) + str(self.settings.dsl)])
 
-
+                pool.join()
                 if self.store:
                     self.file_manager.append_result(stats_list)
+
+
         accuracies = [float(s) / t for s, t in zip(solved_examples, total_examples)]
 
         return mean(accuracies)

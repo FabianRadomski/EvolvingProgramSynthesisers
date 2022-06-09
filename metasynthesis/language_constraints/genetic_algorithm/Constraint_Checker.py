@@ -26,9 +26,10 @@ class ConstraintBuffer:
 
         with Pool(processes=os.cpu_count() - 1) as pool:
             results = pool.map_async(self._setup_desync, itertools.product(self._enumerate_constraint_states(), self._tokens))
-
+            pool.close()
             for token, state, output in results.get():
                 self._computed[token][state] = output
+            pool.join()
 
     def _setup_desync(self, input):
         state, token = input
