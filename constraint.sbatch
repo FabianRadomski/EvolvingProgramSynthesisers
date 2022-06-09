@@ -5,6 +5,8 @@
 #SBATCH --ntasks=12
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4G
+#SBATCH --array=1-12
+#SBATCH -o constraint-%j-%a.out
 
 module load 2022r1
 module load compute
@@ -15,16 +17,6 @@ unset CONDA_SHLVL
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate mypython
 
-srun python CMain.py "AS" "P" "G" &
-srun python CMain.py "AS" "P" "E" &
-srun python CMain.py "AS" "P" "O" &
-srun python CMain.py "AS" "R" "G" &
-srun python CMain.py "AS" "R" "E" &
-srun python CMain.py "AS" "R" "O" &
-srun python CMain.py "Brute" "P" "G" &
-srun python CMain.py "Brute" "P" "E" &
-srun python CMain.py "Brute" "P" "O" &
-srun python CMain.py "Brute" "R" "G" &
-srun python CMain.py "Brute" "R" "E" &
-srun python CMain.py "Brute" "R" "O"
+srun python CMain.py $SLURM_ARRAY_TASK_ID
+
 

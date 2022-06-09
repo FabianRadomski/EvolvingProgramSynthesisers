@@ -61,7 +61,16 @@ def create_runner(settings, dsl):
 
 
 def main():
-    _, algorithm, setting, objective_function = sys.argv
+    jobs = {}
+    i = 1
+    for alg in ["Brute", "AS"]:
+        for domain in ["P", "R"]:
+            for function in ["G", "O", "E"]:
+                jobs[i] = alg, domain, function
+                i+=1
+    _, job_n = sys.argv
+
+    algorithm, setting, objective_function = jobs[job_n]
     print(sys.argv)
     raise NotImplementedError()
     run_constraint_verification(setting,
