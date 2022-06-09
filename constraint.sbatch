@@ -2,9 +2,9 @@
 #SBATCH --job-name="constraint_programming"
 #SBATCH --partition=compute
 #SBATCH --time=2:00:00
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem-per-cpu=16G
+#SBATCH --ntasks=12
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=4G
 
 module load 2022r1
 module load compute
