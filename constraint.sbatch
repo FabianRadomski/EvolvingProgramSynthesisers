@@ -8,6 +8,7 @@
 
 module load 2022r1
 module load compute
+module load openmpi
 module load miniconda3
 
 unset CONDA_SHLVL
