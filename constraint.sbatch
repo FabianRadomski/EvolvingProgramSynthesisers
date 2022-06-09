@@ -3,8 +3,8 @@
 #SBATCH --partition=compute
 #SBATCH --time=2:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
-#SBATCH --mem-per-cpu=24G
+#SBATCH --cpus-per-task=6
+#SBATCH --mem-per-cpu=16G
 
 module load 2022r1
 module load compute
