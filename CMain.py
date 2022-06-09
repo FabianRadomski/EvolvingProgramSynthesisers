@@ -62,6 +62,8 @@ def create_runner(settings, dsl):
 
 def main():
     _, algorithm, setting, objective_function = sys.argv
+    print(sys.argv)
+    raise NotImplementedError()
     run_constraint_verification(setting,
                                 algorithm,
                                 objective_function)
