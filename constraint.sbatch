@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4G
-#SBATCH --array=1-12
+#SBATCH --array=1-6
 #SBATCH -o constraint-%j-%a.out
 
 module load 2022r1
