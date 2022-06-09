@@ -157,16 +157,17 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         bias = True
         for i in range(self.generation_limit):
             logger_data[i] = []
-            for pop in population:
-                fitness = self.fitness(pop, bias)
-                print(self.genome_to_string(pop), self.fitness(pop))
-                total_fitness += fitness
-                if fitness > max_fitness:
-                    max_fitness = fitness
-                    self.best_chromosome = (pop, max_fitness)
-                logger_data[i].append(("pop_report", pop, fitness))
+            if bias:
+                for pop in population:
+                    fitness = self.fitness(pop, bias)
+                    print(self.genome_to_string(pop), self.fitness(pop))
+                    total_fitness += fitness
+                    if fitness > max_fitness:
+                        max_fitness = fitness
+                        self.best_chromosome = (pop, max_fitness)
+                    logger_data[i].append(("pop_report", pop, fitness))
 
-            if total_fitness == 0 and bias:
+            if total_fitness == 0 or not bias:
                 bias = False
                 self.fitness_bias = {}
                 logger_data[i] = []

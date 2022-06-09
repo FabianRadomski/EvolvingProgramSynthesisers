@@ -63,11 +63,13 @@ def create_runner(settings, dsl):
 def main():
     jobs = {}
     i = 1
-    for alg in ["Brute", "AS"]:
-        for domain in ["P", "R"]:
-            for function in ["G", "O", "E"]:
-                jobs[i] = alg, domain, function
-                i+=1
+    for alg in [["AS", "R", "E"],
+                ["AS", "R", "O"],
+                ["Brute", "P", "O"],
+                ["Brute", "R", "E"],
+                ["Brute", "R", "O"]]:
+            jobs[i] = alg
+            i+=1
     _, job_n = sys.argv
 
     algorithm, setting, objective_function = jobs[int(job_n)]
