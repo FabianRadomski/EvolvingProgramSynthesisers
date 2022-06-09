@@ -70,9 +70,8 @@ def main():
                 i+=1
     _, job_n = sys.argv
 
-    algorithm, setting, objective_function = jobs[job_n]
+    algorithm, setting, objective_function = jobs[int(job_n)]
     print(sys.argv)
-    raise NotImplementedError()
     run_constraint_verification(setting,
                                 algorithm,
                                 objective_function)
