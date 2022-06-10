@@ -25,7 +25,7 @@ def plot_fitness(evolutions_history):
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.savefig(f"fit-{fig_name[setting]}-strong.png")
+    plt.savefig(f"fit-{fig_name[setting]}.png")
     plt.show()
 
 
@@ -49,7 +49,7 @@ def plot_successes(evolutions_history, mutations_results):
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.savefig(f"succ-{fig_save[setting]}-strong.png")
+    plt.savefig(f"succ-{fig_save[setting]}.png")
     plt.show()
 
 
@@ -66,7 +66,7 @@ def plot_speeds(speeds):
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.savefig(f"exec-{fig_save[setting]}-strong.png")
+    plt.savefig(f"exec-{fig_save[setting]}.png")
     plt.show()
 
 
