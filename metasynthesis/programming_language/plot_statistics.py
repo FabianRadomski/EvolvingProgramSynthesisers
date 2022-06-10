@@ -19,8 +19,8 @@ class LanguageStatistics:
         # plt.style.use('tableau-colorblind10')
 
         # These parameters are manually updated based on analysis of the plots
-        self.best_parameters = {"generation_limit": 10,
-                                "generation_size": 10,
+        self.best_parameters = {"generation_limit": 30,
+                                "generation_size": 30,
                                 "search_mode": search_mode,
                                 "search_algorithm": "AS",
                                 "search_setting": "SG",
@@ -61,7 +61,7 @@ class LanguageStatistics:
 
         plt.xlabel("Total time passed")
         plt.ylabel("Average generation fitness")
-        plt.title("Effect of search algorithm on time and fitness")
+        # plt.title("Effect of search algorithm on time and fitness")
         plt.legend(loc="upper left")
         plt.savefig(self.base_save_path + "search_algorithm_comparison.jpg")
         plt.close()
@@ -104,7 +104,7 @@ class LanguageStatistics:
 
         plt.xlabel("Total time passed")
         plt.ylabel("Average generation fitness")
-        plt.title("Effect of search setting on time and fitness")
+        # plt.title("Effect of search setting on time and fitness")
         plt.legend(loc="upper left")
         plt.savefig(self.base_save_path + "search_setting_comparison.jpg")
         plt.close()
@@ -150,14 +150,14 @@ class LanguageStatistics:
         plt.figure(1)
         plt.xlabel("Generation")
         plt.ylabel("Ratio correct best chromosome")
-        plt.title("Effect of timeout on ratio correct")
+        # plt.title("Effect of timeout on ratio correct")
         plt.legend(loc="upper left")
         plt.savefig(self.base_save_path + "search_timeout_comparison_correct.jpg")
 
         plt.figure(2)
         plt.xlabel("Generation")
         plt.ylabel("Generation time taken")
-        plt.title("Effect of timeout on generation time")
+        # plt.title("Effect of timeout on generation time")
         plt.legend(loc="upper left")
         plt.savefig(self.base_save_path + "search_timeout_comparison_time.jpg")
 
@@ -198,8 +198,8 @@ class LanguageStatistics:
 
         plt.xlabel("Generations")
         plt.ylabel("Best fitness")
-        plt.title("Effect of mutation methods on fitness")
-        plt.legend(loc="upper left")
+        # plt.title("Effect of mutation methods on fitness")
+        plt.legend(loc="lower right")
         plt.savefig(self.base_save_path + "mutation_method_comparison.jpg")
         plt.close()
 
@@ -237,8 +237,8 @@ class LanguageStatistics:
 
         plt.xlabel("Generations")
         plt.ylabel("Average fitness")
-        plt.title("Effect of crossover methods on fitness")
-        plt.legend(loc="upper left")
+        # plt.title("Effect of crossover methods on fitness")
+        plt.legend(loc="lower right")
         plt.savefig(self.base_save_path + "crossover_method_comparison.jpg")
         plt.close()
 
@@ -271,8 +271,8 @@ class LanguageStatistics:
 
         plt.xlabel("Total time passed")
         plt.ylabel("Best fitness value")
-        plt.title("Effect of population size on fitness vs time passed")
-        plt.legend(loc="upper left")
+        # plt.title("Effect of population size on fitness vs time passed")
+        plt.legend(loc="lower right")
         plt.savefig(self.base_save_path + "population_size_comparison.jpg")
         plt.close()
 
@@ -302,8 +302,8 @@ class LanguageStatistics:
 
         plt.xlabel("Total time passed")
         plt.ylabel("Best fitness value")
-        plt.title("Effect of generation limit on fitness vs time passed")
-        plt.legend(loc="upper left")
+        # plt.title("Effect of generation limit on fitness vs time passed")
+        plt.legend(loc="lower right")
         plt.savefig(self.base_save_path + "generation_limit_comparison.jpg")
         plt.close()
 

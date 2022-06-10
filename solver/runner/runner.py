@@ -1,4 +1,5 @@
 import os
+import time
 from multiprocessing import Pool
 from statistics import mean
 from typing import Callable
@@ -30,7 +31,10 @@ class Runner:
                  suffix: str = "",
                  dsl: DomainSpecificLanguage = None,
                  dist_fun: Callable[[Environment, Environment], float] = None,
-                 multi_thread: bool = True):
+                 multi_thread: bool = True,
+                 left_bound_cases: float = 0,
+                 right_bound_cases: float = 1,
+                 type_cases: str = "all"):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
         self.store = store
@@ -47,6 +51,8 @@ class Runner:
 
         self.file_manager = FileManager(algo, setting, suffix)
         self.multi_thread = multi_thread
+        self.left_bound_cases = left_bound_cases
+        self.right_bound_cases = right_bound_cases
 
         self.search_results = dict()
 
@@ -58,6 +64,7 @@ class Runner:
 
         exclude = self.file_manager.finished_test_cases() if self.store else []
         all_cases = get_test_cases(self.settings.domain, self.files, exclude)
+        all_cases = all_cases[round(self.left_bound_cases * len(all_cases)):round(self.right_bound_cases*len(all_cases))]
 
         if self.debug:
             print("Parsed {} test cases".format(len(all_cases)))

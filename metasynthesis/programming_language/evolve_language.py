@@ -273,7 +273,7 @@ class EvolvingLanguage(GeneticAlgorithm):
         runner = Runner(dicts(0),
                         algo=self.search_algo,
                         setting=self.search_setting,
-                        test_cases=self.search_mode,
+                        test_cases="param_test",
                         time_limit_sec=self.max_search_time,
                         debug=False,
                         store=False,

@@ -20,15 +20,15 @@ def run_genetic_algorithm_once(domain_for_func):
     dsl = StandardDomainSpecificLanguage(domain)
 
     genetic = EvolvingLanguage(fitness_limit=1,
-                               generation_limit=5,
+                               generation_limit=10,
                                crossover_probability=0.8,
                                mutation_probability=0.3,
                                elite_genomes=2,
-                               generation_size=6,  # 10, 34
+                               generation_size=10,  # 10, 34
                                dsl=dsl,
                                search_setting=get_search_setting(domain_for_func),
-                               max_search_time=0.1,
-                               search_mode="debug",  # set to "eval" for final, "debug" for debugging
+                               max_search_time=1,
+                               search_mode="param_train",  # debug, param_train
                                search_algo="Brute",
                                print_stats=True)
     genetic.run_evolution()
@@ -37,7 +37,7 @@ def run_genetic_algorithm_once(domain_for_func):
 if __name__ == '__main__':
     domain = "string"
 
-    # run_genetic_algorithm_once(domain)
+    run_genetic_algorithm_once(domain)
 
     stats = LanguageStatistics(domain=domain, print_stats=True, search_mode="param")
 
@@ -46,5 +46,5 @@ if __name__ == '__main__':
     # stats.plot_search_timeout_performance()
     # stats.plot_mutation_method_performance()
     # stats.plot_crossover_method_performance()
-    stats.plot_population_size_performance()
-    stats.plot_generation_limit_performance()
+    # stats.plot_population_size_performance()
+    # stats.plot_generation_limit_performance()
