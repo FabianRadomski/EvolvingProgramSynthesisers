@@ -2,16 +2,13 @@ import os
 import time
 from multiprocessing import Pool
 from statistics import mean
-from typing import Callable
-from typing import List, Tuple
+from typing import Callable, Dict
 
-from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
+from common.program_synthesis.dsl import DomainSpecificLanguage
 from common.environment.environment import Environment
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
-from metasynthesis.performance_function.evolving_function import distance_default_expr_tree
 from metasynthesis.performance_function.expr_tree import ExpressionTree
 from metasynthesis.performance_function.symbol import TermSym
-import numpy as np
 
 from common.program import Program
 from solver.runner.algorithms import dicts
@@ -20,7 +17,6 @@ from solver.runner.test_case_retriever import get_test_cases
 
 
 class Runner:
-    # TODO implement DSL in Runner
     def __init__(self, lib,
                  algo: str,
                  setting: str,
@@ -33,8 +29,7 @@ class Runner:
                  dist_fun: Callable[[Environment, Environment], float] = None,
                  multi_thread: bool = True,
                  left_bound_cases: float = 0,
-                 right_bound_cases: float = 1,
-                 type_cases: str = "all"):
+                 right_bound_cases: float = 0.1):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
         self.store = store
@@ -75,7 +70,6 @@ class Runner:
 
         total_examples = [0] * len(self.files[2])
         solved_examples = [0] * len(self.files[2])
-        run_time = 0
         for i, trial in enumerate(self.files[2]):
             if self.debug:
                 print("Running trial #{}...".format(trial))
@@ -97,14 +91,7 @@ class Runner:
                     solved_examples[i] += stats["test_correct"]
                     stats_list.append(stats)
 
-                    self.search_results[str(stats["complexity"]) + str(stats["task"]) +
-                                        str(stats["trial"]) + str(self.settings.dsl)] = \
-                        {"best_program": program,
-                         "train_correct": stats["train_correct"],
-                         "test_correct": stats["test_correct"],
-                         "test_total": stats["test_total"],
-                         "search_time": stats["execution_time"]}
-
+                    self.update_search_results(stats, program)
             else:
                 # with Pool(processes=1) as pool:
                 with Pool(processes=os.cpu_count() - 1) as pool:
@@ -118,13 +105,7 @@ class Runner:
                         total_examples[i] += stats["test_total"]
                         solved_examples[i] += stats["test_correct"]
 
-                        self.search_results[str(stats["complexity"]) + str(stats["task"]) +
-                                            str(stats["trial"]) + str(self.settings.dsl)] = \
-                            {"best_program": program,
-                             "train_correct": stats["train_correct"],
-                             "test_correct": stats["test_correct"],
-                             "test_total": stats["test_total"],
-                             "search_time": stats["execution_time"]}
+                        self.update_search_results(stats, program)
 
                 if self.store:
                     self.file_manager.append_result(stats_list)
@@ -132,6 +113,15 @@ class Runner:
         accuracies = [float(s) / t for s, t in zip(solved_examples, total_examples)]
 
         return mean(accuracies)
+
+    def update_search_results(self, stats: Dict, best_program: Program):
+        self.search_results[str(stats["complexity"]) + str(stats["task"]) +
+                            str(stats["trial"]) + str(self.settings.dsl)] = \
+            {"best_program": best_program,
+             "train_correct": stats["train_correct"],
+             "test_correct": stats["test_correct"],
+             "test_total": stats["test_total"],
+             "search_time": stats["execution_time"]}
 
     def execute_test_case(self, test_case):
         return self.algorithm.run(self.settings, self.time_limit_sec, self.debug, test_case, best_program=Program([]))
