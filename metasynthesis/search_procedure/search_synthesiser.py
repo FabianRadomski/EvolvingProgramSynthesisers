@@ -20,8 +20,8 @@ from solver.search.implementations.metropolis import MetropolisHasting
 class SearchSynthesiser(GeneticAlgorithm):
     # Search procedures considered while constructing a genome
     # TODO: add vanillaGP
-    allowed_searches: Dict[str, List[str]] = {"R": ["Brute", "AS", "LNS", "MH"], "S": ["GP", "Brute", "LNS", "MH", "AS"],
-                                              "P": ["GP", "Brute", "LNS", "MH", "AS"]}
+    allowed_searches: Dict[str, List[str]] = {"R": ["Brute", "AS", "LNS", "MH", "Brute", "MCTS"], "S": ["GP", "Brute", "LNS", "MH", "AS", "MCTS"],
+                                              "P": ["GP", "Brute", "LNS", "MH", "AS", "MCTS"],}
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values

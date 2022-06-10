@@ -1,4 +1,3 @@
-import copy
 import time
 from statistics import mean
 
@@ -21,7 +20,6 @@ class SearchAlgorithm:
     debug: bool
 
     invent: Invent
-    # TODO replace tokens with DSL
     tokens: list[Token]
 
     training_examples: list[Example]
@@ -46,7 +44,7 @@ class SearchAlgorithm:
 
     def iteration(self):
         """This method represents an iteration of the solver algorithm. This method will get called over and over
-        again, as long as it returns True. It will stop whenever False is returned or a time limit is reached. The 
+        again, as long as it returns True. It will stop whenever False is returned or a time limit is reached. The
         solver will be performed for the given 'training_examples'. Also the 'trans_tokens' and 'bool_tokens' that are
         available for the environment are given."""
 
@@ -71,7 +69,6 @@ class SearchAlgorithm:
         self.invent.setup(settings.trans_tokens, settings.bool_tokens)
         self.tokens = self.invent.perms + self.invent.loops + self.invent.ifs
 
-        self.test_case = test_case
         self.training_examples = test_case.training_examples
         self.input_state = tuple([t.input_environment for t in self.training_examples])
         self.test_examples = test_case.test_examples
@@ -159,9 +156,9 @@ class SearchAlgorithm:
 
         return cost
 
-    def normalized_reward(self, state: tuple):
+    def normalized_cost(self, state: tuple):
         costs = []
-        rewards = []
+        n_costs = []
 
         for out, desired, inp in zip(state, self.training_examples, self.input_state):
             cost = self.settings.distance(out, desired.output_environment)
@@ -169,15 +166,21 @@ class SearchAlgorithm:
 
             if self.settings.domain == "string":
                 div = len(desired.input_environment.string_array) + len(inp.string_array)
-                reward = 1 - cost / div
             elif self.settings.domain == "robot":
-                reward = cost / (6 * desired.input_environment.size)
+                div = 6 * desired.input_environment.size
             else:
-                reward = 0
+                div = desired.input_environment.width * desired.input_environment.height
 
-            rewards.append(reward)
+            if cost == float("inf"):
+                n_cost = 1
+            else:
+                n_cost = cost / div
 
-        reward = mean(rewards)
+            assert 0 <= n_cost <= 1
+
+            n_costs.append(n_cost)
+
+        n_cost = mean(n_costs)
         cost = mean(costs)
 
         if cost < self.best_cost:
@@ -185,6 +188,4 @@ class SearchAlgorithm:
 
             self.statistics["best_cost_per_iteration"].append((self.statistics["no._iterations"], self.best_cost))
 
-        assert 0 <= reward <= 1
-
-        return reward#, self.best_cost == cost
+        return n_cost#, self.best_cost == cost

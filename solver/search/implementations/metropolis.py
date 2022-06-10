@@ -39,7 +39,10 @@ class MetropolisHasting(SearchAlgorithm):
         new_program = mutation(self.current_program)
         new_cost, _, _ = self.evaluate(new_program)
 
-        ratio = math.exp(-self.alpha * new_cost) / math.exp(-self.alpha * self.current_cost)
+        if math.exp(-self.alpha * self.current_cost) == 0:
+            ratio = float('inf')
+        else:
+            ratio = math.exp(-self.alpha * new_cost) / math.exp(-self.alpha * self.current_cost)
         if ratio > 1 or random.random() < ratio:
             self.current_program = new_program
             self.current_cost = new_cost

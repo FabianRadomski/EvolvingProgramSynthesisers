@@ -78,11 +78,8 @@ class CombinedSearchTime(SearchAlgorithm):
         self.setup()
 
         # self.iteration returns whether a new iteration should be performed. Break the loop if time limit reached.
-        while self.iteration():
+        while self.iteration() and not time.process_time() >= start_time + self.time_limit_sec:
             self.statistics["no._iterations"] += 1
-
-            if time.process_time() >= start_time + self.time_limit_sec:
-                break
 
         run_time = time.process_time() - start_time
 
