@@ -33,14 +33,10 @@ class SearchSynthesiser(GeneticAlgorithm):
     }
 
     # Upper boundary for the execution time for specific search procedures, different for each domain
-    initial_distribution_time: Dict[str, Dict[str, float]] = {"R": {"Brute": 0.1, "AS": 0.1, "MH": 0.1, "LNS": 0.1},
-                                                              "S": {"Brute": 0.1,
-                                                                    "AS": 10, "MH": 10,
-                                                                    "LNS": 10, "GP": 10},
-                                                              "P": {"Brute": 10,
-                                                                    "AS": 10, "MH": 10,
-                                                                    "LNS": 10, "GP": 10}}
 
+    initial_distribution_time: Dict[str, float] = {"R": 0.1,
+                                                              "S": 10,
+                                                              "P": 10}
     TIME_MAX = 1
     TOURN_SIZE = 2
     TESTS_SIZE = 100
@@ -407,7 +403,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         elif dist_type == "Uniform":
             return random.randrange(1, self.initial_distribution_uniform[search_type])
         elif dist_type == "Time":
-            return random.uniform(0, self.initial_distribution_time[self.setting[0]][search_type])
+            return random.uniform(0, self.initial_distribution_time[self.setting[0]])
         else:
             raise Exception("The chosen iteration distribution is not allowed. Choose either Gauss or Uniform!")
 
