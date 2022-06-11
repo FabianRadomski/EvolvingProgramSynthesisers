@@ -204,7 +204,8 @@ class EvolvingLanguage(GeneticAlgorithm):
 
             # MUTATION
             normalize_special_token_weights()
-            elite_crossed_mutated = self.apply_mutation(elite_and_crossed)
+            elite_crossed_mutated = elite_and_crossed[:self.elite_genomes] \
+                                    + self.apply_mutation(elite_and_crossed[self.elite_genomes:])
 
             # GENERATION STATISTICS
             generation_statistics[str(generation_count)] = \
@@ -540,8 +541,6 @@ def process_search_results(search_results: dict, domain: str) -> Tuple[float, fl
 
     mean_ratio_correct = cumulative_ratios_correct / total_cases
     mean_search_time_correct = cumulative_search_time / total_cases
-
-    print(mean_ratio_correct)
 
     return mean_ratio_correct, mean_search_time_correct, best_programs
 
