@@ -24,9 +24,9 @@ class LanguageStatistics:
                                 "search_mode": search_mode,
                                 "search_algorithm": "AS",
                                 "search_setting": "SG",
-                                "max_search_time": 0.7,
+                                "max_search_time": 1,
                                 "crossover_probability": 0.8,
-                                "mutation_probability": 0.3,
+                                "mutation_probability": 0.3
                                 }
 
     def plot_search_algorithm_performance(self):

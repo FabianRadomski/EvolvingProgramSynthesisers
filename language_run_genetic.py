@@ -27,8 +27,8 @@ def run_genetic_algorithm_once(domain_for_func):
                                generation_size=10,  # 10, 34
                                dsl=dsl,
                                search_setting=get_search_setting(domain_for_func),
-                               max_search_time=1,
-                               search_mode="param_train",  # debug, param_train
+                               max_search_time=0.01,
+                               search_mode="debug",  # debug, param_train
                                search_algo="Brute",
                                print_stats=True)
     genetic.run_evolution()
@@ -37,12 +37,12 @@ def run_genetic_algorithm_once(domain_for_func):
 if __name__ == '__main__':
     domain = "string"
 
-    run_genetic_algorithm_once(domain)
+    # run_genetic_algorithm_once(domain)
 
     stats = LanguageStatistics(domain=domain, print_stats=True, search_mode="param")
 
-    # stats.plot_search_algorithm_performance()
-    # stats.plot_search_setting_performance()
+    stats.plot_search_algorithm_performance()
+    stats.plot_search_setting_performance()
     # stats.plot_search_timeout_performance()
     # stats.plot_mutation_method_performance()
     # stats.plot_crossover_method_performance()

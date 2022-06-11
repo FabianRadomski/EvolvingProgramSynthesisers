@@ -29,7 +29,7 @@ class Runner:
                  dist_fun: Callable[[Environment, Environment], float] = None,
                  multi_thread: bool = True,
                  left_bound_cases: float = 0,
-                 right_bound_cases: float = 0.1):
+                 right_bound_cases: float = 1):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
         self.store = store

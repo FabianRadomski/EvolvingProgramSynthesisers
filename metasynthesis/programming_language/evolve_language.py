@@ -29,7 +29,7 @@ class EvolvingLanguage(GeneticAlgorithm):
                  dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("string"), search_setting: str = "SO",
                  max_search_time: float = 1, search_mode: str = "debug", search_algo: str = "Brute",
                  mutation_weights: List = (0.45, 0.05, 0.5), crossover_weights: List = (0, 0, 1),
-                 start_population: Population = None, print_stats: bool = False):
+                 start_population: Population = None, print_stats: bool = True):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -170,21 +170,17 @@ class EvolvingLanguage(GeneticAlgorithm):
             print("FULL DSL:")
             print_chromosome_stats(full_dsl)
 
-        iteration_count = 0
+        generation_count = 0
         if self.start_population is None:
             population = self.generate_population()
         else:
             population = self.start_population
         generation_statistics = {}
 
-        while iteration_count < self.generation_limit:
+        while generation_count < self.generation_limit:
             t2_start_generation = time.perf_counter()
             if self.print_stats:
-                print("GENERATION:", iteration_count + 1, "/", self.generation_limit)
-
-            # GENERATION SETUP
-            successful_tokens_weights.clear()
-            new_population = copy.deepcopy(population)
+                print("GENERATION:", generation_count + 1, "/", self.generation_limit)
 
             # EVALUATING CHROMOSOMES
             for chromosome in population:
@@ -192,59 +188,37 @@ class EvolvingLanguage(GeneticAlgorithm):
                 if self.print_stats:
                     print_chromosome_stats(chromosome)
 
-            best_percentage = select_best_percentage(population=new_population, percentage=50,
-                                                     size=self.generation_size)
+            # GENERATION SETUP
+            successful_tokens_weights.clear()
+            new_population = copy.deepcopy(population)
+            sorted_population = sorted(new_population, key=lambda x: get_fitness(x), reverse=True)
 
             # ELITISM
+            elite_chromosomes = []
             for elite_index in range(0, self.elite_genomes):
-                new_population[elite_index] = best_percentage[elite_index]
+                elite_chromosomes.append(sorted_population[elite_index])
 
             # CROSSOVER
-            random_crossover_probability = random.random()
-            if random_crossover_probability < self.crossover_probability:
-
-                crossed_result = []
-                genome_count = 0
-                while genome_count < len(best_percentage) - 1:
-                    a = best_percentage[genome_count]
-                    b = best_percentage[genome_count + 1]
-                    crossed_a, crossed_b = self.crossover(a, b)
-                    genome_count += 2
-                    crossed_result = crossed_result + [a, b, crossed_a, crossed_b]
-                new_population[self.elite_genomes:self.generation_size] = crossed_result[
-                                                                          0:self.generation_size - self.elite_genomes]
-
-            # SPECIAL TOKEN WEIGHTS
-            normalize_token_weights()
+            crossed_chromosomes = self.apply_crossover(sorted_population)
+            elite_and_crossed = elite_chromosomes + crossed_chromosomes
 
             # MUTATION
-            for genome_index in range(self.elite_genomes, self.generation_size):
-                random_mutation_probability = random.random()
-                if random_mutation_probability < self.mutation_probability:
-                    mutated_genome = self.mutation(copy.deepcopy(new_population[genome_index]))
-                    new_population[genome_index] = mutated_genome
-            iteration_count += 1
+            normalize_special_token_weights()
+            elite_crossed_mutated = self.apply_mutation(elite_and_crossed)
 
             # GENERATION STATISTICS
-            generation_cum_fitness = 0
-            for genome in population:
-                generation_cum_fitness += self.fitness(genome)
+            generation_statistics[str(generation_count)] = \
+                self.calculate_generation_statistics(population, t2_start_generation)
 
-            t2_stop_generation = time.perf_counter()
-            generation_time_taken = t2_stop_generation - t2_start_generation
-            generation_average_fitness = generation_cum_fitness / self.generation_size
-            generation_best_fitness = self.fitness(population[0])
-
-            generation_best_stats = get_chromosome_stats(population[0])
-            generation_statistics[str(iteration_count)] = {"Time taken": generation_time_taken,
-                                                           "Best fitness": generation_best_fitness,
-                                                           "Average fitness": generation_average_fitness,
-                                                           "Generation best stats": generation_best_stats}
+            # PRINTING STATISTICS
+            generation_average_fitness = generation_statistics[str(generation_count)]["Average fitness"]
+            generation_time_taken = generation_statistics[str(generation_count)]["Time taken"]
             if self.print_stats:
                 print("AVG FITNESS:", round(generation_average_fitness, 4),
                       "TIME TAKEN:", generation_time_taken)
 
-            population = new_population
+            population = elite_crossed_mutated
+            generation_count += 1
 
         best_genome = population[0]
 
@@ -268,6 +242,48 @@ class EvolvingLanguage(GeneticAlgorithm):
                 "Final original results": final_original_results,
                 "Final evolved results": final_evolved_results,
                 "Generation statistics": generation_statistics}
+
+    def apply_crossover(self, sorted_population: Population):
+        crossed_chromosomes = []
+        two_crossover_candidates = []
+        for chromosome in sorted_population:
+            random_crossover_chance = random.random()
+            if random_crossover_chance < self.crossover_probability:
+                two_crossover_candidates.append(chromosome)
+                if len(two_crossover_candidates) == 2:
+                    a, b = self.crossover(two_crossover_candidates[0], two_crossover_candidates[1])
+                    crossed_chromosomes += [a, b]
+                    sorted_population.remove(two_crossover_candidates[0])
+                    sorted_population.remove(two_crossover_candidates[1])
+                    two_crossover_candidates = []
+
+        num_still_to_add = self.generation_size - self.elite_genomes - len(crossed_chromosomes)
+        crossed_chromosomes += sorted_population[:num_still_to_add]
+        return crossed_chromosomes
+
+    def apply_mutation(self, elite_and_crossed: Population):
+        for chromosome_index in range(self.elite_genomes, self.generation_size):
+            random_mutation_probability = random.random()
+            if random_mutation_probability < self.mutation_probability:
+                mutated_genome = self.mutation(elite_and_crossed[chromosome_index])
+                elite_and_crossed[chromosome_index] = mutated_genome
+        return elite_and_crossed
+
+    def calculate_generation_statistics(self, population: Population, t2_start_generation: float):
+        generation_cumulative_fitness = 0
+        for chromosome in population:
+            generation_cumulative_fitness += self.fitness(chromosome)
+
+        t2_stop_generation = time.perf_counter()
+        generation_time_taken = t2_stop_generation - t2_start_generation
+        generation_average_fitness = generation_cumulative_fitness / self.generation_size
+        generation_best_fitness = self.fitness(population[0])
+
+        generation_best_stats = get_chromosome_stats(population[0])
+        return {"Time taken": generation_time_taken,
+                "Best fitness": generation_best_fitness,
+                "Average fitness": generation_average_fitness,
+                "Generation best stats": generation_best_stats}
 
     def final_evaluation(self, genome: Genome):
         runner = Runner(dicts(0),
@@ -470,7 +486,7 @@ def pick_random_weighted():
     return None
 
 
-def normalize_token_weights():
+def normalize_special_token_weights():
     # Since we want to enlarge the chance that various tokens get picked, we make smaller weights relatively bigger
     for key in successful_tokens_counts:
         successful_tokens_weights[key] = (successful_tokens_counts[key] ** 0.2)
@@ -524,6 +540,8 @@ def process_search_results(search_results: dict, domain: str) -> Tuple[float, fl
 
     mean_ratio_correct = cumulative_ratios_correct / total_cases
     mean_search_time_correct = cumulative_search_time / total_cases
+
+    print(mean_ratio_correct)
 
     return mean_ratio_correct, mean_search_time_correct, best_programs
 
