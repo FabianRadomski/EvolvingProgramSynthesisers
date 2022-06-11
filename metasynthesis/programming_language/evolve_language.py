@@ -50,14 +50,14 @@ class EvolvingLanguage(GeneticAlgorithm):
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
 
-        max_dsl_length = len(self.bool_tokens + self.trans_tokens)
-        bool_length = round((length / max_dsl_length) * len(self.bool_tokens))
-        trans_length = round((length / max_dsl_length) * len(self.trans_tokens))
+        all_tokens = self.bool_tokens + self.trans_tokens
 
-        bool_chromosomes = random.sample(self.bool_tokens, bool_length)
-        trans_chromosomes = random.sample(self.trans_tokens, trans_length)
+        selected_tokens = random.sample(all_tokens, length)
 
-        dsl_genome = DomainSpecificLanguage(self.domain, bool_chromosomes, trans_chromosomes)
+        bool_tokens = [x for x in selected_tokens if x not in self.trans_tokens]
+        trans_tokens = [x for x in selected_tokens if x not in self.bool_tokens]
+
+        dsl_genome = DomainSpecificLanguage(self.domain, bool_tokens, trans_tokens)
 
         return sort_genome(dsl_genome)
 
