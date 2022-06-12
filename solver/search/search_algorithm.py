@@ -1,3 +1,4 @@
+import copy
 import time
 from statistics import mean
 
@@ -26,11 +27,13 @@ class SearchAlgorithm:
     training_examples: list[Example]
     input_state: tuple[Environment]
     test_examples: list[Example]
+    test_case: TestCase
 
     empty_program_cost: float
-    best_program: Program
+    best_program: Program = Program([])
     best_cost: float = float("inf")
     best_state: tuple[Environment]
+    initial_program: Program
 
     statistics: dict = {}
 
@@ -49,7 +52,7 @@ class SearchAlgorithm:
 
         raise NotImplementedError()
 
-    def run(self, settings: Settings, time_limit_sec: float, debug: bool, test_case: TestCase) -> (Program, dict):
+    def run(self, settings: Settings, time_limit_sec: float, debug: bool, test_case: TestCase, best_program: Program = Program([])) -> (Program, dict):
         """"Runs the solver method until a program is returned or the time limit is reached. First the setup method is
         called, followed by a repetition of the iteration method until either a result is obtained, or the time limit is
         reached"""
@@ -68,11 +71,12 @@ class SearchAlgorithm:
         self.invent.setup(settings.dsl)
         self.tokens = self.invent.perms + self.invent.loops + self.invent.ifs
 
+        self.test_case = test_case
         self.training_examples = test_case.training_examples
         self.input_state = tuple([t.input_environment for t in self.training_examples])
         self.test_examples = test_case.test_examples
 
-        self.best_program = Program([])
+        self.best_program = best_program
         self.best_cost, self.best_state, _ = self.evaluate(self.best_program)
         self.empty_program_cost = self.best_cost
 
@@ -88,11 +92,8 @@ class SearchAlgorithm:
         self.setup()
 
         # self.iteration returns whether a new iteration should be performed. Break the loop if time limit reached.
-        while self.iteration():
+        while self.iteration() and not time.process_time() >= start_time + self.time_limit_sec:
             self.statistics["no._iterations"] += 1
-
-            if time.process_time() >= start_time + self.time_limit_sec:
-                break
 
         run_time = time.process_time() - start_time
 
@@ -104,6 +105,7 @@ class SearchAlgorithm:
         self.statistics["prune_count"] = self.settings.dsl.prune_counter
 
         if self.debug:
+            print(self.__class__.__name__ + "\n")
             print(self.statistics)
 
         # Extend results and return.
