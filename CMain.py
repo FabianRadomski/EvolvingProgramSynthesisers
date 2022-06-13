@@ -59,7 +59,6 @@ def create_runner(settings, dsl):
                     dsl=dsl)
     return runner
 
-
 def main():
     jobs = {}
     i = 1
@@ -76,6 +75,25 @@ def main():
     run_constraint_verification(setting,
                                 algorithm,
                                 objective_function)
+
+def verify_main():
+    jobs = {}
+    i = 1
+    for set in [["AS", "P", "E", [0,1,2,1,0,2,1,0]],
+                ["AS", "P", "G", [1,1,2,2,2,1,2,2]],
+                ["AS", "P", "O", [0,0,0,2,1,2,0,0]],
+                ["Brute", "P", "E", [0,0,1,2,2,1,2,1]],
+                ["Brute", "R", "G", [0,0,0,1,0,2,2,0,2]]]:
+        jobs[i] = set
+        i += 1
+    _, job_n = sys.argv
+    algorithm, setting, objective_function, genome = jobs[int(job_n)]
+    print(sys.argv)
+    verification(setting,
+                 algorithm,
+                 objective_function,
+                 genome)
+
 
 
 def run_constraint_verification(domain,
@@ -127,5 +145,46 @@ def run_constraint_verification(domain,
         logger.write_final(gen.best_chromosome[0], data, settings)
 
 
+def verification(domain, search_algorithm, objective_function, genome):
+    if domain == 'P':
+        domain_name = 'pixel'
+    elif domain == 'S':
+        domain_name = 'string'
+    else:
+        domain_name = 'robot'
+    settings = {
+        'algorithm': search_algorithm,
+        'setting': domain + objective_function,
+        'test_cases': 'eval',
+        'time_limit': 0.1,
+        'debug': False,
+        'store': True,
+        'domain': domain_name
+    }
+
+    ga = ConstraintGeneticAlgorithm(1, 40, 0.1, create_constraints(settings), settings)
+    dsl = ga._create_dsl(genome, domain_name)
+
+    for time in [0.1, 0.5, 1, 10]:
+        settings = {
+            'algorithm': search_algorithm,
+            'setting': domain + objective_function,
+            'test_cases': 'eval',
+            'time_limit': time,
+            'debug': False,
+            'store': True,
+            'domain': domain_name
+        }
+        data = {}
+        runner = create_runner(settings, dsl)
+        runner.run()
+        data['constraints'] = runner.file_manager.written_data
+        runner = create_runner(settings, get_dsl(domain))
+        runner.run()
+        data['normal'] = runner.file_manager.written_data
+
+        ga.logger.write_final(genome, data, settings)
+
 if __name__ == '__main__':
-    main()
+    verify_main()
+
