@@ -44,6 +44,6 @@ def cost_evaluation(data):
     return norm, cons
 
 if __name__ == '__main__':
-    dr = DataReader('pixelASPE')
+    dr = DataReader('pixelBrutePO')
     data = dr.get_evaluation_data()
-    norm, cons = cost_evaluation(data)
+    norm, cons = runtime_evaluation(data)
