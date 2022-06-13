@@ -129,7 +129,7 @@ class CompleteConstraint(AbstractConstraint):
             return {t for t in self.tokens if t is not self.tokens[self.state-1]}
 
     def state_values(self):
-        return len(self.tokens)
+        return len(self.tokens)+1
 
     def get_values(self):
         return 1

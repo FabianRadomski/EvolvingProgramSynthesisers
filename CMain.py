@@ -75,9 +75,7 @@ def main():
 def verify_main():
     jobs = {}
     i = 1
-    for set in [["Brute", "R", "O", [1,1,1,1,1,1,1,2]],
-                ["Brute", "R", "E", [1, 1, 0, 0, 1, 2, 2, 2, 2]],
-                ["AS", "R", "E", [1, 1, 1, 2, 1, 2, 2, 1, 2]],
+    for set in [["Brute", "R", "E", [1, 1, 0, 0, 1, 2, 2, 2, 2]],
                 ["Brute", "P", "O", [1, 1, 1, 2, 0, 2, 2, 0]]]:
         jobs[i] = set
         i += 1
@@ -181,5 +179,5 @@ def verification(domain, search_algorithm, objective_function, genome):
         ga.logger.write_final(genome, data, settings)
 
 if __name__ == '__main__':
-    main()
+    verify_main()
 

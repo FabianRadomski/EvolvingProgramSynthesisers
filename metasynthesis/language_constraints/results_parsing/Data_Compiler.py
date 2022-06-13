@@ -38,8 +38,10 @@ def cost_evaluation(data):
     return norm, cons
 
 if __name__ == '__main__':
-    dr = DataReader('RobotASRG')
+    dr = DataReader('robotBruteRE')
     data = dr.get_evaluation_data()
-    norm, cons = cost_evaluation(data)
-    print(norm)
-    print(cons)
+    norm, cons = runtime_evaluation(data)
+    for key in norm:
+        print(norm)
+        print(f'{key}:{sum(map(lambda x: x[0], norm[key]))/len(norm[key])} normal')
+        print(f'{key}:{sum(map(lambda x: x[0], cons[key])) / len(cons[key])} constrained')
