@@ -43,7 +43,15 @@ def cost_evaluation(data):
     print("constrainted: ", cons)
     return norm, cons
 
+def programs_evaluation(data):
+    norm, cons = _evaluation(data, ["no._explored_programs"])
+    for key in norm:
+        print(f'{key}:{sum(map(lambda x: x[0], norm[key]))/len(norm[key])} normal')
+        print(f'{key}:{sum(map(lambda x: x[0], cons[key])) / len(cons[key])} constrained')
+    return norm, cons
+
 if __name__ == '__main__':
     dr = DataReader('robotBruteRO')
     data = dr.get_evaluation_data()
-    norm, cons = runtime_evaluation(data)
+    print(data)
+    norm, cons = cost_evaluation(data)

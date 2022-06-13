@@ -56,7 +56,9 @@ def create_runner(settings, dsl):
                     settings['time_limit'],
                     settings['debug'],
                     settings['store'],
-                    dsl=dsl)
+                    dsl=dsl,
+                    left_bound_cases=0,
+                    right_bound_cases=1)
     return runner
 
 def main():
