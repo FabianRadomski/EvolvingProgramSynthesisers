@@ -1,7 +1,9 @@
+import itertools
+
 from metasynthesis.language_constraints.results_parsing.Data_Reader import DataReader
+import pandas as pd
 
-
-def runtime_evaluation(data):
+def _evaluation(data, keys):
     normal_dict = {}
     constraint_dict = {}
     for time in data:
@@ -11,14 +13,33 @@ def runtime_evaluation(data):
         constraint_dict[time] = []
         for trial in normal:
             for program in trial:
-                normal_dict[time].append(program["execution_time"])
+                t = []
+                for key in keys:
+                    t.append(program[key])
+                normal_dict[time].append(tuple(t))
         for trial in constraint:
             for program in trial:
-                constraint_dict[time].append(program["execution_time"])
+                t = []
+                for key in keys:
+                    t.append(program[key])
+                constraint_dict[time].append(tuple(t))
     return normal_dict, constraint_dict
 
+def runtime_evaluation(data):
+    return _evaluation(data, ["execution_time"])
+
+def cost_evaluation(data):
+    norm, cons = _evaluation(data, ["complexity", "test_cost"])
+    def parse(data, key):
+        return [(g, sum(map(lambda k: k[1], k))) for g, k in itertools.groupby(sorted(data[key], key=lambda x: x[0]), lambda x: x[0])]
+    norm = {k: parse(norm, k) for k in norm}
+    cons = {k: parse(cons, k) for k in cons}
+
+    return norm, cons
+
 if __name__ == '__main__':
-    dr = DataReader('pixelASPG')
+    dr = DataReader('RobotASRG')
     data = dr.get_evaluation_data()
-    norm, cons = runtime_evaluation(data)
-    print(sum(norm['10'])/len(norm['10']), sum(cons['10'])/len(cons['10']))
+    norm, cons = cost_evaluation(data)
+    print(norm)
+    print(cons)

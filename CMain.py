@@ -71,7 +71,6 @@ def main():
             jobs[i] = alg
             i+=1
     _, job_n = sys.argv
-
     algorithm, setting, objective_function = jobs[int(job_n)]
     print(sys.argv)
     run_constraint_verification(setting,
@@ -84,7 +83,7 @@ def run_constraint_verification(domain,
                                 objective_function,
                                 generations=40,
                                 mutation_chance=0.1,
-                                pop_size=20
+                                pop_size=1
                                 ):
     if domain == 'P':
         domain_name = 'pixel'
@@ -97,7 +96,7 @@ def run_constraint_verification(domain,
         'algorithm': search_algorithm,
         'setting': domain + objective_function,
         'test_cases': 'param',
-        'time_limit': 0.1,
+        'time_limit': 0.5,
         'debug': False,
         'store': True,
         'domain': domain_name

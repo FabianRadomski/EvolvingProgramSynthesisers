@@ -98,6 +98,7 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         execution_time = 0
         max_cost = 0
         for d in data[0]:
+            print(d)
             programs_considered += d['no._explored_programs']
             cost += d['train_cost']+d['test_cost']
             max_cost = max(d['train_cost']+d['test_cost'], max_cost)
@@ -105,8 +106,15 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
         cost /= len(data[0])
         execution_time /= len(data[0])
         if bias:
+            print("BIASED")
+            cost = max(cost, 1)
+            max_cost = max(cost, 1)
             fit = (1/(cost*max_cost*execution_time)**(1/2)) * 100 - self.fitness_bias
         else:
+            print("UNBIASED")
+            print((cost * max_cost * execution_time) ** (1/2))
+            cost = max(cost, 1)
+            max_cost = max(cost, 1)
             fit = (1 / (cost * max_cost * execution_time) ** (1 / 2)) * 100
         return max(fit, 0)
 
@@ -168,10 +176,13 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
                     logger_data[i].append(("pop_report", pop, fitness))
 
             if total_fitness == 0 or not bias:
-                bias = False
-                self.fitness_bias = {}
                 logger_data[i] = []
-                logger_data[i].append(("bias_disabled",))
+                if bias:
+                    bias = False
+                    print("bias DISABLED")
+                    self.fitness_memory = {}
+                    logger_data[i].append(("bias_disabled",))
+
                 for pop in population:
                     fitness = self.fitness(pop, bias)
                     print(self.genome_to_string(pop), self.fitness(pop))
