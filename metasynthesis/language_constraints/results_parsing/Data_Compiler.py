@@ -44,6 +44,6 @@ def cost_evaluation(data):
     return norm, cons
 
 if __name__ == '__main__':
-    dr = DataReader('pixelBrutePO')
+    dr = DataReader('robotBruteRO')
     data = dr.get_evaluation_data()
     norm, cons = runtime_evaluation(data)

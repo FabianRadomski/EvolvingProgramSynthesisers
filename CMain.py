@@ -165,7 +165,7 @@ def verification(domain, search_algorithm, objective_function, genome):
         settings = {
             'algorithm': search_algorithm,
             'setting': domain + objective_function,
-            'test_cases': 'all',
+            'test_cases': 'debug',
             'time_limit': time,
             'debug': False,
             'store': True,
@@ -182,5 +182,6 @@ def verification(domain, search_algorithm, objective_function, genome):
         ga.logger.write_final(genome, data, settings)
 
 if __name__ == '__main__':
-    main()
+    verify_main()
+
 
