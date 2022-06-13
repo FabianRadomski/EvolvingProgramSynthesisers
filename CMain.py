@@ -161,7 +161,7 @@ def verification(domain, search_algorithm, objective_function, genome):
         settings = {
             'algorithm': search_algorithm,
             'setting': domain + objective_function,
-            'test_cases': 'eval',
+            'test_cases': 'all',
             'time_limit': time,
             'debug': False,
             'store': True,
