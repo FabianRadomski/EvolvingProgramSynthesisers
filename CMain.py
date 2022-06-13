@@ -62,11 +62,7 @@ def create_runner(settings, dsl):
 def main():
     jobs = {}
     i = 1
-    for alg in [["AS", "R", "E"],
-                ["AS", "R", "O"],
-                ["Brute", "P", "O"],
-                ["Brute", "R", "E"],
-                ["Brute", "R", "O"]]:
+    for alg in [["Brute", "R", "O"]]:
             jobs[i] = alg
             i+=1
     _, job_n = sys.argv
@@ -185,5 +181,5 @@ def verification(domain, search_algorithm, objective_function, genome):
         ga.logger.write_final(genome, data, settings)
 
 if __name__ == '__main__':
-    verify_main()
+    main()
 

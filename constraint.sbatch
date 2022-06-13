@@ -1,11 +1,11 @@
 #!/bin/sh
 #SBATCH --job-name="constraint_programming"
 #SBATCH --partition=compute
-#SBATCH --time=2:00:00
+#SBATCH --time=6:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4G
-#SBATCH --array=1-4
+#SBATCH --array=1-1
 #SBATCH -o constraint-%j-%a.out
 
 module load 2022r1
