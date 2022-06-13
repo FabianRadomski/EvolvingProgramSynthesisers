@@ -26,7 +26,12 @@ def _evaluation(data, keys):
     return normal_dict, constraint_dict
 
 def runtime_evaluation(data):
-    return _evaluation(data, ["execution_time"])
+    norm, cons = _evaluation(data, ["execution_time"])
+    for key in norm:
+        print(norm)
+        print(f'{key}:{sum(map(lambda x: x[0], norm[key]))/len(norm[key])} normal')
+        print(f'{key}:{sum(map(lambda x: x[0], cons[key])) / len(cons[key])} constrained')
+    return norm, cons
 
 def cost_evaluation(data):
     norm, cons = _evaluation(data, ["complexity", "test_cost"])
@@ -34,14 +39,11 @@ def cost_evaluation(data):
         return [(g, sum(map(lambda k: k[1], k))) for g, k in itertools.groupby(sorted(data[key], key=lambda x: x[0]), lambda x: x[0])]
     norm = {k: parse(norm, k) for k in norm}
     cons = {k: parse(cons, k) for k in cons}
-
+    print("normal: ", norm)
+    print("constrainted: ", cons)
     return norm, cons
 
 if __name__ == '__main__':
-    dr = DataReader('robotBruteRE')
+    dr = DataReader('pixelBrutePO')
     data = dr.get_evaluation_data()
-    norm, cons = runtime_evaluation(data)
-    for key in norm:
-        print(norm)
-        print(f'{key}:{sum(map(lambda x: x[0], norm[key]))/len(norm[key])} normal')
-        print(f'{key}:{sum(map(lambda x: x[0], cons[key])) / len(cons[key])} constrained')
+    norm, cons = cost_evaluation(data)
