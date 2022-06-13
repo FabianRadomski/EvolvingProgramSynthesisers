@@ -182,5 +182,5 @@ def verification(domain, search_algorithm, objective_function, genome):
         ga.logger.write_final(genome, data, settings)
 
 if __name__ == '__main__':
-    verify_main()
+    main()
 
