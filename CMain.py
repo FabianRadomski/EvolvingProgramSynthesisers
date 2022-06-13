@@ -83,7 +83,7 @@ def run_constraint_verification(domain,
                                 objective_function,
                                 generations=40,
                                 mutation_chance=0.1,
-                                pop_size=1
+                                pop_size=20
                                 ):
     if domain == 'P':
         domain_name = 'pixel'
@@ -96,7 +96,7 @@ def run_constraint_verification(domain,
         'algorithm': search_algorithm,
         'setting': domain + objective_function,
         'test_cases': 'param',
-        'time_limit': 0.5,
+        'time_limit': 0.1,
         'debug': False,
         'store': True,
         'domain': domain_name
