@@ -77,11 +77,7 @@ def main():
 def verify_main():
     jobs = {}
     i = 1
-    for set in [["Brute", "P", "E", [0, 0, 1, 2, 2, 1, 2, 1]],
-                ["Brute", "P", "O", [1, 1, 1, 2, 0, 2, 2, 0]],
-                ["Brute", "R", "O", [1, 1, 1, 2, 2, 1, 1, 1, 2]],
-                ["Brute", "R", "G", [0, 0, 0, 1, 0, 2, 2, 0, 2]],
-                ["Brute", "R", "E", [1, 1, 0, 0, 1, 2, 2, 2, 2]]]:
+    for set in [["Brute", "P", "G", [1, 1, 1, 2, 2, 2, 2, 2]]]:
         jobs[i] = set
         i += 1
     _, job_n = sys.argv
