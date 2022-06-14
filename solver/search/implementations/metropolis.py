@@ -48,12 +48,18 @@ class MetropolisHasting(SearchAlgorithm):
 
     # Mutations from here
     def _append_token(self, program: Program) -> Program:
-        return Program(program.sequence + [random.choice(self.tokens)])
+        if len(self.tokens) > 0:
+            return Program(program.sequence + [random.choice(self.tokens)])
+        else:
+            return Program(program.sequence)
 
     def _insert_token(self, program: Program) -> Program:
         index = random.randint(0, len(program.sequence))
 
-        return Program(program.sequence[:index] + [random.choice(self.tokens)] + program.sequence[index:])
+        if len(self.tokens) > 0:
+            return Program(program.sequence[:index] + [random.choice(self.tokens)] + program.sequence[index:])
+        else:
+            return Program(program.sequence)
 
     def _remove_last_token(self, program: Program) -> Program:
         return Program(program.sequence[:-1])
