@@ -69,7 +69,7 @@ class SearchAlgorithm:
 
         self.invent = StaticInvent()
         self.invent.setup(settings.dsl)
-        self.tokens = self.invent.perms + self.invent.loops + self.invent.ifs
+        self.tokens = self.invent.perms + self.invent.loops + self.invent.ifs + self.invent.design_patterns
 
         self.test_case = test_case
         self.training_examples = test_case.training_examples
@@ -120,6 +120,7 @@ class SearchAlgorithm:
         for ex in examples:
             try:
                 res = p.interp(ex.input_environment)
+                # print(res.bx)
                 cost = self.settings.distance(res, ex.output_environment)
 
                 if cost == 0:

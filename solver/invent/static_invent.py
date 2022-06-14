@@ -1,5 +1,5 @@
 from common.program_synthesis.dsl import DomainSpecificLanguage
-from common.tokens.abstract_tokens import TransToken, BoolToken, InventedToken
+from common.tokens.abstract_tokens import TransToken, BoolToken, InventedToken, PatternApplicationToken, FunctionVariableToken, PatternToken
 from common.tokens.control_tokens import If, LoopWhileThen
 from solver.invent.invent import Invent
 
@@ -11,6 +11,7 @@ class StaticInvent(Invent):
         self.ifs = self._all_ifs()
         self.loops = self._all_loops()
         self.perms = self._all_permutations()
+        self.design_patterns = self._all_design_patterns()
 
     def _all_ifs(self) -> list[If]:
         res = []
@@ -75,4 +76,13 @@ class StaticInvent(Invent):
                     continue
                 res.append(InventedToken([t1, t2]))
         # print(f'permutations removed: {i}')
+        return res
+
+    def _all_design_patterns(self):
+        res = []
+
+        for p in self._pattern_tokens:
+            for t in self._trans_tokens:
+                res.append(PatternApplicationToken(p, t))
+        # add also loops and ifs?
         return res

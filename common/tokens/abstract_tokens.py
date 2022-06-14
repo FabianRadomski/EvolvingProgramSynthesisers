@@ -88,8 +88,9 @@ class InventedToken(EnvToken):
     def __hash__(self):
         return hash((self.__class__, tuple(self.tokens)))
 
+
 # should there be more arguments than one?
-class FunctionDefinitionToken(Token):
+class PatternToken(Token):
     def __init__(self, body_tokens: list, param_token: Token):
         self.body_tokens = body_tokens
         self.param_token = param_token
@@ -109,14 +110,14 @@ class FunctionVariableToken(Token):
         print("fv apply")
 
 
-class PatternToken(EnvToken):
-    def __init__(self, fd: FunctionDefinitionToken, arg_token: TransToken):
+class PatternApplicationToken(EnvToken):
+    def __init__(self, pattern: PatternToken, arg_token: TransToken):
         self.arg_token = arg_token
-        self.function_definition = fd
+        self.pattern = pattern
 
     # simple implementation with a single argument and parameter
     def apply(self, env: Environment) -> Environment:
-        for token in self.function_definition.body_tokens:
+        for token in self.pattern.body_tokens:
             if isinstance(token, FunctionVariableToken):
                 self.arg_token.apply(env)
             else:

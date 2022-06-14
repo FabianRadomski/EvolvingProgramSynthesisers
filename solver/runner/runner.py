@@ -6,7 +6,10 @@ from typing import List, Tuple
 
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
 from common.environment.environment import Environment
+from common.tokens.abstract_tokens import PatternToken
+from metasynthesis.performance_function.dom_dist_fun.pixel_dist_fun import PixelDistFun
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
+from metasynthesis.performance_function.dom_dist_fun.string_dist_fun import StringDistFun
 from metasynthesis.performance_function.evolving_function import distance_default_expr_tree
 from metasynthesis.performance_function.expr_tree import ExpressionTree
 from metasynthesis.performance_function.symbol import TermSym
@@ -16,7 +19,6 @@ from common.program import Program
 from solver.runner.algorithms import dicts
 from solver.runner.file_manager import FileManager
 from solver.runner.test_case_retriever import get_test_cases
-
 
 class Runner:
     # TODO implement DSL in Runner
@@ -42,7 +44,6 @@ class Runner:
             self.settings.dsl = dsl
 
         self.settings.dist_fun = dist_fun
-
         self.files = lib["test_cases"][test_cases][setting[0]]
 
         self.file_manager = FileManager(algo, setting, suffix)
@@ -132,24 +133,30 @@ class Runner:
 
 if __name__ == "__main__":
     time_limit = 1
-    debug = False
+    debug = True
     store = False
     setting = "RG"
-    algo = "Brute"
-    test_cases = "param"
+    algo = "AS"
+    test_cases = "small"
     params = [0, 0.1, 0.5, 1, 1.5, 2]
 
     params = params if test_cases == "param" else [0]
     store = False if test_cases == "param" else store
 
     functions = RobotDistFun.partial_dist_funs()
+    # functions = PixelDistFun.partial_dist_funs()
+    # functions = StringDistFun.partial_dist_funs()
     terms = list(map(lambda x: TermSym(x), functions))
     rand_obj_fun = ExpressionTree.generate_random_expression(terms=terms, max_depth=4)
     dist_fun = rand_obj_fun.distance_fun
+
+    design_patterns = []
+    dsl = StandardDomainSpecificLanguage("robot")
+    dsl.set_pattern_tokens(design_patterns)
 
     for param in params:
         if test_cases == "param":
             print("\nParam = {}".format(param))
 
-        mean1 = Runner(dicts(param), algo, setting, test_cases, time_limit, debug, store, dist_fun=dist_fun).run()
+        mean1 = Runner(dicts(param), algo, setting, test_cases, time_limit, debug, store, dist_fun=dist_fun, multi_thread=False, dsl=dsl).run()
         print(f"Solved {str(mean1)}")

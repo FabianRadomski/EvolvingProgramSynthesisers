@@ -1,8 +1,8 @@
-from typing import Callable
+from typing import Callable, List
 
 from common.environment.environment import Environment
 from common.program_synthesis.dsl import DomainSpecificLanguage
-from common.tokens.abstract_tokens import Token, TransToken, BoolToken
+from common.tokens.abstract_tokens import Token, TransToken, BoolToken, PatternToken
 
 
 class Settings:
@@ -13,15 +13,12 @@ class Settings:
         self.dsl = dsl
 
     @property
-    def trans_tokens(self, partial_program=None):
-        return self.dsl.get_trans_tokens(partial_program)
+    def trans_tokens(self):
+        return self.dsl.get_trans_tokens()
 
     @property
     def bool_tokens(self):
         return self.dsl.get_bool_tokens()
-        self.trans_tokens = trans_tokens
-        self.bool_tokens = bool_tokens
-        self.dist_fun = None
 
     def distance(self, inp: Environment, out: Environment) -> float:
         """Returns the distance between two given Environments."""

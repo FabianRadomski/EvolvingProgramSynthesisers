@@ -8,21 +8,23 @@ from common.tokens.control_tokens import If, LoopWhile
 class Invent:
 
     def __init__(self):
+        self._pattern_tokens = []
         self._trans_tokens = []
         self._bool_tokens = []
 
         self.loops = []
         self.ifs = []
         self.perms = []
+        self.design_patterns = []
 
     def setup(self, dsl: DomainSpecificLanguage):
         self._dsl = dsl
         self._trans_tokens = dsl.get_trans_tokens()
         self._bool_tokens = dsl.get_bool_tokens()
+        self._pattern_tokens = dsl.get_pattern_tokens()
 
     def increment_depth(self):
         pass
-
 
     def random_token(self, w_trans: float, w_if: float, w_loop: float) -> EnvToken:
         return random.choices([

@@ -1,5 +1,4 @@
-from collections import defaultdict, Mapping
-
+from collections.abc import Mapping
 from solver.search.implementations.a_star import AStar
 from solver.search.implementations.brute import Brute
 from solver.search.implementations.genetic_programming import GeneticProgramming
