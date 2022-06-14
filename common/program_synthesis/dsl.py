@@ -21,6 +21,7 @@ class DomainSpecificLanguage:
                  trans_tokens: List[Token],
                  constraints_enabled: bool = False,
                  constraint_func: ConstraintFunc = identity):
+        self.programs = []
         self.domain_name = domain_name
         self._bool_tokens = bool_tokens
         self._trans_tokens = trans_tokens

@@ -77,7 +77,7 @@ def main():
 def verify_main():
     jobs = {}
     i = 1
-    for set in [["Brute", "P", "G", [1, 1, 1, 2, 2, 2, 2, 2]]]:
+    for set in [["Brute", "R", "O", [1, 1, 1, 2, 2, 1, 1, 1, 2]]]:
         jobs[i] = set
         i += 1
     _, job_n = sys.argv
@@ -173,10 +173,12 @@ def verification(domain, search_algorithm, objective_function, genome):
         runner = create_runner(settings, dsl)
         runner.run()
         data['constraints'] = runner.file_manager.written_data
+        ga.logger.write("DEBUG_DATA_cons", dsl.programs)
+        print("CONSTRAINTS DONE")
         runner = create_runner(settings, get_dsl(domain))
         runner.run()
         data['normal'] = runner.file_manager.written_data
-
+        ga.logger.write("DEBUG_DATA_norm", dsl.programs)
         ga.logger.write_final(genome, data, settings)
 
 if __name__ == '__main__':

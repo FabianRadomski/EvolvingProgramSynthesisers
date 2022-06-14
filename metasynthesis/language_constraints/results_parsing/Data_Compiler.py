@@ -1,6 +1,9 @@
 import itertools
 from statistics import mean
 
+from CMain import create_constraints
+from common.program_synthesis.dsl import StandardDomainSpecificLanguage
+from metasynthesis.language_constraints.constraints.ConstraintFactory import ConstraintFactory, ConstraintCombiner
 from metasynthesis.language_constraints.results_parsing.Data_Reader import DataReader
 import pandas as pd
 
@@ -65,3 +68,17 @@ def runtime_evaluation(data):
     print(norm)
     print(cons)
     return norm, cons
+
+def best_chromosome(data):
+    return data['39'][-1]
+
+def chromosome_distance_count(data):
+    for chromosome in data:
+        data[chromosome] = sum(map(lambda x: x["test_cost"], data[chromosome][0]))
+    return data
+
+if __name__ == '__main__':
+    dr = DataReader('robotBruteRO')
+    data = dr.get_evaluation_data()
+    programs_evaluation(data)
+

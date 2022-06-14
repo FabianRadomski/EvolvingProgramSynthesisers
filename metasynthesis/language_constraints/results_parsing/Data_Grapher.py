@@ -51,6 +51,7 @@ if __name__ == '__main__':
     ]
 
     functions = [
+        ("cost", cost_evaluation),
         ("runtime", runtime_evaluation)
     ]
     get_data(domains, functions)

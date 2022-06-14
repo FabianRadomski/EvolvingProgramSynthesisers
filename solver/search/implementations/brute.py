@@ -25,7 +25,6 @@ class Brute(SearchAlgorithm):
 
     def iteration(self) -> bool:
         cost, program = heapq.heappop(self.program_heap)
-        self.best_program = program
 
         # If solution
         if cost == 0:
@@ -42,5 +41,4 @@ class Brute(SearchAlgorithm):
             if list(new_state) not in self.visited_states:
                 heapq.heappush(self.program_heap, (new_cost, new_program))
                 self.visited_states.append(new_state)
-
         return len(self.program_heap) > 0
