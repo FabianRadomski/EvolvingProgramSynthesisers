@@ -1,6 +1,6 @@
 from metasynthesis.search_procedure.analyze_searches import analyze_search_times,  plot_times
 
-algs = ["Brute", "LNS", "MH", "AS", "GP"]
+algs = ["Brute", "LNS", "MH", "AS", "GP", "MCTS"]
 
 names = []
 means = []

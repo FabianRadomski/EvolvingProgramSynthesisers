@@ -127,7 +127,7 @@ class SearchSynthesiser(GeneticAlgorithm):
         # Or else run the synthesizer with a runner
         elif len(genome) != 0:
             print(f"Running search of {str(genome)}\n")
-            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 10, debug=False, store=False, multi_thread=True)
+            runner: Runner = Runner(dicts(alg_sequence=genome), "CS", self.setting, self.test_size, 1000, debug=False, store=False, multi_thread=True)
             success_ratio, average_time, _ = runner.run()
             average_success = success_ratio
             print("Finished running search\n")

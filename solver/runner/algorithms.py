@@ -18,7 +18,7 @@ from solver.search.implementations.metropolis import MetropolisHasting
 from solver.search.implementations.my_mcts.mcts import MCTS
 
 
-def dicts(param=0.5, alg_sequence=None):
+def dicts(param=0, alg_sequence=None):
     if alg_sequence is None:
         alg_sequence = [("Brute", 1)]
     return {
