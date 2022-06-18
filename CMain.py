@@ -62,14 +62,7 @@ def create_runner(settings, dsl):
     return runner
 
 def main():
-    jobs = {}
-    i = 1
-    for alg in [["Brute", "P", "G"]]:
-            jobs[i] = alg
-            i+=1
-    _, job_n = sys.argv
-    algorithm, setting, objective_function = jobs[int(job_n)]
-    print(sys.argv)
+    _, algorithm, setting, objective_function = sys.argv
     run_constraint_verification(setting,
                                 algorithm,
                                 objective_function)
@@ -117,26 +110,7 @@ def run_constraint_verification(domain,
     gen = ConstraintGeneticAlgorithm(1, generations, mutation_chance, create_constraints(settings), settings, pop_size)
     dsl = gen.run_evolution()
     logger = gen.logger
-
-    for time in [0.1, 0.5, 1, 10]:
-        data = {}
-        settings = {
-            'algorithm': search_algorithm,
-            'setting': domain + objective_function,
-            'test_cases': 'eval',
-            'time_limit': time,
-            'debug': False,
-            'store': True,
-            'domain': domain_name
-        }
-        runner = create_runner(settings, dsl)
-        runner.run()
-        data['constraints'] = runner.file_manager.written_data
-        runner = create_runner(settings, get_dsl(domain))
-        runner.run()
-        data['normal'] = runner.file_manager.written_data
-
-        logger.write_final(gen.best_chromosome[0], data, settings)
+    verification(domain, search_algorithm, objective_function, gen.best_chromosome[0])
 
 
 def verification(domain, search_algorithm, objective_function, genome):

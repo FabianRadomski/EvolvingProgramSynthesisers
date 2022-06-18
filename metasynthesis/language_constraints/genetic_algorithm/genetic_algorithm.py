@@ -190,6 +190,7 @@ class ConstraintGeneticAlgorithm(GeneticAlgorithm):
                     if fitness > max_fitness:
                         max_fitness = fitness
                         self.best_chromosome = (pop, max_fitness)
+                    logger_data[i].append(("pop_report", pop, fitness))
 
             logger_data[i].append(("general", self.best_chromosome))
             self.logger.write_genetic_stats(logger_data)

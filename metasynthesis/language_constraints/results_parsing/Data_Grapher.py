@@ -42,11 +42,6 @@ def get_data(domains: List[str], functions: List[Tuple[str, Callable]]):
 
 if __name__ == '__main__':
     domains = [
-        "pixelBrutePE",
-        "pixelBrutePG",
-        "pixelBrutePO",
-        "robotBruteRE",
-        "robotBruteRG",
         "robotBruteRO"
     ]
 
