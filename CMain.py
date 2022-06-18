@@ -62,7 +62,14 @@ def create_runner(settings, dsl):
     return runner
 
 def main():
-    _, algorithm, setting, objective_function = sys.argv
+    jobs = {}
+    i = 1
+    for alg in [["Brute", "P", "G"]]:
+            jobs[i] = alg
+            i+=1
+    _, job_n = sys.argv
+    algorithm, setting, objective_function = jobs[int(job_n)]
+    print(sys.argv)
     run_constraint_verification(setting,
                                 algorithm,
                                 objective_function)
@@ -70,7 +77,9 @@ def main():
 def verify_main():
     jobs = {}
     i = 1
-    for set in [["Brute", "R", "O", [1, 1, 1, 2, 2, 1, 1, 1, 2]]]:
+    for set in [
+        ["Brute", "P", "O", [1,1,1,2,0,2,2,0]],
+        ["Brute", "R", "O", [1, 1, 1, 2, 2, 1, 1, 1, 2]]]:
         jobs[i] = set
         i += 1
     _, job_n = sys.argv
