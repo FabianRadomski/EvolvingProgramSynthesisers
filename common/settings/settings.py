@@ -19,9 +19,6 @@ class Settings:
     @property
     def bool_tokens(self):
         return self.dsl.get_bool_tokens()
-        self.trans_tokens = trans_tokens
-        self.bool_tokens = bool_tokens
-        self.dist_fun = None
 
     def distance(self, inp: Environment, out: Environment) -> float:
         """Returns the distance between two given Environments."""

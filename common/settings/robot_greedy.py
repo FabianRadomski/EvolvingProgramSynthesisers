@@ -11,9 +11,6 @@ class RobotGreedy(Settings):
 
     def distance(self, inp: RobotEnvironment, out: RobotEnvironment) -> float:
         """Heuristic that was originally used by Brute."""
-        if self.dist_fun is None:
-            return abs(inp.bx - out.bx) + abs(inp.by - out.by) \
-                   + abs(inp.rx - out.rx) + abs(inp.ry - out.ry) \
-                   + abs(int(inp.holding) - int(out.holding))
-        else:
-            return self.dist_fun(inp, out)
+        return abs(inp.bx - out.bx) + abs(inp.by - out.by) \
+               + abs(inp.rx - out.rx) + abs(inp.ry - out.ry) \
+               + abs(int(inp.holding) - int(out.holding))

@@ -10,8 +10,5 @@ class PixelHamming(Settings):
         super().__init__("pixel", StandardDomainSpecificLanguage('pixel'))
 
     def distance(self, inp: PixelEnvironment, out: PixelEnvironment) -> float:
-        if self.dist_fun is None:
-            assert len(inp.pixels) == len(out.pixels)
-            return sum([e1 != e2 for (e1, e2) in zip(inp.pixels, out.pixels)])
-        else:
-            return self.dist_fun(inp, out)
+        assert len(inp.pixels) == len(out.pixels)
+        return sum([e1 != e2 for (e1, e2) in zip(inp.pixels, out.pixels)])

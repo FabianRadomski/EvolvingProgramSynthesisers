@@ -22,29 +22,30 @@ def run_genetic_algorithm_once(domain_for_func):
     genetic = EvolvingLanguage(fitness_limit=1,
                                generation_limit=10,
                                crossover_probability=0.8,
-                               mutation_probability=0.3,
+                               mutation_probability=0.2,
                                elite_genomes=2,
                                generation_size=10,  # 10, 34
                                dsl=dsl,
                                search_setting=get_search_setting(domain_for_func),
-                               max_search_time=0.01,
-                               search_mode="debug",  # debug, param_train
-                               search_algo="Brute",
+                               max_search_time=3,
+                               search_mode="param",  # debug, param_train
+                               search_algo="AS",
                                print_stats=True)
     genetic.run_evolution()
 
 
 if __name__ == '__main__':
-    domain = "string"
+    domain = "robot"
 
     # run_genetic_algorithm_once(domain)
 
-    stats = LanguageStatistics(domain=domain, print_stats=True, search_mode="param")
+    stats = LanguageStatistics(print_stats=True, search_mode="eval_train")
 
-    stats.plot_search_algorithm_performance()
-    stats.plot_search_setting_performance()
-    # stats.plot_search_timeout_performance()
+    # stats.plot_search_algorithm_performance()
+    # stats.plot_search_setting_performance()
     # stats.plot_mutation_method_performance()
     # stats.plot_crossover_method_performance()
+    # stats.plot_search_timeout_performance()
     # stats.plot_population_size_performance()
     # stats.plot_generation_limit_performance()
+    stats.plot_standard_vs_evolved_performance()

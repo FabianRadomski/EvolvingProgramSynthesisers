@@ -9,7 +9,4 @@ class StringEntailment(Settings):
         super().__init__("string", StandardDomainSpecificLanguage('string'))
 
     def distance(self, inp: StringEnvironment, out: StringEnvironment) -> float:
-        if self.dist_fun is None:
-            return 0 if inp.string_array == out.string_array else 1
-        else:
-            return self.dist_fun(inp, out)
+        return 0 if inp.string_array == out.string_array else 1

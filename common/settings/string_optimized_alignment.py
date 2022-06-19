@@ -13,10 +13,7 @@ class StringOptimizedAlignment(Settings):
         super().__init__("string", StandardDomainSpecificLanguage('string'))
 
     def distance(self, inp: StringEnvironment, out: StringEnvironment) -> float:
-        if self.dist_fun is None:
-            return self._alignment("".join(inp.string_array), "".join(out.string_array))
-        else:
-            return self.dist_fun(inp, out)
+        return self._alignment("".join(inp.string_array), "".join(out.string_array))
 
     @staticmethod
     def _alignment(inp, out):
@@ -69,6 +66,7 @@ class StringOptimizedAlignment(Settings):
         return mem[m][n]
         """
 
+
 if __name__ == "__main__":
     ios = [
         ("AB", "AB", 0),
@@ -102,4 +100,3 @@ if __name__ == "__main__":
         if e == -1:
             e = float("inf")
         print("\"{}\" -> \"{}\": {}".format(i, o, StringOptimizedAlignment._alignment(i, o) == e))
-

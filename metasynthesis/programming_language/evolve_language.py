@@ -27,9 +27,10 @@ class EvolvingLanguage(GeneticAlgorithm):
     def __init__(self, fitness_limit: int = 1, generation_limit: int = 20, crossover_probability: float = 0.8,
                  elite_genomes: int = 2, mutation_probability: float = 0.2, generation_size: int = 20,
                  dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("string"), search_setting: str = "SO",
-                 max_search_time: float = 1, search_mode: str = "debug", search_algo: str = "Brute",
-                 mutation_weights: List = (0.45, 0.05, 0.5), crossover_weights: List = (0, 0, 1),
-                 start_population: Population = None, print_stats: bool = True):
+                 max_search_time: float = 1, search_mode: str = "debug", search_algo: str = "AS",
+                 mutation_weights: List = (0.25, 0.25, 0.5), crossover_weights: List = (0, 0, 1),
+                 start_population: Population = None, print_stats: bool = True, left_bound_cases: float = 0,
+                 right_bound_cases: float = 1):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
         self.dsl = dsl
@@ -46,6 +47,8 @@ class EvolvingLanguage(GeneticAlgorithm):
         self.print_stats = print_stats
 
         self.full_dsl_correct_ratio = 0.0
+        self.left_bound_cases = left_bound_cases
+        self.right_bound_cases = right_bound_cases
 
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
@@ -88,7 +91,9 @@ class EvolvingLanguage(GeneticAlgorithm):
                         debug=False,
                         store=False,
                         suffix="",
-                        dsl=genome)
+                        dsl=genome,
+                        left_bound_cases=self.left_bound_cases,
+                        right_bound_cases=self.right_bound_cases)
         runner.run()
 
         mean_ratio_correct_original, mean_search_time, best_programs = \
@@ -117,8 +122,8 @@ class EvolvingLanguage(GeneticAlgorithm):
         """This method applies the given crossover function with certain probability"""
 
         rand_float = random.random()
-        crossed_a = None
-        crossed_b = None
+        crossed_a = a
+        crossed_b = b
 
         if rand_float <= self.crossover_weights[0]:
             crossed_a, crossed_b = crossover_exchange_trans_bool(a, b)
@@ -158,6 +163,10 @@ class EvolvingLanguage(GeneticAlgorithm):
         """This method runs the evolution process"""
 
         genome_fitness_values.clear()
+        successful_tokens_counts.clear()
+        successful_tokens_weights.clear()
+        successful_tokens_objects.clear()
+
         self.fitness(sort_genome(StandardDomainSpecificLanguage(self.domain)))
         self.full_dsl_correct_ratio = \
             genome_fitness_values[str(sort_genome(StandardDomainSpecificLanguage(self.domain)))]["correct"]
@@ -196,7 +205,7 @@ class EvolvingLanguage(GeneticAlgorithm):
             # ELITISM
             elite_chromosomes = []
             for elite_index in range(0, self.elite_genomes):
-                elite_chromosomes.append(sorted_population[elite_index])
+                elite_chromosomes.append(copy.deepcopy(sorted_population[elite_index]))
 
             # CROSSOVER
             crossed_chromosomes = self.apply_crossover(sorted_population)
@@ -205,7 +214,7 @@ class EvolvingLanguage(GeneticAlgorithm):
             # MUTATION
             normalize_special_token_weights()
             elite_crossed_mutated = elite_and_crossed[:self.elite_genomes] \
-                                    + self.apply_mutation(elite_and_crossed[self.elite_genomes:])
+                                    + self.apply_mutation(copy.deepcopy(elite_and_crossed[self.elite_genomes:]))
 
             # GENERATION STATISTICS
             generation_statistics[str(generation_count)] = \
@@ -222,6 +231,7 @@ class EvolvingLanguage(GeneticAlgorithm):
             generation_count += 1
 
         best_genome = population[0]
+        print(best_genome)
 
         if self.print_stats:
             print("ORIGINAL DSL")
@@ -262,13 +272,13 @@ class EvolvingLanguage(GeneticAlgorithm):
         crossed_chromosomes += sorted_population[:num_still_to_add]
         return crossed_chromosomes
 
-    def apply_mutation(self, elite_and_crossed: Population):
-        for chromosome_index in range(self.elite_genomes, self.generation_size):
+    def apply_mutation(self, crossed: Population):
+        for chromosome_index in range(0, len(crossed)):
             random_mutation_probability = random.random()
             if random_mutation_probability < self.mutation_probability:
-                mutated_genome = self.mutation(elite_and_crossed[chromosome_index])
-                elite_and_crossed[chromosome_index] = mutated_genome
-        return elite_and_crossed
+                mutated_chromosome = self.mutation(crossed[chromosome_index])
+                crossed[chromosome_index] = mutated_chromosome
+        return crossed
 
     def calculate_generation_statistics(self, population: Population, t2_start_generation: float):
         generation_cumulative_fitness = 0
@@ -290,12 +300,14 @@ class EvolvingLanguage(GeneticAlgorithm):
         runner = Runner(dicts(0),
                         algo=self.search_algo,
                         setting=self.search_setting,
-                        test_cases="param_test",
+                        test_cases="eval_test",
                         time_limit_sec=self.max_search_time,
                         debug=False,
                         store=False,
                         suffix="",
-                        dsl=genome)
+                        dsl=genome,
+                        left_bound_cases=self.left_bound_cases,
+                        right_bound_cases=self.right_bound_cases)
         runner.run()
 
         mean_ratio_correct, mean_search_time_correct, best_programs = \
@@ -305,11 +317,11 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         if self.print_stats:
             print("Mean search time", mean_search_time_correct)
-            print("Mean ratio correct:", mean_ratio_correct)
+            print("Mean ratio correct", mean_ratio_correct)
             print("Average program length", avg_program_length)
 
         return {"Mean search time": mean_search_time_correct,
-                "Mean ratio correct:": mean_ratio_correct,
+                "Mean ratio correct": mean_ratio_correct,
                 "Average program length": avg_program_length,
                 "Domain-specific language": genome}
 
@@ -470,7 +482,7 @@ def mutate_add_special_token(genome: Genome) -> Genome:
 
     randomly_selected_token = pick_random_weighted()
 
-    if randomly_selected_token not in trans_tokens_genome:
+    if randomly_selected_token is not None and randomly_selected_token not in trans_tokens_genome:
         trans_tokens_genome.append(randomly_selected_token)
 
     result = sort_genome(DomainSpecificLanguage(genome.domain_name, bool_tokens_genome, trans_tokens_genome))

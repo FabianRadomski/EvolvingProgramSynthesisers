@@ -7,7 +7,7 @@ import networkx
 from common.environment.robot_environment import RobotEnvironment
 from common.program_synthesis.dsl import StandardDomainSpecificLanguage
 from common.tokens.abstract_tokens import Token
-from common.tokens.robot_tokens import MoveDown
+from common.tokens.robot_tokens import MoveRobotDown
 from metasynthesis.language_constraints.constraints.Constraints import AbstractConstraint, PartialConstraint, \
     CompleteConstraint, MixedConstraint
 from metasynthesis.language_constraints.properties.BinaryProperties import Independent, Identity

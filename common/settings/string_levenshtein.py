@@ -14,10 +14,8 @@ class StringLevenshtein(Settings):
         super().__init__("string", StandardDomainSpecificLanguage('string'))
 
     def distance(self, inp: StringEnvironment, out: StringEnvironment) -> float:
-        if self.dist_fun is None:
-            return self._levenshtein("".join(inp.string_array), "".join(out.string_array))
-        else:
-            return self.dist_fun(inp, out)
+        return self._levenshtein("".join(inp.string_array), "".join(out.string_array))
+
 
     @staticmethod
     def _levenshtein(s1, s2):

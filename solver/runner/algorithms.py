@@ -155,43 +155,43 @@ def dicts(param=0.5, alg_sequence=None):
                 )
             },
 
-            "param_train": {
+            "eval_train": {
                 "S": (
-                    [1, 3, 5],
-                    range(1, 327, 20),
-                    [1, 2, 3]
+                    range(1, 10),
+                    range(1, 327, 5),
+                    range(1, 2)
                 ),
 
                 "R": (
                     [],
-                    range(0, 9, 2),
-                    [1]
+                    [],
+                    range(0, 10, 2)
                 ),
 
                 "P": (
                     [],
-                    range(0, 9, 2),
-                    [1],
+                    [],
+                    range(1, 11, 2),
                 )
             },
 
-            "param_test": {
+            "eval_test": {
                 "S": (
-                    [1, 3, 5],
-                    range(11, 327, 20),
-                    [1, 2, 3]
+                    range(1, 10),
+                    range(1, 327, 5),
+                    range(2, 6)
                 ),
 
                 "R": (
                     [],
-                    range(1, 9, 2),
-                    [1]
+                    [],
+                    range(1, 10, 2)
                 ),
 
                 "P": (
                     [],
-                    range(1, 9, 2),
-                    [1],
+                    [],
+                    range(2, 11, 2),
                 )
             },
 
@@ -227,14 +227,14 @@ def dicts(param=0.5, alg_sequence=None):
                     # Runs all robot tasks
                     [],
                     [],
-                    range(1, 10),
+                    range(0, 2),
                 ),
 
                 "P": (
                     # Runs all pixel tasks except the first trial
                     [],
                     [],
-                    range(2, 11),
+                    range(1, 3),
                 )
             },
             "all": defaultdict(lambda: ([], [], []))

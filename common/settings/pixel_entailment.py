@@ -9,7 +9,5 @@ class PixelEntailment(Settings):
         super().__init__("pixel", StandardDomainSpecificLanguage('pixel'))
 
     def distance(self, inp: PixelEnvironment, out: PixelEnvironment) -> float:
-        if self.dist_fun is None:
-            return 0 if inp.pixels == out.pixels else 1
-        else:
-            return self.dist_fun(inp, out)
+        return 0 if inp.pixels == out.pixels else 1
+
