@@ -1,3 +1,4 @@
 anytree
 networkx
 numpy
+numpy

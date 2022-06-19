@@ -1,3 +1,5 @@
+from typing import List
+
 from common.tokens.abstract_tokens import *
 import copy
 
@@ -5,7 +7,7 @@ import copy
 class Program:
     """Wrapper class for a list of Tokens, a program."""
 
-    def __init__(self, tokens: list[EnvToken], recurse_limit: int = 300, loop_limit: int = 100):
+    def __init__(self, tokens: List[EnvToken], recurse_limit: int = 300, loop_limit: int = 100):
         """Creates a new program given a sequence of Tokens."""
         self.sequence = tokens
         self.recursive_call_limit = recurse_limit

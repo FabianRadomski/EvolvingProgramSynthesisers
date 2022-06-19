@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 from common.tokens.abstract_tokens import *
 from common.program import Program
@@ -7,7 +7,7 @@ from common.program import Program
 class If(ControlToken):
     """If statement ControlToken."""
 
-    def __init__(self, cond: BoolToken, e1: list[EnvToken], e2: list[EnvToken]):
+    def __init__(self, cond: BoolToken, e1: List[EnvToken], e2: List[EnvToken]):
         """Creates a new If ControlToken. When applied, 'cond' is executed. If that yields true, 'e1' is execute,
         otherwise 'e2'."""
         self.cond = cond
@@ -55,7 +55,7 @@ class If(ControlToken):
 class LoopWhile(ControlToken):
     """Loop ControlToken."""
 
-    def __init__(self, cond: BoolToken, loop_body: list[EnvToken]):
+    def __init__(self, cond: BoolToken, loop_body: List[EnvToken]):
         """Creates a new Loop ControlToken. 'loop_body' will run as long as 'cond' is true."""
         self.cond = cond
         self.loop_body = loop_body
@@ -101,6 +101,49 @@ class LoopWhile(ControlToken):
         )
         return result
 
+class LoopWhileThen(ControlToken):
+    """LoopWhileThen ControlToken."""
+
+    def __init__(self, cond: BoolToken, loop_body: List[EnvToken], then_body: List[EnvToken]):
+        """Creates a new Loop ControlToken. 'loop_body' will run as long as 'cond' is true."""
+        self.cond = cond
+        self.loop_body = loop_body
+        self.then_body = then_body
+
+        self.input_map = {}
+
+    def apply(self, env: Environment) -> Environment:
+        # Raise exception if recursive call limit is reached
+        # if the condition is None or true, make recursive call
+        calls = 0
+        limit = env.loop_limit()
+
+        #for token in self.loop_body:
+        #    token.apply(env)
+
+        while self.cond.apply(env):
+            if calls > limit:
+                raise LoopIterationLimitReached()
+            calls += 1
+
+            for token in self.loop_body:
+                token.apply(env)
+
+        for token in self.then_body:
+            token.apply(env)
+
+        return env
+
+    def number_of_tokens(self) -> int:
+        return len(self.then_body) + len(self.loop_body)
+
+    def __str__(self):
+        return "LoopWhileThen(%s [%s], [%s])" % \
+               (self.cond, ", ".join(list(map(str, self.loop_body))), ", ".join(list(map(str, self.then_body))))
+
+    def __repr__(self):
+        return "LoopWhileThen(%s [%s], [%s])" % \
+               (self.cond, ", ".join(list(map(str, self.loop_body))), ", ".join(list(map(str, self.then_body))))
 
 class LoopIterationLimitReached(Exception):
     """"Exception raised when the recursive call limit, set in the Program constructor is reached."""

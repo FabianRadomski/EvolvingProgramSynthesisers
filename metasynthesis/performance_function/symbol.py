@@ -1,8 +1,8 @@
 from typing import Callable
 
-from common.environment import Environment
 from operator import add, sub, mul, truediv as div
 
+from common.environment.environment import Environment
 from metasynthesis.performance_function.dom_dist_fun.pixel_dist_fun import PixelDistFun
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.dom_dist_fun.string_dist_fun import StringDistFun
@@ -25,6 +25,9 @@ class Symbol:
     def __eq__(self, other):
         raise NotImplementedError
 
+    def __hash__(self):
+        return hash(self.symbol)
+
 
 class OpSym(Symbol):
 
@@ -41,6 +44,9 @@ class OpSym(Symbol):
         if isinstance(other, OpSym):
             return self.symbol == other.symbol
         return False
+
+    def __hash__(self):
+        return hash(self.symbol)
 
 
 class TermSym(Symbol):
@@ -66,6 +72,9 @@ class TermSym(Symbol):
         if isinstance(other, TermSym):
             return self.symbol == other.symbol
         return False
+
+    def __hash__(self):
+        return hash(self.symbol)
 
 
 # if __name__ == '__main__':

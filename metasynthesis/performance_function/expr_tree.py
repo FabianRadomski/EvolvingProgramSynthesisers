@@ -5,8 +5,10 @@ from random import choice
 from typing import List, Tuple
 import numpy as np
 
-from common.environment import Environment
+from common.environment.environment import Environment
+from metasynthesis.performance_function.dom_dist_fun.pixel_dist_fun import PixelDistFun
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
+from metasynthesis.performance_function.dom_dist_fun.string_dist_fun import StringDistFun
 from metasynthesis.performance_function.symbol import Symbol, OpSym, TermSym
 import copy
 
@@ -96,11 +98,7 @@ class ExpressionTree:
     def get_terms(self) -> List[Tuple[List[int], 'ExpressionTree']]:
         return self.get_terms_helper(traversal=[])
 
-    def mutate_tree(self, verbose=False) -> 'ExpressionTree':
-        # possible mutations:
-        # a) pick a random operator (internal node) and change it
-        # b) pick a random term (leaf) and change it
-        # c) TODO: pick a random term (leaf) and replace it with a random operator with two random terms as children
+    def mutate_tree(self, domain, verbose=False) -> 'ExpressionTree':
         clone = copy.deepcopy(self)
         traversal, random_node = clone.random_walk_uniform_depth(min_depth=0)
         if random_node.symbol.is_operator():
@@ -114,7 +112,16 @@ class ExpressionTree:
         else:
             if verbose:
                 print('Changing:', random_node.symbol)
-            funs = RobotDistFun.partial_dist_funs()
+
+            if domain == 'robot':
+                funs = RobotDistFun.partial_dist_funs()
+            elif domain == 'pixel':
+                funs = PixelDistFun.partial_dist_funs()
+            elif domain == 'string':
+                funs = StringDistFun.partial_dist_funs()
+            else:
+                raise Exception('Domain should be one of: robot, string, pixel.')
+
             funs.remove(random_node.symbol.symbol)
             random_node.symbol = TermSym(choice(funs))
             if verbose:
@@ -181,31 +188,34 @@ class ExpressionTree:
     @staticmethod
     def generate_random_expression(terms: List[TermSym],
                                    operators: List[OpSym] = [OpSym(add), OpSym(sub), OpSym(mul), OpSym(div)],
-                                   max_depth=4) -> 'ExpressionTree':
-        return helper_generator(terms=terms, operators=operators, cur_depth=0, max_depth=max_depth)
+                                   max_depth=4, p=0.7) -> 'ExpressionTree':
+        return helper_generator(terms=terms, operators=operators, cur_depth=0, max_depth=max_depth, p=p)
 
     def __eq__(self, other):
         if isinstance(other, ExpressionTree):
             return self.symbol.__eq__(other.symbol) and self.left.__eq__(other.left) and self.right.__eq__(other.right)
         return False
 
+    def __hash__(self):
+        return hash((self.symbol, self.left, self.right))
+
 
 def printN(arr: List[ExpressionTree]):
     return list(map(lambda x: str(x), arr))
 
 
-def helper_generator(terms, operators, cur_depth, max_depth) -> ExpressionTree:
+def helper_generator(terms, operators, cur_depth, max_depth, p) -> ExpressionTree:
     if cur_depth == max_depth:
         return ExpressionTree(symbol=choice(terms), left=None, right=None)
     else:
         # min depth = 1
-        probability_of_operator = 1 if (cur_depth == 0) else 0.6  # TODO: tune this probability
+        probability_of_operator = 1 if (cur_depth == 0) else p
         bernoulli = get_next_bernoulli(probability_of_operator)
         if bernoulli:
             symbol = choice(operators)
             return ExpressionTree(symbol=symbol,
-                                  left=helper_generator(terms, operators, cur_depth + 1, max_depth),
-                                  right=helper_generator(terms, operators, cur_depth + 1, max_depth))
+                                  left=helper_generator(terms, operators, cur_depth + 1, max_depth, p),
+                                  right=helper_generator(terms, operators, cur_depth + 1, max_depth, p))
         else:
             symbol = choice(terms)
             return ExpressionTree(symbol=symbol,

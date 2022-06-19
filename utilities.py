@@ -1,3 +1,5 @@
+from typing import List
+
 import networkx as nx
 
 from common.program import Program
@@ -22,7 +24,7 @@ class PGraph(nx.DiGraph):
         super().__init__(*args, **kwargs)
         self.programs_added = 0  # for labelling programs with order in which they were added
 
-    def _flatten_tokens(self, tokens: list[Token]):
+    def _flatten_tokens(self, tokens: List[Token]):
         result = []
         for t in tokens:
             if isinstance(t, InventedToken):

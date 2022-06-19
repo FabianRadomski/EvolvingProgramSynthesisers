@@ -4,17 +4,16 @@ from typing import Tuple, List
 from random import randint, random, choice
 import numpy as np
 
-from common.environment import RobotEnvironment
-from common.program_synthesis.dsl import StandardDomainSpecificLanguage
+from common.environment.robot_environment import RobotEnvironment
 from common.program_synthesis.objective import ObjectiveFun
-from common.program_synthesis.runner import Runner
 from metasynthesis.abstract_genetic import GeneticAlgorithm, MutationFunc, CrossoverFunc
 from metasynthesis.performance_function.dom_dist_fun.pixel_dist_fun import PixelDistFun
 from metasynthesis.performance_function.dom_dist_fun.robot_dist_fun import RobotDistFun
 from metasynthesis.performance_function.dom_dist_fun.string_dist_fun import StringDistFun
-from metasynthesis.performance_function.expr_tree import ExpressionTree, printN
+from metasynthesis.performance_function.expr_tree import ExpressionTree
 from metasynthesis.performance_function.symbol import TermSym, OpSym
-from search.brute.brute import Brute
+from solver.runner.algorithms import dicts
+from solver.runner.runner import Runner
 
 Genome = ExpressionTree
 Population = List[Genome]
@@ -24,7 +23,9 @@ class EvolvingFunction(GeneticAlgorithm):
 
     def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
                  mutation_probability: float, generation_size: int,
-                 domain: str, tournament_size: int = 2, elite_size: int = 6):
+                 domain: str, tournament_size: int = 2, elite_size: int = 6,
+                 w1: float = 0.7, w2: float = 0.2, w3: float = 0.1,
+                 d_max: int = 4, pr_op: float = 0.7, brute_time_out: float = 1.0):
         assert (generation_size % 2 == 0), "population size (generation_size) should be even"
         assert (elite_size % 2 == 0) and elite_size < generation_size, "elite size (elite_size) should be even and (< gen_size)"
         super().__init__(fitness_limit=fitness_limit, generation_limit=generation_limit,
@@ -43,17 +44,75 @@ class EvolvingFunction(GeneticAlgorithm):
         self.terms = list(map(lambda x: TermSym(x), partial_dist_funs))
         self.tournament_size = tournament_size
         self.elite_size = elite_size
+        self.fitness_dict = dict()
+        self.w1 = w1
+        self.w2 = w2
+        self.w3 = w3
+        self.d_max = d_max
+        self.pr_op = pr_op
+        self.brute_time_out = brute_time_out
 
-    def generate_genome(self, max_depth=4) -> Genome:
-        return ExpressionTree.generate_random_expression(terms=self.terms, max_depth=max_depth)
+    def generate_genome(self) -> Genome:
+        return ExpressionTree.generate_random_expression(terms=self.terms, max_depth=self.d_max, p=self.pr_op)
 
-    def generate_population(self, max_depth=4) -> Population:
-        return [self.generate_genome(max_depth=max_depth) for _ in range(self.generation_size)]
+    def generate_population(self) -> Population:
+        return [self.generate_genome() for _ in range(self.generation_size)]
 
-    def fitness(self, genome: Genome) -> float:
-        # data = Runner(StandardDomainSpecificLanguage(self.domain), Brute(0.1, genome.distance_fun)).run()
-        # return data['average_success']
-        return randint(0, 100)
+    def fitness_manually_designed_fun(self):
+
+        if self.domain == 'robot':
+            percentage_of_examples_solved, average_norm_run_time = Runner(lib=dicts(), algo='Brute',
+                                                                          setting='RO', test_cases='eval',
+                                                                          time_limit_sec=self.brute_time_out,
+                                                                          debug=False, store=False).run()
+            return self.w1 * percentage_of_examples_solved + self.w3 * (1 - average_norm_run_time)
+        elif self.domain == 'string':
+            percentage_of_solved_tasks, mean_perc_unsolved_ex_unsolved_tasks, average_norm_run_time = Runner(dicts(),
+                                                                                                             'Brute',
+                                                                                                             setting='SO',
+                                                                                                             test_cases='eval',
+                                                                                                             time_limit_sec=self.brute_time_out,
+                                                                                                             debug=False,
+                                                                                                             store=False).run(
+                                                                                                             alternative_fitness=True)
+            fit_val = self.w1 * percentage_of_solved_tasks + \
+                      self.w2 * (1 - mean_perc_unsolved_ex_unsolved_tasks) + \
+                      self.w3 * (1 - average_norm_run_time)
+            return fit_val
+
+
+    def fitness(self, genome: Genome, test_cases='param') -> float:
+        if genome in self.fitness_dict:
+            return self.fitness_dict[genome]
+        else:
+            setting = None
+            if self.domain == 'robot':
+                setting = 'RO'
+            elif self.domain == 'string':
+                setting = 'SO'
+
+            if self.domain == 'robot':
+                percentage_of_examples_solved, average_norm_run_time = Runner(dicts(), 'Brute', setting=setting,
+                                                                              test_cases=test_cases,
+                                                                              time_limit_sec=self.brute_time_out,
+                                                                              debug=False, store=False,
+                                                                              dist_fun=genome.distance_fun).run(
+                                                                              alternative_fitness=False)
+                fit_val = self.w1 * percentage_of_examples_solved + self.w3 * (1 - average_norm_run_time)
+                self.fitness_dict[genome] = fit_val
+                return fit_val
+            elif self.domain == 'string':
+                percentage_of_solved_tasks, mean_perc_unsolved_ex_unsolved_tasks, average_norm_run_time = Runner(dicts(), 'Brute', setting=setting,
+                                                                              test_cases=test_cases,
+                                                                              time_limit_sec=self.brute_time_out,
+                                                                              debug=False, store=False,
+                                                                              dist_fun=genome.distance_fun).run(
+                                                                              alternative_fitness=True)
+                fit_val = self.w1 * percentage_of_solved_tasks + \
+                          self.w2 * (1 - mean_perc_unsolved_ex_unsolved_tasks) + \
+                          self.w3 * (1 - average_norm_run_time)
+                self.fitness_dict[genome] = fit_val
+                return fit_val
 
     def crossover(self, a: Genome, b: Genome, func: CrossoverFunc = None) -> Tuple[Genome, Genome]:
         if random() < self.crossover_probability:
@@ -63,17 +122,13 @@ class EvolvingFunction(GeneticAlgorithm):
 
     def mutation(self, genome: Genome, func: MutationFunc = None) -> Genome:
         if random() < self.mutation_probability:
-            return genome.mutate_tree()
+            return genome.mutate_tree(domain=self.domain)
         else:
             return genome
 
     def pop_fitness(self, pop: Population):
-        # print('Calculating population fitness...')
-        start_time = time.time()
         res = list(map(lambda x: self.fitness(x), pop))
-        # print("--- %s seconds taken to calculate pop. fitness: ---" % (time.time() - start_time))
         return res
-        # return list(map(lambda x: randint(0, 10), pop))
 
     def selection_pair(self, population: Population, fitness_values: List[float]) -> Tuple[Genome, Genome]:
 
@@ -110,13 +165,14 @@ class EvolvingFunction(GeneticAlgorithm):
     def genome_to_string(self, genome: Genome) -> str:
         return str(genome)
 
-    def run_evolution(self, verbose=False) -> Tuple[List[float], List[float], Genome]:
+    def run_evolution(self, verbose=False) -> Tuple[List[float], List[float], Genome, float, float]:
+        start_time = time.time()
         population = self.generate_population()
         avg_fit: List[float] = []
         best_fit: List[float] = []
         best_individual: Genome = None
         for cur_gen in range(self.generation_limit):
-            # print('Starting generation no:', cur_gen)
+            print('Starting generation no:', cur_gen, 'at second:', time.time() - start_time)
             fitness_values = np.array(self.pop_fitness(population))
             heights = np.array([x.height() for x in population])
             if verbose:
@@ -125,13 +181,17 @@ class EvolvingFunction(GeneticAlgorithm):
                 print('MAX height', np.max(heights))
                 print('---------------')
 
-
             ind_ranked = np.argsort(-fitness_values)
             top_k_ind = ind_ranked[:self.elite_size]
             best_individual = population[top_k_ind[0]]
             avg_fit.append(np.mean(fitness_values))
             cur_best = np.max(fitness_values)
+
+            print('Max fitness in generation', cur_gen, ':', cur_best)
             best_fit.append(cur_best)
+
+            if cur_gen == self.generation_limit - 1:
+                break
 
             offspring = []
             i = 0
@@ -149,114 +209,6 @@ class EvolvingFunction(GeneticAlgorithm):
                 offspring.append(c2_prime)
 
             population = offspring
-        return avg_fit, best_fit, best_individual
-
-
-def distance_manually_designed_function(env1: RobotEnvironment, env2: RobotEnvironment) -> float:
-    def d(xy1: 'tuple[int, int]', xy2: 'tuple[int, int]'):
-        return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
-
-    # position robot and position ball
-    pr = (env1.rx, env1.ry)
-    pb = (env1.bx, env1.by)
-
-    # position goal robot and position goal bal
-    prstar = (env2.rx, env2.ry)
-    pbstar = (env2.bx, env2.by)
-
-    if d(pb, pbstar) == 0:
-        if d(pr, prstar) == 0:
-            if env1.holding == env2.holding:
-                return 0
-            else:
-                return 1
-        else:
-            if env2.holding:
-                return 1 + d(pr, prstar)
-            else:
-                return d(pr, prstar)
-    else:
-        if env1.holding:
-            if not env2.holding:
-                return 1 + d(pr, pbstar) + d(pbstar, prstar)
-            else:
-                return d(pr, pbstar)
-        else:
-            if not env2.holding:
-                return 2 + d(pbstar, prstar) + d(pr, pb) + d(pb, pbstar)
-            else:
-                return 1 + d(pr, pb) + d(pb, pbstar)
-
-
-
-def distance_default_expr_tree(env1: RobotEnvironment, env2: RobotEnvironment) -> float:
-    def d(xy1: 'tuple[int, int]', xy2: 'tuple[int, int]'):
-        return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
-
-    # position robot and position ball
-    pr = (env1.rx, env1.ry)
-    pb = (env1.bx, env1.by)
-
-    # position goal robot and position goal bal
-    pgr = (env2.rx, env2.ry)
-    pgb = (env2.bx, env2.by)
-
-    partial_dist_funs = RobotDistFun.partial_dist_funs()
-    terms = list(map(lambda x: TermSym(x), partial_dist_funs))
-
-    if pr != pb and pb != pgb:
-        root = ExpressionTree(OpSym(add), ExpressionTree(OpSym(add), ExpressionTree(terms[3], None, None),
-                                                         ExpressionTree(terms[4], None, None)),
-                              ExpressionTree(terms[2], None, None))
-        return root.distance_fun(env1, env2) + 2
-        # return d(pr, pb) + d(pb, pgb) + d(pgb, pgr) + 2
-    elif pr == pb and pb != pgb:
-        root = ExpressionTree(OpSym(add), ExpressionTree(terms[0], None, None), ExpressionTree(terms[2], None, None))
-        return root.distance_fun(env1, env2) + 1
-        # return d(pr, pgb) + d(pgb, pgr) + 1
-    else:
-        root = ExpressionTree(terms[1], None, None)
-        return root.distance_fun(env1, env2)
-        # return d(pr, pgr)
-
-
-def rand_env() -> RobotEnvironment:
-    size = 5
-    rx = randint(0, size - 1)
-    ry = randint(0, size - 1)
-    bx = randint(0, size - 1)
-    by = randint(0, size - 1)
-    return RobotEnvironment(size=size, rx=rx, ry=ry, bx=bx, by=by, holding=False)
-
-
-def test_default_vs_default_expr_tree():
-    count = 0
-    ct_1 = 0
-    ct_2 = 0
-    for i in range(10000):
-        env1 = rand_env()
-        env2 = rand_env()
-        t1 = time.time()
-        d1 = ObjectiveFun("robot").fun(env1, env2)
-        ct_1 += time.time() - t1
-        t2 = time.time()
-        d2 = distance_default_expr_tree(env1, env2)
-        ct_2 += time.time() - t2
-        if d1 == d2:
-            count += 1
-    print(count == 10000)
-    print(ct_1, ct_2)
-
-
-if __name__ == '__main__':
-    ga = EvolvingFunction(fitness_limit=0, generation_limit=20, crossover_probability=0.7,
-                          mutation_probability=0.01, generation_size=40, domain='robot',
-                          tournament_size=3, elite_size=2)
-    avg_fit, best_fit, best_individual = ga.run_evolution()
-    print(avg_fit)
-    print(best_fit)
-    print(best_individual)
-    # T = time.time()
-    # print(ga.fitness(ga.generate_genome(max_depth=2)))
-    # print('TIME TAKEN:', time.time() - T)
-    # test_default_vs_default_expr_tree()
+        del self.fitness_dict[best_individual]
+        return avg_fit, best_fit, best_individual, \
+               self.fitness(genome=best_individual, test_cases='eval'), self.fitness_manually_designed_fun()

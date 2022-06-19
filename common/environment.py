@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import copy
 import re
+from typing import List, Tuple
 
 
 @dataclass(eq=True, unsafe_hash=True)
@@ -87,7 +88,7 @@ class RobotEnvironment(Environment):
     def distance(self, other: "RobotEnvironment") -> int:
         assert self.size == other.size
 
-        def d(xy1: 'tuple[int, int]', xy2: 'tuple[int, int]'):
+        def d(xy1: 'Tuple[int, int]', xy2: 'Tuple[int, int]'):
             return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
 
         # position robot and position ball
@@ -134,10 +135,10 @@ class RobotEnvironment(Environment):
 @dataclass(eq=True)
 class StringEnvironment(Environment):
     """Environment for string manipulation."""
-    string_array: list[str]
+    string_array: List[str]
     pos: int
 
-    def __init__(self, string_array: list[str], pos: int = 0):
+    def __init__(self, string_array: List[str], pos: int = 0):
         """Creates new StringEnvironment given an initial string and starting position of the pointer, 0 by default."""
         super().__init__()
 
@@ -280,7 +281,7 @@ class PixelEnvironment(Environment):
     height: int
     x: int
     y: int
-    pixels: tuple[bool]
+    pixels: List[bool]
 
     def __init__(self, width, height, x, y, pixels=None):
         super().__init__()
