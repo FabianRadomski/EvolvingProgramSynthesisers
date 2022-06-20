@@ -117,6 +117,42 @@ def dicts(param=0.5, alg_sequence=None):
         },
 
         "test_cases": {
+            "DP_train": {
+                "S": (
+                    [],  # range(1,10),
+                    [],  # range(1,327),
+                    [1]  # range(1,11),
+                ),
+                "R": (
+                    [],  # [2,4,6,8,10],
+                    [],  # range(0,10),
+                    [0]  # range(0,11),
+                ),
+                "P": (
+                    range(1, 6),  # range(1,6),
+                    range(1, 10),  # range(1,10),
+                    range(1, 2)  # range(1,11),
+                )
+            },
+
+            "DP_test": {
+                "S": (
+                    [],
+                    [],
+                    [1]
+                ),
+                "R": (
+                    [],
+                    [],
+                    [1,2,3,4,5]
+                ),
+                "P": (
+                    [],
+                    [],
+                    []
+                )
+            },
+
             "small": {
                 # Runs one task for each size
                 "S": (

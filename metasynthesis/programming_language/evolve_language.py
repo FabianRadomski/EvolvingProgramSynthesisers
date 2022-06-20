@@ -250,7 +250,7 @@ class EvolvingLanguage(GeneticAlgorithm):
 
         if self.print_stats:
             print("ORIGINAL DSL")
-        final_original_results = self.final_evaluation(full_dsl)
+        final_original_results = self.final_evaluation()
         if self.print_stats:
             print("EVOLVED DSL")
         final_evolved_results = self.final_evaluation(best_genome)

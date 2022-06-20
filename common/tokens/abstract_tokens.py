@@ -89,14 +89,13 @@ class InventedToken(EnvToken):
         return hash((self.__class__, tuple(self.tokens)))
 
 
-# should there be more arguments than one?
 class PatternToken(Token):
     def __init__(self, body_tokens: list, param_token: Token):
         self.body_tokens = body_tokens
         self.param_token = param_token
 
     def apply(self, env: Environment):
-        print("fd apply")
+        raise EnvironmentError()
 
     def __str__(self):
         return "[%s]" % ", ".join([str(t) for t in self.body_tokens])
@@ -108,12 +107,13 @@ class FunctionVariableToken(Token):
 
     def apply(self, env: Environment):
         print("fv apply")
+        raise LookupError()
 
 
 class PatternApplicationToken(EnvToken):
     def __init__(self, pattern: PatternToken, arg_token: TransToken):
-        self.arg_token = arg_token
         self.pattern = pattern
+        self.arg_token = arg_token
 
     # simple implementation with a single argument and parameter
     def apply(self, env: Environment) -> Environment:
@@ -122,7 +122,10 @@ class PatternApplicationToken(EnvToken):
                 self.arg_token.apply(env)
             else:
                 token.apply(env)
+        return env
 
+    def __str__(self):
+        return "pattern: %s ; argument: %s" % (str(self.pattern), str(self.arg_token))
 
 class InvalidTransition(Exception):
     """This exception will be raised whenever an invalid state transition is performed on an Environment."""

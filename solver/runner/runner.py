@@ -28,7 +28,7 @@ class Runner:
                  dist_fun: Callable[[Environment, Environment], float] = None,
                  multi_thread: bool = True,
                  left_bound_cases: float = 0,
-                 right_bound_cases: float = 0.1):
+                 right_bound_cases: float = 1):
         self.time_limit_sec = time_limit_sec
         self.debug = debug
         self.store = store
@@ -96,7 +96,6 @@ class Runner:
                     results = pool.map_async(self.execute_test_case, cases)
                     # if True:
                     # results = [self.execute_test_case(c) for c in cases]
-
                     for program, stats in results.get():
                         stats_list.append(stats)
 
@@ -107,7 +106,6 @@ class Runner:
 
                 if self.store:
                     self.file_manager.append_result(stats_list)
-
         accuracies = [float(s) / t for s, t in zip(solved_examples, total_examples)]
 
         return mean(accuracies)
@@ -116,39 +114,52 @@ class Runner:
         self.search_results[str(stats["complexity"]) + str(stats["task"]) +
                             str(stats["trial"]) + str(self.settings.dsl)] = \
             {"best_program": best_program,
+             "train_cost": stats["train_cost"],
              "train_correct": stats["train_correct"],
+             "test_cost": stats["test_cost"],
              "test_correct": stats["test_correct"],
              "test_total": stats["test_total"],
-             "search_time": stats["execution_time"]}
+             "search_time": stats["execution_time"], }
 
     def execute_test_case(self, test_case):
         return self.algorithm.run(self.settings, self.time_limit_sec, self.debug, test_case, best_program=Program([]))
 
 
 if __name__ == "__main__":
-    time_limit = 1
-    debug = False
+    time_limit = 0.2
+    debug = True
     store = False
-    setting = "RG"
-    algo = "Brute"
-    test_cases = "param"
+    multi_thread = True
+    setting = "RO"
+    algo = "AS"
+    test_cases = "DP_train"
     params = [0, 0.1, 0.5, 1, 1.5, 2]
 
-    params = params if test_cases == "param" else [0]
+    params = params if test_cases == "param" else [0]*1
     store = False if test_cases == "param" else store
 
-    functions = RobotDistFun.partial_dist_funs()
-    terms = list(map(lambda x: TermSym(x), functions))
-    rand_obj_fun = ExpressionTree.generate_random_expression(terms=terms, max_depth=4)
-    dist_fun = rand_obj_fun.distance_fun
+    # functions = RobotDistFun.partial_dist_funs()
+    # terms = list(map(lambda x: TermSym(x), functions))
+    # rand_obj_fun = ExpressionTree.generate_random_expression(terms=terms, max_depth=4)
+    # dist_fun = rand_obj_fun.distance_fun
 
     design_patterns = []
     dsl = StandardDomainSpecificLanguage("robot")
     dsl.set_pattern_tokens(design_patterns)
 
+    s = time.process_time()
+
     for param in params:
         if test_cases == "param":
             print("\nParam = {}".format(param))
 
-        mean1 = Runner(dicts(param), algo, setting, test_cases, time_limit, debug, store, dist_fun=dist_fun, dsl=dsl).run()
+        # mean1 = Runner(dicts(param), algo, setting, test_cases, time_limit, debug, store, dist_fun=dist_fun, dsl=dsl).run()
+        x = Runner(dicts(param), algo, setting, test_cases, time_limit, debug, store, dsl=dsl, multi_thread=multi_thread)\
+
+        mean1 = x.run()
+        # for result in x.search_results
         print(f"Solved {str(mean1)}")
+
+    f = time.process_time()
+    print(f-s)
+

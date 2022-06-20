@@ -84,5 +84,4 @@ class StaticInvent(Invent):
         for p in self._pattern_tokens:
             for t in self._trans_tokens:
                 res.append(PatternApplicationToken(p, t))
-        # add also loops and ifs?
         return res

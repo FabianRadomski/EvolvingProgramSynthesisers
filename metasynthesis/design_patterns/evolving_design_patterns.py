@@ -5,7 +5,6 @@ from typing import List, Callable, Tuple, Iterable
 import numpy as np
 
 from common.program_synthesis.dsl import DomainSpecificLanguage, StandardDomainSpecificLanguage
-from common.tokens import robot_tokens, pixel_tokens, string_tokens
 from solver.runner.runner import Runner
 from solver.runner.algorithms import dicts
 from common.tokens.abstract_tokens import BoolToken, InventedToken, TransToken, Token, PatternToken, \
@@ -19,23 +18,30 @@ fitness_dict = {}
 
 
 class EvolvingDesignPatterns(GeneticAlgorithm):
-    def __init__(self, fitness_limit: int, generation_limit: int, crossover_probability: float,
-                 mutation_probability: float, generation_size: int, dsl: DomainSpecificLanguage,
-                 search_algo: str, search_setting: str, search_mode: str, max_search_time: float):
+    def __init__(self, fitness_limit: int = 1, generation_limit: int = 30,
+                 crossover_probability: float = 0.60, mutation_probability: float = 0.005,
+                 generation_size: int = 50, elite_genomes: int = 5,
+                 dsl: DomainSpecificLanguage = StandardDomainSpecificLanguage("robot"),
+                 algo: str = "AS", setting: str = "RO", test_cases: str = "debug",
+                 time_limit_sec: float = 1,
+                 debug: bool = False, multi_thread: bool = True):
         super().__init__(fitness_limit, generation_limit, crossover_probability, mutation_probability, generation_size)
         self.domain = dsl.domain_name
-        print(dsl.domain_name)
         self.dsl = dsl
+        self.elite_genomes = elite_genomes
         self.trans_tokens = dsl.get_trans_tokens()
         self.bool_tokens = dsl.get_bool_tokens()
-        self.search_algo = search_algo
-        self.search_setting = search_setting
-        self.search_mode = search_mode
-        self.max_search_time = max_search_time
+        self.algo = algo
+        self.setting = setting
+        self.test_cases = test_cases
+        self.time_limit_sec = time_limit_sec
+        self.debug = debug
+        self.multi_thread = multi_thread
+        self.default_cost = 0.0
 
     def generate_function(self, body_length: int, param_occurrences: int) -> PatternToken:
         """This method creates a pattern"""
-        if body_length <= 1 and body_length <= param_occurrences:
+        if body_length <= 1 and body_length < param_occurrences:
             raise ValueError()
         tokens: list[Token] = random.choices(self.trans_tokens, k=body_length - param_occurrences)
         for i in range(param_occurrences):
@@ -45,24 +51,27 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
     def generate_genome(self, length: int) -> Genome:
         """This method creates a new genome of the specified length"""
         genome: Genome = []
-        # max_body_length = 6
-        # max_param_occurrences = 3
+        max_body_length = 6
+        max_param_occurrences = 6
         # param_occurrences = random.randint(1, max_param_occurrences)
         # body_length = random.randint(max(2, param_occurrences), max_body_length)
-        param_occurrences = 1
-        body_length = 3
+        # param_occurrences = 1
+        # body_length = 3
 
         for i in range(length):
+            param_occurrences = random.randint(1, max_param_occurrences)
+            body_length = random.randint(max(2, param_occurrences), max_body_length)
             genome.append(self.generate_function(body_length, param_occurrences))
         return genome
 
     def generate_population(self) -> Population:
         """This method creates a population of new genomes"""
-        max_number_of_patterns = 4
+        min_number_of_patterns = 2
+        max_number_of_patterns = 6
         population = []
 
         for i in range(self.generation_size):
-            genome_length = random.randint(1, max_number_of_patterns)
+            genome_length = random.randint(min_number_of_patterns, max_number_of_patterns)
             population.append(self.generate_genome(genome_length))
 
         return population
@@ -77,33 +86,21 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
         dsl.set_pattern_tokens(genome)
 
         runner = Runner(lib=dicts(0),
-                        algo=self.search_algo,
-                        setting=self.search_setting,
-                        test_cases=self.search_mode,
-                        time_limit_sec=self.max_search_time,
-                        debug=True,
+                        algo=self.algo,
+                        setting=self.setting,
+                        test_cases=self.test_cases,
+                        time_limit_sec=self.time_limit_sec,
+                        debug=self.debug,
                         store=False,
                         suffix="",
                         dsl=dsl,
-                        multi_thread=True,
+                        multi_thread=self.multi_thread,
                         )
         runner.run()
 
-        # with ratios we ignore how many examples were there for a test case
-        correct_ratios = []
+        profit_avg, time_avg, correct_avg = get_averages_from_search_results(runner.search_results, self.domain)
 
-        for result in runner.search_results.values():
-            # the string domain uses test cases
-            if self.domain == "string":
-                correct_ratio = result["test_correct"] / result["test_total"]
-            else:
-                correct_ratio = result["train_correct"] / result["test_total"]
-
-            correct_ratios.append(correct_ratio)
-
-        mean_correct_ratios = np.mean(correct_ratios)
-
-        fitness = mean_correct_ratios
+        fitness = correct_avg * (1 / time_avg) if time_avg > 0 else 0
 
         fitness_dict[str(genome)] = fitness
 
@@ -131,7 +128,7 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
         mutated_genome = genome
 
         if 0 <= r <= self.mutation_probability:
-            mutated_genome = self.mutate_remove_token(genome)
+            mutated_genome = self.mutate_replace_genome(genome)
 
         return mutated_genome
 
@@ -147,60 +144,117 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
 
     def run_evolution(self):
         """This method runs the evolution process"""
+        fitness_dict.clear()
+
+        # print("default fitness: ", self.fitness([]))
 
         # initialize random population
         population = self.generate_population()
+
+        max_fitnesses_per_generation = []
+        avg_fitnesses_per_generation = []
+        best_pattern = []
         generation_index = 0
 
         while generation_index < self.generation_limit:
-            print("generation:", generation_index, "/", self.generation_limit)
+            print("generation:", generation_index+1, "/", self.generation_limit)
 
             new_population = copy.deepcopy(population)
-            # calculate fitness for genomes
-            for genome in population:
-                print(self.fitness(genome))
 
-            # for ease of crossover, make the population even
-            if len(population) % 2 != 0:
+            for genome in new_population:
+                fitness = self.fitness(genome)
+
+            # picking elite genomes
+            sorted_population = sorted(new_population, key=lambda x: self.fitness(x), reverse=True)
+            elites = sorted_population[0:self.elite_genomes]
+            # they go straight into the new population
+            new_population[0:self.elite_genomes] = elites
+
+            # for ease of crossover, make sure the population even
+            if len(new_population) % 2 != 0:
                 print("population size odd!")
 
-            # pick a pair of chromosomes for crossover
-            selected_genomes = self.fitness_proportionate_selection(population)
-
-            for i in range(0, len(population), 2):
+            # pick a number of chromosomes for crossover
+            selected_genomes = self.fitness_proportionate_selection(population, self.generation_size)
+            non_elite = self.generation_size - self.elite_genomes
+            for i in range(0, non_elite, 2):
+                # pick a pair of genomes and cross them over
                 a = selected_genomes[i]
-                b = selected_genomes[i+1]
+                b = selected_genomes[i + 1]
                 crossed_a, crossed_b = self.crossover(a, b)
-                new_population[i] = crossed_a
-                new_population[i+1] = crossed_b
+                new_population[self.elite_genomes + i] = crossed_a
+                # if the non-elite genomes are odd, we need to get rid of 1 genome in last pair
+                if i + 1 != non_elite:
+                    new_population[self.elite_genomes + i + 1] = crossed_b
 
             # mutation
-            for i in range(len(new_population)):
+            for i in range(self.elite_genomes, self.generation_size):
                 mutated_genome = self.mutation(copy.deepcopy(new_population[i]))
                 new_population[i] = mutated_genome
 
+            # collect stats
+            fitnesses = []
+            for genome in population:
+                fitnesses.append(self.fitness(genome))
+
+            max_fitness = max(fitnesses)
+            max_fitnesses_per_generation.append(max_fitness)
+            best_pattern = population[fitnesses.index(max_fitness)]
+            avg_fitness = np.mean(fitnesses)
+            avg_fitnesses_per_generation.append(avg_fitness)
+
+            generation_index += 1
+            population = new_population
+
+        print("best pattern was found in generation: ", max_fitnesses_per_generation.index(max_fitness)+1)
+
+        print("Best evolved pattern:")
+        self.evaluation(best_pattern)
+        print("No patterns:")
+        self.evaluation([])
+
+        return {
+            "max_fitnesses": max_fitnesses_per_generation,
+            "avg_fitnesses": avg_fitnesses_per_generation,
+            "population": population,
+            "best_pattern": best_pattern
+        }
 
 
-    def fitness_proportionate_selection(self, population: Population):
+    def evaluation(self, genome: Genome):
+        dsl = StandardDomainSpecificLanguage(self.domain)
+        dsl.set_pattern_tokens(genome)
+
+        runner = Runner(lib=dicts(0),
+                        algo=self.algo,
+                        setting=self.setting,
+                        test_cases=self.test_cases,
+                        time_limit_sec=self.time_limit_sec,
+                        debug=False,
+                        store=False,
+                        suffix="",
+                        dsl=dsl,
+                        multi_thread=self.multi_thread,
+                        )
+        runner.run()
+
+        profit_avg, time_avg, correct_avg = get_averages_from_search_results(runner.search_results, self.domain)
+        fitness = correct_avg * (1 / time_avg) if time_avg > 0 else 0
+        print("Profit average: ", profit_avg)
+        print("Correct average: ", correct_avg)
+        print("Time average: ", time_avg)
+        print("Overall fitness: ", fitness)
+        print_genome(genome)
+
+    def fitness_proportionate_selection(self, population: Population, size: int = None):
         # roulette wheel sampling:
         # spins the wheel which consists of slices whose areas equal the genome fitness
         # it does so x times to make x/2 pairs for combination purposes
-        weights = [self.fitness(x) for x in population]
-        return random.choices(population, weights, k=len(population))
-
-    def print_genome(self, genome: Genome):
-        print("Genome: ", end="")
-        for i, pattern in enumerate(genome):
-            f = ", " if i < len(genome) - 1 else "\n"
-            print(pattern, end=f)
-
-    def print_population(self, population: Population):
-        print("Population: ", end="[\n")
-        for genome in population:
-            print(end="\t")
-            self.print_genome(genome)
-
-        print("]")
+        # using tiny value for weight instead of 0 prevents breaking in case all fitness values are 0
+        weights = [self.fitness(x) if self.fitness(x) > 0 else np.nextafter(0, 1) for x in population]
+        if size is None:
+            size = len(population)
+        return random.choices(population, weights, k=size)
 
     def mutate_replace_genome(self, genome: Genome):
         # should it be the same length or random?
@@ -219,21 +273,46 @@ class EvolvingDesignPatterns(GeneticAlgorithm):
         return genome
 
 
-if __name__ == "__main__":
-    e = EvolvingDesignPatterns(1, 1, 1, 1, 6,
-                               StandardDomainSpecificLanguage("robot"),
-                               "Brute", "RG", "small", 0.55)
-    a = e.generate_genome(4)
-    b = e.generate_genome(3)
+def get_averages_from_search_results(search_results: dict, domain: str) -> Tuple[float, float]:
+    profit_total = 0
+    time_total = 0
+    correct_total = 0
 
-    p = e.generate_population()
-    e.print_genome(a)
-    # e.print_genome(b)
-    # e.print_population(p)
+    results = search_results.values()
 
-    c, d = e.crossover(a, b)
-    f = e.mutation(a)
+    for result in results:
+        search_time = result["search_time"]
+        test_total = result["test_total"]
 
-    e.print_genome(f)
-    # e.print_genome(c)
-    # e.print_genome(d)
+        if domain == "string":
+            cost = result["test_cost"]
+            profit = 1 - (cost if cost <= 1 else 1)
+            correct = result["test_correct"]/test_total
+        else:
+            cost = result["train_cost"]
+            profit = 1 - (cost if cost <= 1 else 1)
+            correct = result["train_correct"]/test_total
+
+        profit_total += profit
+        time_total += search_time
+        correct_total += correct
+
+    profit_avg = profit_total / len(results)
+    time_avg = time_total / len(results)
+    correct_avg = correct_total / len(results)
+    return profit_avg, time_avg, correct_avg
+
+
+def print_genome(genome: Genome):
+    print("Genome: ", end="")
+    for i, pattern in enumerate(genome):
+        f = ", " if i < len(genome) - 1 else "\n"
+        print(pattern, end=f)
+
+
+def print_population(population: Population):
+    print("Population: ", end="[\n")
+    for genome in population:
+        print(end="\t")
+        print_genome(genome)
+    print("]")

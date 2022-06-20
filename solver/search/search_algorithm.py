@@ -1,12 +1,13 @@
 import copy
 import time
 from statistics import mean
+from typing import List
 
 from common.settings.settings import Settings
 from common.settings.string_levenshtein import StringLevenshtein
 from common.settings.string_optimized_alignment import StringOptimizedAlignment
 from common.program import Program, Token
-from common.tokens.abstract_tokens import InvalidTransition
+from common.tokens.abstract_tokens import InvalidTransition, PatternToken, PatternApplicationToken
 from common.experiment import TestCase, Example
 from common.tokens.control_tokens import LoopIterationLimitReached, Environment
 from solver.invent.invent import Invent
@@ -52,7 +53,8 @@ class SearchAlgorithm:
 
         raise NotImplementedError()
 
-    def run(self, settings: Settings, time_limit_sec: float, debug: bool, test_case: TestCase, best_program: Program = Program([])) -> (Program, dict):
+    def run(self, settings: Settings, time_limit_sec: float, debug: bool, test_case: TestCase,
+            best_program: Program = Program([])) -> (Program, dict):
         """"Runs the solver method until a program is returned or the time limit is reached. First the setup method is
         called, followed by a repetition of the iteration method until either a result is obtained, or the time limit is
         reached"""
@@ -100,15 +102,23 @@ class SearchAlgorithm:
         self.statistics["execution_time"] = run_time
         self.statistics["best_program"] = str(self.best_program)
         self.statistics["test_cost"], _, self.statistics["test_correct"] = self.evaluate(self.best_program, train=False)
-        self.statistics["train_cost"], _, self.statistics["train_correct"] = self.evaluate(self.best_program, train=True)
+        self.statistics["train_cost"], _, self.statistics["train_correct"] = self.evaluate(self.best_program,
+                                                                                           train=True)
         self.statistics["test_total"] = len(self.test_examples)
 
         if self.debug:
             print(self.__class__.__name__ + "\n")
-            print(self.statistics)
+            # print(self.statistics)
+            print(self.print_statistics(self.statistics))
 
         # Extend results and return.
         return self.best_program, self.statistics
+
+    def print_statistics(self, statistics):
+        keys = ['complexity', 'task', 'trial', 'execution_time', 'test_cost', 'test_correct', 'train_cost', 'train_correct', 'test_total', 'best_program']
+        for key in keys:
+            print(key+": "+str(statistics[key])+", ", end="")
+        print("")
 
     def evaluate(self, p: Program, train: bool = True):
         results = []
@@ -116,11 +126,9 @@ class SearchAlgorithm:
         correct_examples = 0
 
         examples = self.training_examples if train else self.test_examples
-
         for ex in examples:
             try:
                 res = p.interp(ex.input_environment)
-                # print(res.bx)
                 cost = self.settings.distance(res, ex.output_environment)
 
                 if cost == 0:
@@ -139,7 +147,8 @@ class SearchAlgorithm:
             self.best_cost = cost
             self.best_program = p
 
-            self.statistics.get("best_cost_per_iteration", []).append((self.statistics.get("no._iterations", 1), self.best_cost))
+            self.statistics.get("best_cost_per_iteration", []).append(
+                (self.statistics.get("no._iterations", 1), self.best_cost))
 
         return cost, tuple(results), correct_examples
 
@@ -188,4 +197,30 @@ class SearchAlgorithm:
 
         assert 0 <= reward <= 1
 
-        return reward#, self.best_cost == cost
+        return reward  # , self.best_cost == cost
+
+
+# def print_genome(genome: List[PatternToken]):
+#     print("Genome: ", end="")
+#     for i, pattern in enumerate(genome):
+#         f = ", " if i < len(genome) - 1 else "\n"
+#         print(pattern, end=f)
+#
+#
+# def print_population(population: List[List[PatternToken]]):
+#     print("Population: ", end="[\n")
+#     for genome in population:
+#         print(end="\t")
+#         print_genome(genome)
+#
+#     print("]")
+#
+#
+# def print_pattern_application(x: PatternApplicationToken):
+#     print("________")
+#     print("Pattern application with")
+#     print("     -pattern: ")
+#     print(x.pattern)
+#     print("     -arg: ")
+#     print(x.arg_token)
+#     print("________")
