@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 
-from metasynthesis.search_procedure.search_synthesiser import SearchSynthesiser
+from metasynthesis.search_procedure.search_synthesizer import SearchSynthesizer
 
 fig_save = {"SO": "strings", "PO": "pixels", "RO": "robots"}
 fig_name = {"SO": "String", "PO": "Pixel", "RO": "Robot"}
@@ -71,15 +71,15 @@ def plot_speeds(speeds):
 
 
 if __name__ == "__main__":
-    mutation_probabilities = [0.1, 0.1, 0.1, 0.1]
+    mutation_probabilities = [0.01, 0.05, 0.1, 0.2]
 
     mutations_results = []
     evolutions_history = []
     avg_speeds = []
-    setting = "SO"
-    for i in range(4):
-        ss = SearchSynthesiser(fitness_limit=0, generation_limit=30, crossover_probability=0.8,
-                               mutation_probability=0.1, generation_size=30, max_seq_size=6, dist_type="Time", print_generations=True,
+    setting = "RO"
+    for i in mutation_probabilities:
+        ss = SearchSynthesizer(fitness_limit=0, generation_limit=50, crossover_probability=0.8,
+                               mutation_probability=i, generation_size=100, max_seq_size=6, dist_type="Time", print_generations=True,
                                setting=setting, test_size="param", plot=True, write_generations=True)
         hist, results, speed = ss.run_evolution()
         mutations_results.append(results)

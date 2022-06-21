@@ -143,6 +143,8 @@ class MCTS(SearchAlgorithm):
         #print(self.c_exploration)
         del self.root
         self.root = MCTSNode.root(self)
+        del self.initial_program
+        self.initial_program = copy.deepcopy(self.best_program)
 
     def iteration(self):
         selected_node = self.root.select()

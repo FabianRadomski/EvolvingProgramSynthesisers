@@ -17,11 +17,12 @@ from solver.search.implementations.MCTS.mcts import MCTS
 from solver.search.implementations.metropolis import MetropolisHasting
 
 
-class SearchSynthesiser(GeneticAlgorithm):
+class SearchSynthesizer(GeneticAlgorithm):
+
     # Search procedures considered while constructing a genome
     # TODO: add vanillaGP
-    allowed_searches: Dict[str, List[str]] = {"R": ["Brute", "AS", "LNS", "MH", "Brute", "MCTS"], "S": ["GP", "Brute", "LNS", "MH", "AS", "MCTS"],
-                                              "P": ["GP", "Brute", "LNS", "MH", "AS", "MCTS"],}
+    allowed_searches: Dict[str, List[str]] = {"R": ["Brute", "AS", "LNS", "MH"], "S": ["GP", "Brute", "LNS", "MH", "AS"],
+                                              "P": ["GP", "Brute", "LNS", "MH", "AS"]}
 
     # Initial populations are normally distributed, this dictionary contains respectively tuples with expectancy and std
     # TODO: test other distributions and var/std values
@@ -172,6 +173,12 @@ class SearchSynthesiser(GeneticAlgorithm):
 
     def mutation_func(self, genome: Genome, func: MutationFunc) -> Genome:
         return func(genome)
+
+    def crossover(self, a: Genome, b: Genome) -> Tuple[Genome, Genome]:
+        pass
+
+    def mutation(self, genome: Genome) -> Genome:
+        pass
 
     def selection_pair(self, population: Population) -> Tuple[Genome, Genome]:
         pass
@@ -529,7 +536,7 @@ class SearchSynthesiser(GeneticAlgorithm):
 
 
 if __name__ == "__main__":
-    ss = SearchSynthesiser(fitness_limit=0, generation_limit=3, crossover_probability=0.8,
+    ss = SearchSynthesizer(fitness_limit=0, generation_limit=3, crossover_probability=0.8,
                            mutation_probability=0.2, generation_size=2, max_seq_size=6, dist_type="Time", print_generations=True,
                            setting="RO", test_size="param", plot=True, write_generations=True)
     ss.run_evolution()
