@@ -38,6 +38,7 @@ class Brute(SearchAlgorithm):
             new_cost, new_state, _ = self.evaluate(new_program)
             self.statistics["no._explored_programs"] += 1
 
-            heapq.heappush(self.program_heap, (new_cost, new_program))
-            self.visited_states.append(new_state)
+            if list(new_state) not in self.visited_states:
+                heapq.heappush(self.program_heap, (new_cost, new_program))
+                self.visited_states.append(new_state)
         return len(self.program_heap) > 0
