@@ -35,12 +35,14 @@ def run_genetic_algorithm_once(domain_for_func):
 
 
 if __name__ == '__main__':
+
     domain = "robot"
+    run_genetic_algorithm_once(domain)
 
-    # run_genetic_algorithm_once(domain)
-
+    # Use search_mode = debug for relatively faster synthesis, highly recommended to run on a supercomputer
     stats = LanguageStatistics(print_stats=True, search_mode="eval_train")
 
+    # Uncomment the experiment you would like to run
     # stats.plot_search_algorithm_performance()
     # stats.plot_search_setting_performance()
     # stats.plot_mutation_method_performance()
@@ -48,4 +50,4 @@ if __name__ == '__main__':
     # stats.plot_search_timeout_performance()
     # stats.plot_population_size_performance()
     # stats.plot_generation_limit_performance()
-    stats.plot_standard_vs_evolved_performance()
+    # stats.plot_standard_vs_evolved_performance()

@@ -18,19 +18,19 @@ class LanguageStatistics:
         # plt.style.use('tableau-colorblind10')
 
         # These parameters are manually updated based on analysis of the plots
-        self.best_parameters = {"generation_limit": 50,
-                                "generation_size": 30,
+        self.best_parameters = {"generation_limit": 20,
+                                "generation_size": 20,
                                 "search_mode": search_mode,
                                 "search_algorithm": "AS",
                                 "search_setting": "SO",
-                                "max_search_time": 2,
+                                "max_search_time": 0.7,
                                 "crossover_probability": 0.8,
-                                "mutation_probability": 0.2
+                                "mutation_probability": 0.3
                                 }
 
     def plot_search_algorithm_performance(self):
 
-        search_algorithms = ["Brute", "AS", "LNS", "MH"]
+        search_algorithms = ["Brute", "AS", "LNS"]  # , "MH"
 
         general_genetic = EvolvingLanguage(max_search_time=self.best_parameters["max_search_time"],
                                            generation_size=self.best_parameters["generation_size"])
@@ -61,6 +61,7 @@ class LanguageStatistics:
             final_ratio_correct = all_results["Final evolved results"]["Mean ratio correct"]
             cumulative_time = sum(generation_times)
 
+            final_ratio_correct = convert_to_percentage([final_ratio_correct])
             plt.plot(cumulative_time, final_ratio_correct, marker="o", markersize=14, label=algorithm)
 
             # plt.plot(cumulative_generation_times, average_fitness_values, label=algorithm)
@@ -72,10 +73,10 @@ class LanguageStatistics:
         # plt.savefig(self.base_save_path + "search_algorithm_comparison.jpg")
         # plt.close()
 
-        plt.xlabel("Total time passed (s)")
-        plt.ylabel("Evolved chromosome correct ratio")
+        plt.xlabel("Total runtime (s)", fontsize=14)
+        plt.ylabel("Evolved DSL percentage solved tasks", fontsize=14)
         # plt.title("Effect of search algorithm on time and fitness")
-        plt.legend(loc="upper right")
+        plt.legend(loc="center left", fontsize=12)
         plt.savefig(self.base_save_path + "search_algorithm_comparison_dots.jpg")
         plt.close()
 
@@ -123,6 +124,7 @@ class LanguageStatistics:
         plt.xlabel("Generations")
         plt.ylabel("Ratio correct best chromosome")
         # plt.title("Effect of search setting on time and fitness")
+        plt.grid(True)
         plt.legend(loc="upper left")
         plt.savefig(self.base_save_path + "search_setting_comparison.jpg")
         plt.close()
